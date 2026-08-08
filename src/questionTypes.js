@@ -18,7 +18,12 @@ export const ALL_TYPES = [...QUESTION_TYPES, ...PRIVACY_TYPES];
 
 export const TYPE_LABEL = Object.fromEntries(ALL_TYPES.map((t) => [t.value, t.label]));
 
+// Form IDs end up in the public share URL (?respond=<id>), exactly like Google/Naver's
+// long random form links — so this must be unguessable, not just "unique". Uses the
+// browser's cryptographically secure RNG; falls back to Math.random only on very old
+// browsers that lack crypto.randomUUID (their forms just won't be quite as hard to guess).
 export function uid() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
