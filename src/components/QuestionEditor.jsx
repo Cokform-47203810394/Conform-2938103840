@@ -59,7 +59,7 @@ export default function QuestionEditor({
       <div
         onMouseDown={() => setDragHandleActive(true)}
         onMouseUp={() => setDragHandleActive(false)}
-        className="mb-1 hidden cursor-grab justify-center text-[#CAC4D0] hover:text-[#79747E] active:cursor-grabbing sm:flex"
+        className="mb-1 hidden cursor-grab justify-center text-[#C9CEC6] hover:text-[#78837C] active:cursor-grabbing sm:flex"
         title="드래그해서 순서 변경"
       >
         <GripVertical size={16} />
@@ -86,7 +86,7 @@ export default function QuestionEditor({
               const fresh = defaultQuestion(nextType);
               update({ type: nextType, ...fresh, id: q.id, title: q.title, required: q.required });
             }}
-            className="w-full shrink-0 rounded-md border border-[#CAC4D0] bg-white px-2 py-2 text-base text-[#1C1B1F] outline-none focus:border-[#6750A4] sm:w-auto sm:py-1.5 sm:text-sm"
+            className="w-full shrink-0 rounded-md border border-[#C9CEC6] bg-white px-2 py-2 text-base text-[#17251F] outline-none focus:border-[#17866D] sm:w-auto sm:py-1.5 sm:text-sm"
           >
             <optgroup label="일반 문항">
               {QUESTION_TYPES.map((t) => (
@@ -112,19 +112,19 @@ export default function QuestionEditor({
           <div className="space-y-2">
             {q.options.map((opt, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="text-[#79747E]">
+                <span className="text-[#78837C]">
                   {q.type === "checkbox" ? "▢" : q.type === "dropdown" ? `${i + 1}.` : "○"}
                 </span>
                 <input
                   value={opt}
                   onChange={(e) => updateOption(i, e.target.value)}
-                  className="min-w-0 flex-1 border-b border-[#CAC4D0] bg-transparent py-1.5 text-base text-[#1C1B1F] outline-none focus:border-[#6750A4] sm:text-sm"
+                  className="min-w-0 flex-1 border-b border-[#C9CEC6] bg-transparent py-1.5 text-base text-[#17251F] outline-none focus:border-[#17866D] sm:text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => removeOption(i)}
                   disabled={q.options.length <= 1}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#79747E] hover:bg-[#1C1B1F]/[0.08] hover:text-[#B3261E] disabled:opacity-0"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#78837C] hover:bg-[#17251F]/[0.08] hover:text-[#B3261E] disabled:opacity-0"
                 >
                   <X size={14} />
                 </button>
@@ -133,7 +133,7 @@ export default function QuestionEditor({
             <button
               type="button"
               onClick={addOption}
-              className="mt-1 flex items-center gap-1 text-sm font-medium text-[#6750A4] hover:underline"
+              className="mt-1 flex items-center gap-1 text-sm font-medium text-[#17866D] hover:underline"
             >
               <Plus size={14} /> 옵션 추가
             </button>
@@ -141,12 +141,12 @@ export default function QuestionEditor({
         )}
 
         {q.type === "scale" && (
-          <div className="flex flex-wrap items-center gap-2 text-base text-[#49454F] sm:gap-3 sm:text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-base text-[#59645E] sm:gap-3 sm:text-sm">
             <div className="flex items-center gap-2">
               <select
                 value={q.scaleMin}
                 onChange={(e) => update({ scaleMin: Number(e.target.value) })}
-                className="rounded-md border border-[#CAC4D0] bg-white px-2 py-1.5 text-base sm:py-1 sm:text-sm"
+                className="rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-base sm:py-1 sm:text-sm"
               >
                 {[0, 1].map((n) => (
                   <option key={n} value={n}>
@@ -158,7 +158,7 @@ export default function QuestionEditor({
               <select
                 value={q.scaleMax}
                 onChange={(e) => update({ scaleMax: Number(e.target.value) })}
-                className="rounded-md border border-[#CAC4D0] bg-white px-2 py-1.5 text-base sm:py-1 sm:text-sm"
+                className="rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-base sm:py-1 sm:text-sm"
               >
                 {[3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                   <option key={n} value={n}>
@@ -171,25 +171,25 @@ export default function QuestionEditor({
               value={q.scaleMinLabel}
               onChange={(e) => update({ scaleMinLabel: e.target.value })}
               placeholder={`${q.scaleMin}번 라벨 (선택)`}
-              className="min-w-0 flex-1 rounded-md border border-[#CAC4D0] px-2 py-1.5 text-base sm:w-40 sm:flex-none sm:py-1 sm:text-sm"
+              className="min-w-0 flex-1 rounded-md border border-[#C9CEC6] px-2 py-1.5 text-base sm:w-40 sm:flex-none sm:py-1 sm:text-sm"
             />
             <input
               value={q.scaleMaxLabel}
               onChange={(e) => update({ scaleMaxLabel: e.target.value })}
               placeholder={`${q.scaleMax}번 라벨 (선택)`}
-              className="min-w-0 flex-1 rounded-md border border-[#CAC4D0] px-2 py-1.5 text-base sm:w-40 sm:flex-none sm:py-1 sm:text-sm"
+              className="min-w-0 flex-1 rounded-md border border-[#C9CEC6] px-2 py-1.5 text-base sm:w-40 sm:flex-none sm:py-1 sm:text-sm"
             />
           </div>
         )}
 
         {q.type === "short" && (
-          <div className="border-b border-dashed border-[#CAC4D0] pb-1 text-sm text-[#79747E]">단답형 텍스트</div>
+          <div className="border-b border-dashed border-[#C9CEC6] pb-1 text-sm text-[#78837C]">단답형 텍스트</div>
         )}
         {q.type === "paragraph" && (
-          <div className="border-b border-dashed border-[#CAC4D0] pb-1 text-sm text-[#79747E]">장문형 텍스트</div>
+          <div className="border-b border-dashed border-[#C9CEC6] pb-1 text-sm text-[#78837C]">장문형 텍스트</div>
         )}
-        {q.type === "date" && <div className="text-sm text-[#79747E]">날짜 선택</div>}
-        {q.type === "time" && <div className="text-sm text-[#79747E]">시간 선택</div>}
+        {q.type === "date" && <div className="text-sm text-[#78837C]">날짜 선택</div>}
+        {q.type === "time" && <div className="text-sm text-[#78837C]">시간 선택</div>}
 
         {q.type === "privacy_consent" && (
           <div
@@ -200,41 +200,41 @@ export default function QuestionEditor({
               <ShieldCheck size={14} /> 동의 문항 · 네이버폼 스타일
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              <label className="block text-xs text-[#49454F]">
+              <label className="block text-xs text-[#59645E]">
                 수집 목적
                 <input
                   value={q.purpose}
                   onChange={(e) => update({ purpose: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-[#CAC4D0] bg-white px-2 py-1.5 text-sm outline-none focus:border-[#6750A4]"
+                  className="mt-1 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm outline-none focus:border-[#17866D]"
                 />
               </label>
-              <label className="block text-xs text-[#49454F]">
+              <label className="block text-xs text-[#59645E]">
                 수집 항목
                 <input
                   value={q.items}
                   onChange={(e) => update({ items: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-[#CAC4D0] bg-white px-2 py-1.5 text-sm outline-none focus:border-[#6750A4]"
+                  className="mt-1 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm outline-none focus:border-[#17866D]"
                 />
               </label>
-              <label className="block text-xs text-[#49454F]">
+              <label className="block text-xs text-[#59645E]">
                 보유 기간
                 <input
                   value={q.retention}
                   onChange={(e) => update({ retention: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-[#CAC4D0] bg-white px-2 py-1.5 text-sm outline-none focus:border-[#6750A4]"
+                  className="mt-1 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm outline-none focus:border-[#17866D]"
                 />
               </label>
             </div>
             <div className="space-y-2">
               {q.options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <span className="text-[#79747E]">○</span>
+                  <span className="text-[#78837C]">○</span>
                   <input
                     value={opt}
                     onChange={(e) => updateOption(i, e.target.value)}
-                    className="flex-1 border-b border-[#CAC4D0] bg-transparent py-1 text-sm text-[#1C1B1F] outline-none focus:border-[#6750A4]"
+                    className="flex-1 border-b border-[#C9CEC6] bg-transparent py-1 text-sm text-[#17251F] outline-none focus:border-[#17866D]"
                   />
-                  {i === 1 && <span className="shrink-0 text-[11px] text-[#79747E]">미동의 옵션</span>}
+                  {i === 1 && <span className="shrink-0 text-[11px] text-[#78837C]">미동의 옵션</span>}
                 </div>
               ))}
             </div>
@@ -257,7 +257,7 @@ export default function QuestionEditor({
             <select
               value={q.noticeType}
               onChange={(e) => update({ noticeType: e.target.value })}
-              className="w-full rounded-md border border-[#CAC4D0] bg-white px-2 py-1.5 text-sm sm:w-auto"
+              className="w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm sm:w-auto"
             >
               <option value="collection">개인정보 수집 및 이용 안내</option>
               <option value="entrustment">개인정보 처리 위탁 안내</option>
@@ -266,13 +266,13 @@ export default function QuestionEditor({
               value={q.content}
               onChange={(e) => update({ content: e.target.value })}
               rows={3}
-              className="w-full rounded-md border border-[#CAC4D0] bg-white px-2 py-1.5 text-sm text-[#1C1B1F] outline-none focus:border-[#6750A4]"
+              className="w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]"
             />
           </div>
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#E7E0EC] pt-3 pl-4 sm:pl-9">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#E7E5DC] pt-3 pl-4 sm:pl-9">
         <div className="flex items-center gap-1">
           <IconButton title="복제" onClick={onDuplicate}>
             <Copy size={16} />
@@ -298,7 +298,7 @@ export default function QuestionEditor({
                       onMove(-1);
                       setMenuOpen(false);
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#1C1B1F] hover:bg-[#F3EDF7]"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#17251F] hover:bg-[#F5F3EC]"
                   >
                     <ChevronUp size={14} /> 위로 이동
                   </button>
@@ -307,7 +307,7 @@ export default function QuestionEditor({
                       onMove(1);
                       setMenuOpen(false);
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#1C1B1F] hover:bg-[#F3EDF7]"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#17251F] hover:bg-[#F5F3EC]"
                   >
                     <ChevronDown size={14} /> 아래로 이동
                   </button>

@@ -198,6 +198,11 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
           <IconButton title="홈으로" onClick={onBack}>
             <ArrowLeft size={18} />
           </IconButton>
+          <img
+            src={`${import.meta.env.BASE_URL}brand/cokform-mark.svg`}
+            alt="콕폼"
+            className="hidden h-7 w-7 rounded-[9px] sm:block"
+          />
           <input
             value={form.title}
             onChange={(e) => updateForm((f) => ({ ...f, title: e.target.value }))}
@@ -214,7 +219,7 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
               </IconButton>
               {paletteOpen && (
                 <Popover onClose={() => setPaletteOpen(false)} width="w-52">
-                  <div className="mb-2 text-xs font-medium text-[#79747E]">테마 색상</div>
+                  <div className="mb-2 text-xs font-medium text-[#78837C]">테마 색상</div>
                   <div className="mb-4 grid grid-cols-6 gap-2">
                     {PALETTE_SWATCHES.map((c) => (
                       <button
@@ -228,7 +233,7 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
                       />
                     ))}
                   </div>
-                  <div className="mb-2 text-xs font-medium text-[#79747E]">배경색</div>
+                  <div className="mb-2 text-xs font-medium text-[#78837C]">배경색</div>
                   <div className="grid grid-cols-6 gap-2">
                     {BACKGROUND_SWATCHES.map((c) => (
                       <button
@@ -238,7 +243,7 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
                           setPaletteOpen(false);
                         }}
                         className="h-7 w-7 rounded-full border border-[#E0E0E0] ring-2 ring-offset-2"
-                        style={{ backgroundColor: c, ringColor: (form.backgroundColor || "#F3EDF7") === c ? MD.primary : "transparent" }}
+                        style={{ backgroundColor: c, ringColor: (form.backgroundColor || "#F5F3EC") === c ? MD.primary : "transparent" }}
                       />
                     ))}
                   </div>
@@ -290,7 +295,7 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
 
       <div className="safe-bottom relative mx-auto max-w-3xl px-3 py-6 sm:px-4 sm:py-8">
         {!loaded ? (
-          <div className="py-16 text-center text-sm text-[#79747E]">불러오는 중…</div>
+          <div className="py-16 text-center text-sm text-[#78837C]">불러오는 중…</div>
         ) : (
           <>
             {tab === "edit" && (
@@ -300,7 +305,7 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
                     value={form.description}
                     onChange={(html) => updateForm((f) => ({ ...f, description: html }))}
                     placeholder="이 폼으로 무엇을 알고 싶은지 적어보세요"
-                    className="min-h-[2.5rem] w-full text-base text-[#49454F] sm:text-sm"
+                    className="min-h-[2.5rem] w-full text-base text-[#59645E] sm:text-sm"
                   />
                 </div>
 
@@ -336,12 +341,12 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
             {tab === "settings" && (
               <div className="space-y-4">
                 <div className={`rounded-xl bg-white p-5 ${ELEV1}`}>
-                  <h3 className="mb-4 text-sm font-medium text-[#1C1B1F]">응답</h3>
+                  <h3 className="mb-4 text-sm font-medium text-[#17251F]">응답</h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <div className="text-sm text-[#1C1B1F]">이메일 주소 수집</div>
-                        <div className="text-xs text-[#79747E]">응답 목록에 이메일 열을 표시해요</div>
+                        <div className="text-sm text-[#17251F]">이메일 주소 수집</div>
+                        <div className="text-xs text-[#78837C]">응답 목록에 이메일 열을 표시해요</div>
                       </div>
                       <Toggle
                         checked={form.settings?.collectEmail}
@@ -350,8 +355,8 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <div className="text-sm text-[#1C1B1F]">응답 1회로 제한</div>
-                        <div className="text-xs text-[#79747E]">같은 브라우저에서 중복 제출을 막아요</div>
+                        <div className="text-sm text-[#17251F]">응답 1회로 제한</div>
+                        <div className="text-xs text-[#78837C]">같은 브라우저에서 중복 제출을 막아요</div>
                       </div>
                       <Toggle
                         checked={form.settings?.limitOneResponse}
@@ -360,8 +365,8 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <div className="text-sm text-[#1C1B1F]">응답 받는 중</div>
-                        <div className="text-xs text-[#79747E]">꺼두면 공유 링크로 들어와도 제출할 수 없어요</div>
+                        <div className="text-sm text-[#17251F]">응답 받는 중</div>
+                        <div className="text-xs text-[#78837C]">꺼두면 공유 링크로 들어와도 제출할 수 없어요</div>
                       </div>
                       <Toggle
                         checked={form.settings?.acceptingResponses}
@@ -382,8 +387,8 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
 
       {shareOpen && (
         <Modal title="공유" onClose={() => setShareOpen(false)}>
-          <p className="mb-3 text-sm text-[#49454F]">이 링크가 있는 사람은 누구나 설문에 응답할 수 있어요.</p>
-          <div className="flex items-center gap-2 rounded-lg border border-[#CAC4D0] p-2">
+          <p className="mb-3 text-sm text-[#59645E]">이 링크가 있는 사람은 누구나 설문에 응답할 수 있어요.</p>
+          <div className="flex items-center gap-2 rounded-lg border border-[#C9CEC6] p-2">
             <input readOnly value={shareUrl} className="min-w-0 flex-1 truncate bg-transparent text-sm outline-none" />
             <button
               onClick={copyLink}
@@ -398,7 +403,7 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
 
       {collabOpen && (
         <Modal title="공동작업자" onClose={() => setCollabOpen(false)}>
-          <p className="mb-3 text-xs leading-relaxed text-[#79747E]">
+          <p className="mb-3 text-xs leading-relaxed text-[#78837C]">
             이메일만 목록으로 저장돼요. 실제 초대 메일은 발송되지 않으니, 함께 편집할 사람에게는 위의 공유 링크를 직접 전달해주세요.
           </p>
           <div className="mb-3 flex gap-2">
@@ -407,7 +412,7 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
               onChange={(e) => setCollabInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addCollaborator()}
               placeholder="email@example.com"
-              className="min-w-0 flex-1 rounded-md border border-[#CAC4D0] px-3 py-2 text-sm outline-none focus:border-[#6750A4]"
+              className="min-w-0 flex-1 rounded-md border border-[#C9CEC6] px-3 py-2 text-sm outline-none focus:border-[#17866D]"
             />
             <button onClick={addCollaborator} className="shrink-0 rounded-full px-3 py-2 text-sm font-medium text-white" style={{ backgroundColor: accent }}>
               추가
@@ -416,9 +421,9 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
           {(form.collaborators || []).length > 0 && (
             <ul className="space-y-1.5">
               {form.collaborators.map((email) => (
-                <li key={email} className="flex items-center justify-between rounded-md bg-[#F3EDF7] px-3 py-1.5 text-sm text-[#1C1B1F]">
+                <li key={email} className="flex items-center justify-between rounded-md bg-[#F5F3EC] px-3 py-1.5 text-sm text-[#17251F]">
                   {email}
-                  <button onClick={() => removeCollaborator(email)} className="text-[#79747E] hover:text-[#B3261E]">
+                  <button onClick={() => removeCollaborator(email)} className="text-[#78837C] hover:text-[#B3261E]">
                     <X size={14} />
                   </button>
                 </li>
@@ -429,7 +434,7 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#1C1B1F] px-4 py-2.5 text-sm text-white shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#17251F] px-4 py-2.5 text-sm text-white shadow-lg">
           {toast}
         </div>
       )}

@@ -41,7 +41,7 @@ export default function RichTextInput({ value, onChange, placeholder, className 
   return (
     <div className={`relative ${className}`}>
       {focused && (
-        <div className="absolute -top-10 left-0 z-20 flex items-center gap-0.5 rounded-lg bg-[#1C1B1F] p-1 shadow-lg">
+        <div className="absolute -top-10 left-0 z-20 flex items-center gap-0.5 rounded-lg bg-[#17251F] p-1 shadow-lg">
           {COMMANDS.map(({ cmd, icon: Icon, label }) => (
             <button
               key={cmd}
@@ -70,7 +70,7 @@ export default function RichTextInput({ value, onChange, placeholder, className 
         }}
         onInput={commit}
         data-placeholder={placeholder}
-        className="outline-none empty:before:text-[#79747E] empty:before:content-[attr(data-placeholder)]"
+        className="outline-none empty:before:text-[#78837C] empty:before:content-[attr(data-placeholder)]"
       />
     </div>
   );

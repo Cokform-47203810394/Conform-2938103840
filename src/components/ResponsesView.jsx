@@ -8,7 +8,7 @@ import { richTextToPlain } from "../lib/sanitizeRichText";
 export default function ResponsesView({ form, responses, onClear }) {
   if (responses.length === 0) {
     return (
-      <div className="rounded-xl border-2 border-dashed border-[#CAC4D0] bg-white p-12 text-center text-sm text-[#79747E]">
+      <div className="rounded-xl border-2 border-dashed border-[#C9CEC6] bg-white p-12 text-center text-sm text-[#78837C]">
         아직 응답이 없습니다. 미리보기 탭에서 제출해보세요.
       </div>
     );
@@ -18,8 +18,8 @@ export default function ResponsesView({ form, responses, onClear }) {
     <div className="space-y-4 sm:space-y-6">
       <div className={`flex items-center justify-between rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`}>
         <div>
-          <div className="font-mono text-2xl font-bold text-[#1C1B1F]">{responses.length}</div>
-          <div className="text-xs text-[#79747E]">개 응답</div>
+          <div className="font-mono text-2xl font-bold text-[#17251F]">{responses.length}</div>
+          <div className="text-xs text-[#78837C]">개 응답</div>
         </div>
         <IconButton title="응답 전체 삭제" onClick={onClear} danger>
           <Trash2 size={16} />
@@ -35,9 +35,9 @@ export default function ResponsesView({ form, responses, onClear }) {
             className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`}
             style={{ borderLeft: `4px solid ${TYPE_COLORS[q.type] || MD.primary}` }}
           >
-            <div className="mb-3 text-sm font-medium text-[#1C1B1F]">
+            <div className="mb-3 text-sm font-medium text-[#17251F]">
               {richTextToPlain(q.title) || "제목 없는 질문"}
-              <span className="ml-2 text-xs font-normal text-[#79747E]">{TYPE_LABEL[q.type]}</span>
+              <span className="ml-2 text-xs font-normal text-[#78837C]">{TYPE_LABEL[q.type]}</span>
             </div>
 
             {["radio", "dropdown", "privacy_consent"].includes(q.type) && (
@@ -92,9 +92,9 @@ export default function ResponsesView({ form, responses, onClear }) {
             )}
 
             {["short", "paragraph", "date", "time"].includes(q.type) && (
-              <ul className="space-y-1.5 text-sm text-[#49454F]">
+              <ul className="space-y-1.5 text-sm text-[#59645E]">
                 {values.map((v, i) => (
-                  <li key={i} className="border-b border-[#F3EDF7] pb-1.5 last:border-0">
+                  <li key={i} className="border-b border-[#F5F3EC] pb-1.5 last:border-0">
                     {v}
                   </li>
                 ))}

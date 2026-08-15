@@ -39,17 +39,17 @@ function Builder() {
 
   if (view === "settings") {
     return (
-      <div className="min-h-screen bg-[#F3EDF7]">
-        <div className={`sticky top-0 z-10 bg-[#FFFBFE] ${ELEV1}`}>
+      <div className="min-h-screen bg-[#F5F3EC]">
+        <div className={`sticky top-0 z-10 bg-[#FFFDF8] ${ELEV1}`}>
           <div className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-3 sm:px-4">
             <button
               onClick={() => setView("home")}
               title="홈으로"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#49454F] hover:bg-[#1C1B1F]/[0.08]"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#59645E] hover:bg-[#17251F]/[0.08]"
             >
               <ArrowLeft size={18} />
             </button>
-            <span className="text-lg font-normal text-[#1C1B1F]">설정</span>
+            <span className="text-lg font-normal text-[#17251F]">설정</span>
           </div>
         </div>
         <div className="mx-auto max-w-3xl px-3 py-4 sm:px-4 sm:py-6">

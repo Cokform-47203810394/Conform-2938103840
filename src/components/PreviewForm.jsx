@@ -67,7 +67,7 @@ export default function PreviewForm({ form, onSubmit, accent }) {
         >
           <Check size={22} />
         </div>
-        <div className="text-[15px] font-medium text-[#1C1B1F]">응답이 저장되었습니다</div>
+        <div className="text-[15px] font-medium text-[#17251F]">응답이 저장되었습니다</div>
         <button onClick={restart} className="mt-4 text-sm font-medium hover:underline" style={{ color }}>
           다른 응답 제출하기
         </button>
@@ -78,10 +78,10 @@ export default function PreviewForm({ form, onSubmit, accent }) {
   return (
     <div className="space-y-4">
       <div className={`rounded-xl border-t-8 bg-white p-5 sm:p-6 ${ELEV1}`} style={{ borderTopColor: color }}>
-        <h1 className="break-words text-xl font-normal text-[#1C1B1F] sm:text-2xl">{form.title}</h1>
+        <h1 className="break-words text-xl font-normal text-[#17251F] sm:text-2xl">{form.title}</h1>
         {form.description && (
           <p
-            className="mt-2 whitespace-pre-wrap text-sm text-[#49454F]"
+            className="mt-2 whitespace-pre-wrap text-sm text-[#59645E]"
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(form.description) }}
           />
         )}

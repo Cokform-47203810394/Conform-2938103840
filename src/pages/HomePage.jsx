@@ -75,16 +75,11 @@ export default function HomePage({ onOpenForm, onOpenSettings }) {
       <div className="sticky top-0 z-10 border-b border-[#DDE1D9] bg-[#FFFDF8]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-3 sm:px-6">
           <div className="flex shrink-0 items-center gap-2">
-            <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#D8ED59] text-[#17251F] shadow-[0_4px_10px_rgba(23,37,31,0.08)]">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M6 5.5h8.2a3.8 3.8 0 0 1 0 7.6H10l-3.6 3v-3.3A3.7 3.7 0 0 1 6 5.5Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
-                <path d="m15.8 8.2 2.6-2.2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-              </svg>
-            </span>
-            <div className="hidden sm:block">
-              <span className="block text-lg font-bold tracking-[-0.04em] text-[#17251F]">콕폼</span>
-              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#17866D]">ASK IT WELL</span>
-            </div>
+            <img
+              src={`${import.meta.env.BASE_URL}brand/cokform-logo.svg`}
+              alt="콕폼 · ASK IT WELL"
+              className="h-10 w-auto"
+            />
           </div>
 
           <div className="relative mx-auto w-full max-w-xl">
@@ -146,7 +141,7 @@ export default function HomePage({ onOpenForm, onOpenSettings }) {
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-sm text-[#79747E]">불러오는 중…</div>
+          <div className="py-16 text-center text-sm text-[#78837C]">불러오는 중…</div>
         ) : filtered.length === 0 ? (
           <div className="rounded-[24px] border border-dashed border-[#B8C5BA] bg-[#FFFDF8]/70 py-16 text-center text-sm text-[#59645E]">
             {query ? "찾는 폼이 없어요." : "아직 만든 폼이 없어요. 위에서 하나를 골라 시작해보세요."}
@@ -179,13 +174,13 @@ export default function HomePage({ onOpenForm, onOpenSettings }) {
                   <div className="absolute right-1.5 top-10 z-10 w-40 overflow-hidden rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] py-1 text-sm shadow-lg">
                     <button
                       onClick={() => onOpenForm(f.id)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#1C1B1F] hover:bg-[#D8F5E8]"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#17251F] hover:bg-[#D8F5E8]"
                     >
                       <ExternalLink size={14} /> 열기
                     </button>
                     <button
                       onClick={() => handleDuplicate(f.id)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#1C1B1F] hover:bg-[#D8F5E8]"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#17251F] hover:bg-[#D8F5E8]"
                     >
                       <Copy size={14} /> 사본 만들기
                     </button>

@@ -5,8 +5,8 @@ export function IconButton({ onClick, title, children, danger, disabled }) {
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#49454F] transition-colors active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent hover:bg-[#1C1B1F]/[0.08] ${
-        danger ? "hover:text-[#B3261E]" : "hover:text-[#1C1B1F]"
+      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition-colors active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent hover:bg-[#17251F]/[0.08] ${
+        danger ? "hover:text-[#B3261E]" : "hover:text-[#17251F]"
       }`}
     >
       {children}
@@ -16,7 +16,7 @@ export function IconButton({ onClick, title, children, danger, disabled }) {
 
 export function Toggle({ checked, onChange, label }) {
   return (
-    <label className="flex select-none items-center gap-2 text-sm text-[#49454F]">
+    <label className="flex select-none items-center gap-2 text-sm text-[#59645E]">
       {label && <span>{label}</span>}
       <button
         type="button"
@@ -24,7 +24,7 @@ export function Toggle({ checked, onChange, label }) {
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`relative h-8 w-[52px] rounded-full border-2 transition-colors ${
-          checked ? "border-[#6750A4] bg-[#6750A4]" : "border-[#79747E] bg-transparent"
+          checked ? "border-[#17866D] bg-[#17866D]" : "border-[#78837C] bg-transparent"
         }`}
       >
         <span
