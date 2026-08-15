@@ -1,60 +1,65 @@
-// ---------- Material Design 3 tokens (baseline purple theme) ----------
-// ref: m3.material.io/foundations/design-tokens
+// Cokform brand tokens: warm, direct, and response-first.
+// Brand idea: "콕 집어 묻고, 콕 집어 이해하는 폼"
 export const MD = {
-  primary: "#6750A4",
+  primary: "#17866D",
   onPrimary: "#FFFFFF",
-  primaryContainer: "#EADDFF",
-  onPrimaryContainer: "#21005D",
-  surface: "#FFFBFE",
-  surfaceContainer: "#F3EDF7",
-  surfaceVariant: "#E7E0EC",
-  onSurface: "#1C1B1F",
-  onSurfaceVariant: "#49454F",
-  outline: "#79747E",
-  outlineVariant: "#CAC4D0",
-  error: "#B3261E",
-  errorContainer: "#F9DEDC",
+  primaryContainer: "#D8F5E8",
+  onPrimaryContainer: "#0B4D3D",
+  surface: "#FFFDF8",
+  surfaceContainer: "#F5F3EC",
+  surfaceVariant: "#E7E5DC",
+  onSurface: "#17251F",
+  onSurfaceVariant: "#59645E",
+  outline: "#78837C",
+  outlineVariant: "#C9CEC6",
+  error: "#B94A48",
+  errorContainer: "#FBE4E0",
 };
 
-// Naver Form-style accent, used only for privacy consent/notice question types
-export const NAVER_GREEN = "#03C75A";
+export const BRAND = {
+  ink: "#17251F",
+  cream: "#FFFDF8",
+  canvas: "#F5F3EC",
+  green: "#17866D",
+  greenSoft: "#D8F5E8",
+  lime: "#D8ED59",
+  coral: "#F28B70",
+  blue: "#4E7BB7",
+  line: "#DDE1D9",
+};
 
-// per-type accent colors — makes the question list scannable at a glance
+// A vivid, practical accent system for question types.
 export const TYPE_COLORS = {
-  short: "#4F86F7",
-  paragraph: "#7C6FF0",
-  radio: "#6750A4",
-  checkbox: "#00A896",
-  dropdown: "#F2994A",
-  scale: "#EB5757",
-  date: "#219653",
-  time: "#C08A00",
-  privacy_consent: NAVER_GREEN,
-  privacy_notice: NAVER_GREEN,
+  short: "#4E7BB7",
+  paragraph: "#7B6FD0",
+  radio: "#17866D",
+  checkbox: "#E18B35",
+  dropdown: "#F28B70",
+  scale: "#D25561",
+  date: "#4F9A70",
+  time: "#8B6B35",
+  privacy_consent: "#17866D",
+  privacy_notice: "#17866D",
 };
 
-// rotating palette for response bar charts (option-level color, not just one flat purple)
 export const CHART_PALETTE = [
-  "#6750A4",
-  "#4F86F7",
-  "#00A896",
-  "#F2994A",
-  "#EB5757",
-  "#219653",
-  "#7C6FF0",
-  "#C08A00",
+  "#17866D",
+  "#4E7BB7",
+  "#E18B35",
+  "#F28B70",
+  "#D25561",
+  "#4F9A70",
+  "#7B6FD0",
+  "#8B6B35",
 ];
 
-// M3 elevation shadow approximations
-export const ELEV1 = "shadow-[0_1px_2px_rgba(0,0,0,0.3),0_1px_3px_1px_rgba(0,0,0,0.15)]";
-export const ELEV2 = "shadow-[0_1px_2px_rgba(0,0,0,0.3),0_2px_6px_2px_rgba(0,0,0,0.15)]";
-export const ELEV3 = "shadow-[0_1px_3px_rgba(0,0,0,0.3),0_4px_8px_3px_rgba(0,0,0,0.15)]";
+export const NAVER_GREEN = BRAND.green;
 
-// pre-composed (not string-interpolated) so Tailwind's JIT scanner can actually see the
-// `hover:` variant — building it via `${ELEV1} hover:${ELEV2}` at call-sites silently
-// drops the hover class from the production build.
+export const ELEV1 = "shadow-[0_2px_4px_rgba(23,37,31,0.06),0_8px_20px_rgba(23,37,31,0.04)]";
+export const ELEV2 = "shadow-[0_4px_12px_rgba(23,37,31,0.08),0_16px_32px_rgba(23,37,31,0.06)]";
+export const ELEV3 = "shadow-[0_8px_24px_rgba(23,37,31,0.12),0_24px_48px_rgba(23,37,31,0.08)]";
 export const ELEV1_HOVER =
-  "shadow-[0_1px_2px_rgba(0,0,0,0.3),0_1px_3px_1px_rgba(0,0,0,0.15)] hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_2px_6px_2px_rgba(0,0,0,0.15)]";
+  "shadow-[0_2px_4px_rgba(23,37,31,0.06),0_8px_20px_rgba(23,37,31,0.04)] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(23,37,31,0.12),0_24px_48px_rgba(23,37,31,0.08)]";
 
 export const FIELD =
-  "w-full rounded-t-md bg-[#F3EDF7] px-3 pt-2.5 pb-2 text-base text-[#1C1B1F] outline-none border-b-2 border-[#79747E] focus:border-[#6750A4] focus:bg-[#ECE6F0] transition-colors";
+  "w-full rounded-xl bg-[#F5F3EC] px-3.5 py-3 text-base text-[#17251F] outline-none ring-1 ring-inset ring-[#DDE1D9] focus:bg-white focus:ring-2 focus:ring-[#17866D] transition-colors";

@@ -2,7 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color: #17251f;
+  background: #f5f3ec;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
+  min-width: 320px;
+  background: #f5f3ec;
   font-family: "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  color: #17251f;
+  background: #d8ed59;
+}
+
+@layer components {
+  .cok-eyebrow {
+    @apply text-[11px] font-bold uppercase tracking-[0.18em] text-[#17866D];
+  }
+
+  .cok-display {
+    @apply text-3xl font-semibold tracking-[-0.04em] text-[#17251F] sm:text-4xl;
+  }
+
+  .cok-button-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#17866D] px-5 py-3 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(23,37,31,0.12)] transition hover:-translate-y-0.5 hover:bg-[#0F705B] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .cok-button-soft {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#D8F5E8] px-4 py-2.5 text-sm font-semibold text-[#0B4D3D] transition hover:bg-[#BCEBD7] active:scale-[0.98];
+  }
 }

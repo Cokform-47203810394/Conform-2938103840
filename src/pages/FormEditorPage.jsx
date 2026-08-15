@@ -23,7 +23,7 @@ import { emptyForm, defaultQuestion, uid } from "../questionTypes";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
 
 const PALETTE_SWATCHES = [MD.primary, ...CHART_PALETTE.filter((c) => c !== MD.primary), NAVER_GREEN];
-const BACKGROUND_SWATCHES = ["#F3EDF7", "#FFFFFF", "#FDF6EC", "#EAF6EF", "#EAF1FB", "#FCEFEF"];
+const BACKGROUND_SWATCHES = ["#F5F3EC", "#FFFDF8", "#FFF2E8", "#EAF6EF", "#EAF1FB", "#FCEFEF"];
 
 export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
   const [form, setForm] = useState(emptyForm());
@@ -180,28 +180,28 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
   };
 
   const tabs = [
-    { id: "edit", label: "질문" },
-    { id: "responses", label: "응답", badge: responses.length },
-    { id: "settings", label: "설정" },
+    { id: "edit", label: "흐름" },
+    { id: "responses", label: "답변", badge: responses.length },
+    { id: "settings", label: "운영" },
   ];
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: form.backgroundColor || "#F3EDF7" }}>
+    <div className="min-h-screen" style={{ backgroundColor: form.backgroundColor || "#F5F3EC" }}>
       <style>{`
         .safe-bottom { padding-bottom: max(6rem, calc(env(safe-area-inset-bottom) + 5rem)); }
         input, select, textarea, button { -webkit-tap-highlight-color: transparent; }
       `}</style>
 
       {/* top app bar */}
-      <div className={`sticky top-0 z-10 bg-[#FFFBFE] ${ELEV1}`}>
-        <div className="mx-auto flex max-w-4xl items-center gap-1 px-3 py-2 sm:px-4">
+      <div className={`sticky top-0 z-10 border-b border-[#DDE1D9] bg-[#FFFDF8]/95 backdrop-blur ${ELEV1}`}>
+        <div className="mx-auto flex max-w-4xl items-center gap-1 px-3 py-3 sm:px-4">
           <IconButton title="홈으로" onClick={onBack}>
             <ArrowLeft size={18} />
           </IconButton>
           <input
             value={form.title}
             onChange={(e) => updateForm((f) => ({ ...f, title: e.target.value }))}
-            className="min-w-0 flex-1 bg-transparent text-base font-normal text-[#1C1B1F] outline-none sm:text-lg"
+            className="min-w-0 flex-1 bg-transparent text-base font-semibold tracking-[-0.03em] text-[#17251F] outline-none sm:text-lg"
           />
           <IconButton title={form.starred ? "즐겨찾기 해제" : "즐겨찾기"} onClick={() => updateForm((f) => ({ ...f, starred: !f.starred }))}>
             <Star size={18} fill={form.starred ? accent : "none"} color={form.starred ? accent : "currentColor"} />
@@ -262,33 +262,33 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
             </IconButton>
             <button
               onClick={() => setShareOpen(true)}
-              className="ml-1 shrink-0 rounded-full px-4 py-2 text-sm font-medium text-white"
+              className="ml-1 shrink-0 rounded-full bg-[#17866D] px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(23,37,31,0.12)] transition hover:bg-[#0F705B]"
               style={{ backgroundColor: accent }}
             >
-              게시
+              공유 시작
             </button>
           </div>
         </div>
-        <div className="mx-auto flex max-w-4xl justify-center gap-6 border-t border-[#F1F3F4] px-4">
+        <div className="mx-auto flex max-w-4xl justify-center gap-8 border-t border-[#DDE1D9] px-4">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-1.5 border-b-2 px-1 py-2.5 text-sm font-medium transition-colors ${
-                tab === t.id ? "text-[#1C1B1F]" : "border-transparent text-[#49454F] hover:text-[#1C1B1F]"
+                tab === t.id ? "text-[#0B4D3D]" : "border-transparent text-[#78837C] hover:text-[#17251F]"
               }`}
               style={{ borderColor: tab === t.id ? accent : "transparent" }}
             >
               {t.label}
               {t.badge > 0 && (
-                <span className="rounded-full bg-[#E7E0EC] px-1.5 font-mono text-[11px] text-[#49454F]">{t.badge}</span>
+                <span className="rounded-full bg-[#D8ED59] px-1.5 font-mono text-[11px] font-semibold text-[#17251F]">{t.badge}</span>
               )}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="safe-bottom relative mx-auto max-w-3xl px-3 py-4 sm:px-4 sm:py-6">
+      <div className="safe-bottom relative mx-auto max-w-3xl px-3 py-6 sm:px-4 sm:py-8">
         {!loaded ? (
           <div className="py-16 text-center text-sm text-[#79747E]">불러오는 중…</div>
         ) : (
@@ -299,7 +299,7 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
                   <RichTextInput
                     value={form.description}
                     onChange={(html) => updateForm((f) => ({ ...f, description: html }))}
-                    placeholder="설문지 설명"
+                    placeholder="이 폼으로 무엇을 알고 싶은지 적어보세요"
                     className="min-h-[2.5rem] w-full text-base text-[#49454F] sm:text-sm"
                   />
                 </div>
@@ -326,7 +326,7 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
                   className={`fixed bottom-6 right-4 z-20 flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-medium text-white transition-shadow active:scale-95 sm:right-8 ${ELEV3}`}
                   style={{ backgroundColor: accent }}
                 >
-                  <Plus size={20} /> 질문 추가
+                  <Plus size={20} /> 질문 콕 찍기
                 </button>
               </div>
             )}
