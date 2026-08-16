@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import PreviewForm from "../components/PreviewForm";
-import { getFormDoc, saveFormDoc } from "../lib/formsStore";
+import { getFormDoc, submitResponse } from "../lib/formsStore";
 import { ELEV1, MD } from "../theme";
 
 export default function RespondPage({ formId }) {
@@ -29,9 +29,11 @@ export default function RespondPage({ formId }) {
   const blocked = form.settings?.limitOneResponse && alreadyResponded;
 
   const handleSubmit = async (answers) => {
-    const fresh = await getFormDoc(formId);
-    const responses = [...(fresh?.responses || []), { id: `${Date.now()}`, submittedAt: new Date().toISOString(), answers }];
-    await saveFormDoc(formId, { form: fresh?.form || form, responses });
+    const result = await submitResponse(formId, answers);
+    if (!result.ok) {
+      window.alert("응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
+      return;
+    }
     if (form.settings?.limitOneResponse) {
       localStorage.setItem(`form-builder:responded:${formId}`, "1");
       setAlreadyResponded(true);

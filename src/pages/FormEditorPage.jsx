@@ -18,7 +18,7 @@ import PreviewForm from "../components/PreviewForm";
 import ResponsesView from "../components/ResponsesView";
 import { IconButton, Toggle } from "../components/Primitives";
 import { Popover, Modal } from "../components/Overlay";
-import { getFormDoc, saveFormDoc } from "../lib/formsStore";
+import { clearResponses as clearStoredResponses, getFormDoc, saveFormDoc, submitResponse } from "../lib/formsStore";
 import { emptyForm, defaultQuestion, uid } from "../questionTypes";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
 
@@ -90,10 +90,10 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
     if (!loaded) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      saveFormDoc(formId, { form, responses });
+      saveFormDoc(formId, { form });
     }, 400);
     return () => clearTimeout(saveTimer.current);
-  }, [form, responses, loaded, formId]);
+  }, [form, loaded, formId]);
 
   // ---- question CRUD ----
   const updateQuestion = (id, next) => {
@@ -139,10 +139,22 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
     setDragIndex(null);
   };
 
-  const handleFormSubmit = useCallback((answers) => {
-    setResponses((r) => [...r, { id: uid(), submittedAt: new Date().toISOString(), answers }]);
-  }, []);
-  const clearResponses = () => setResponses([]);
+  const handleFormSubmit = useCallback(async (answers) => {
+    const result = await submitResponse(formId, answers);
+    if (!result.ok) {
+      window.alert("응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
+      return;
+    }
+    setResponses((r) => [...r, result.response]);
+  }, [formId]);
+  const clearResponses = async () => {
+    const cleared = await clearStoredResponses(formId);
+    if (!cleared) {
+      window.alert("응답을 삭제할 권한이 없거나 저장소에 연결되지 않았어요.");
+      return;
+    }
+    setResponses([]);
+  };
 
   // ---- share / theme / collaborators ----
   const [paletteOpen, setPaletteOpen] = useState(false);

@@ -3,10 +3,10 @@ import { uid } from "../questionTypes";
 
 const INDEX_KEY = "form-builder:index";
 const DOC_PREFIX = "form-builder:doc";
+const RESPONSE_PREFIX = "form-builder:responses";
 const TABLE = "forms";
-
-// See README.md for the SQL to create this table in Supabase:
-//   id text primary key, title text, data jsonb, updated_at timestamptz, created_at timestamptz
+const PUBLIC_TABLE = "form_public";
+const RESPONSE_TABLE = "responses";
 
 function readIndexLocal() {
   try {
@@ -25,55 +25,94 @@ function writeIndexLocal(list) {
   }
 }
 
-// Runs `fn` against Supabase if configured. Returns undefined (never throws) on any
-// failure or when unconfigured, so every call site can just fall through to localStorage.
+function readResponsesLocal(id) {
+  try {
+    const raw = localStorage.getItem(`${RESPONSE_PREFIX}:${id}`);
+    if (raw) return JSON.parse(raw);
+    const legacy = localStorage.getItem(`${DOC_PREFIX}:${id}`);
+    return legacy ? JSON.parse(legacy).responses || [] : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeResponsesLocal(id, responses) {
+  localStorage.setItem(`${RESPONSE_PREFIX}:${id}`, JSON.stringify(responses));
+}
+
+function publicFormData(form) {
+  // Collaborator emails are editor metadata and must never be in the public row.
+  const { collaborators: _private, ...safeForm } = form || {};
+  return safeForm;
+}
+
 async function trySupabase(label, fn) {
   const supabase = getSupabaseClient();
   if (!supabase) return undefined;
   try {
     return await fn(supabase);
   } catch (e) {
-    console.warn(`Supabase ${label} 실패, 로컬 저장소로 대체합니다.`, e);
+    console.warn(`Supabase ${label} 실패`, e);
     return undefined;
   }
 }
 
 export const newFormId = uid;
 
-// { id, title, updatedAt, createdAt, questions } 목록 — 최근 수정순
-// questions는 카드 썸네일 렌더링용으로 앞 3개만 담아온다 (응답 데이터까지 통째로 fetch하지 않기 위함)
 export async function listForms() {
   const remote = await trySupabase("목록 조회", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return undefined;
     const { data, error } = await supabase
       .from(TABLE)
-      .select("id, title, updated_at, created_at, data->questions")
+      .select("id, title, updated_at, created_at, data")
       .order("updated_at", { ascending: false });
-    if (error || !data) return undefined;
-    return data.map((r) => ({
-      id: r.id,
-      title: r.title,
-      updatedAt: r.updated_at,
-      createdAt: r.created_at,
-      questions: (r.questions || []).slice(0, 3),
+    if (error) return undefined;
+    return (data || []).map((row) => ({
+      id: row.id,
+      title: row.title,
+      updatedAt: row.updated_at,
+      createdAt: row.created_at,
+      questions: (row.data?.form?.questions || []).slice(0, 3),
     }));
   });
-  if (remote) return remote;
-
+  if (remote !== undefined) return remote;
   return readIndexLocal().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 }
 
-// { form, responses } 전체 문서
 export async function getFormDoc(id) {
   const remote = await trySupabase("로드", async (supabase) => {
-    const { data, error } = await supabase.from(TABLE).select("data").eq("id", id).maybeSingle();
-    if (error || !data) return undefined;
-    return data.data;
+    const { data: authData } = await supabase.auth.getUser();
+    const isOwnerSession = Boolean(authData?.user);
+    const table = isOwnerSession ? TABLE : PUBLIC_TABLE;
+    const { data, error } = await supabase.from(table).select("data").eq("id", id).maybeSingle();
+    if (error) return undefined;
+    if (!data) return null;
+
+    const stored = data.data || {};
+    if (!isOwnerSession) return { form: stored.form || stored, responses: [] };
+
+    let responses = [];
+    const result = await supabase
+      .from(RESPONSE_TABLE)
+      .select("id, submitted_at, answers")
+      .eq("form_id", id)
+      .order("submitted_at", { ascending: true });
+    if (!result.error) {
+      responses = (result.data || []).map((row) => ({
+        id: row.id,
+        submittedAt: row.submitted_at,
+        answers: row.answers,
+      }));
+    }
+    return { form: stored.form || stored, responses };
   });
-  if (remote) return remote;
+  if (remote !== undefined) return remote;
 
   try {
     const raw = localStorage.getItem(`${DOC_PREFIX}:${id}`);
-    return raw ? JSON.parse(raw) : null;
+    const stored = raw ? JSON.parse(raw) : null;
+    return stored ? { form: stored.form || stored, responses: readResponsesLocal(id) } : null;
   } catch {
     return null;
   }
@@ -82,15 +121,34 @@ export async function getFormDoc(id) {
 export async function saveFormDoc(id, doc) {
   const now = new Date().toISOString();
   const title = doc.form?.title?.trim() || "제목 없는 설문지";
+  const payload = { form: doc.form };
 
   const savedRemotely = await trySupabase("저장", async (supabase) => {
-    const { error } = await supabase.from(TABLE).upsert({ id, title, data: doc, updated_at: now });
-    return error ? undefined : true;
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return undefined;
+
+    const { error: formError } = await supabase.from(TABLE).upsert({
+      id,
+      title,
+      data: payload,
+      owner: authData.user.id,
+      updated_at: now,
+    });
+    if (formError) return undefined;
+
+    const { error: publicError } = await supabase.from(PUBLIC_TABLE).upsert({
+      id,
+      title,
+      data: publicFormData(doc.form),
+      updated_at: now,
+    });
+    return publicError ? undefined : true;
   });
   if (savedRemotely) return true;
+  if (getSupabaseClient()) return false;
 
   try {
-    localStorage.setItem(`${DOC_PREFIX}:${id}`, JSON.stringify(doc));
+    localStorage.setItem(`${DOC_PREFIX}:${id}`, JSON.stringify(payload));
     const index = readIndexLocal();
     const questionsPreview = (doc.form?.questions || []).slice(0, 3);
     const existing = index.find((f) => f.id === id);
@@ -109,14 +167,64 @@ export async function saveFormDoc(id, doc) {
   }
 }
 
+export async function submitResponse(formId, answers) {
+  const response = { id: uid(), submittedAt: new Date().toISOString(), answers };
+  const savedRemotely = await trySupabase("응답 제출", async (supabase) => {
+    const { error } = await supabase.from(RESPONSE_TABLE).insert({
+      id: response.id,
+      form_id: formId,
+      submitted_at: response.submittedAt,
+      answers,
+    });
+    return error ? undefined : true;
+  });
+  if (savedRemotely) return { ok: true, response };
+  if (getSupabaseClient()) return { ok: false, response: null };
+
+  try {
+    const responses = [...readResponsesLocal(formId), response];
+    writeResponsesLocal(formId, responses);
+    return { ok: true, response };
+  } catch (e) {
+    console.error("응답 제출 실패", e);
+    return { ok: false, response: null };
+  }
+}
+
+export async function clearResponses(formId) {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData?.user) return false;
+      const { error } = await supabase.from(RESPONSE_TABLE).delete().eq("form_id", formId);
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  try {
+    writeResponsesLocal(formId, []);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function deleteFormDoc(id) {
   const deletedRemotely = await trySupabase("삭제", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return undefined;
     const { error } = await supabase.from(TABLE).delete().eq("id", id);
-    return error ? undefined : true;
+    if (error) return undefined;
+    await supabase.from(PUBLIC_TABLE).delete().eq("id", id);
+    return true;
   });
 
   if (!deletedRemotely) {
     localStorage.removeItem(`${DOC_PREFIX}:${id}`);
+    localStorage.removeItem(`${RESPONSE_PREFIX}:${id}`);
     writeIndexLocal(readIndexLocal().filter((f) => f.id !== id));
   }
   return true;
@@ -126,9 +234,6 @@ export async function duplicateFormDoc(id) {
   const doc = await getFormDoc(id);
   if (!doc) return null;
   const newId = newFormId();
-  await saveFormDoc(newId, {
-    form: { ...doc.form, title: `${doc.form.title} 사본` },
-    responses: [],
-  });
+  await saveFormDoc(newId, { form: { ...doc.form, title: `${doc.form.title} 사본` } });
   return newId;
 }
