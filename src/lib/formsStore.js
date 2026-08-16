@@ -234,8 +234,14 @@ export async function deleteFormDoc(id) {
   const deletedRemotely = await trySupabase("삭제", async (supabase) => {
     const { data: authData } = await supabase.auth.getUser();
     if (!authData?.user) return undefined;
-    const { error } = await supabase.from(TABLE).delete().eq("id", id);
-    if (error) return undefined;
+    const { data: deletedRows, error } = await supabase
+      .from(TABLE)
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error || !deletedRows?.length) return undefined;
+    // form_public and responses reference forms with ON DELETE CASCADE.
+    // Keep this explicit cleanup as a best-effort fallback for older pilot schemas.
     await supabase.from(PUBLIC_TABLE).delete().eq("id", id);
     return true;
   });

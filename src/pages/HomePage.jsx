@@ -24,6 +24,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
   const [sortBy, setSortBy] = useState("updated"); // 'updated' | 'title'
   const [openMenuId, setOpenMenuId] = useState(null);
   const [creating, setCreating] = useState(null);
+  const [notice, setNotice] = useState(null);
 
   const refresh = async () => {
     setLoading(true);
@@ -71,8 +72,15 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
   const handleDelete = async (id, title) => {
     setOpenMenuId(null);
     if (!window.confirm(`"${title}" 설문지를 삭제할까요? 응답 데이터도 함께 삭제됩니다.`)) return;
-    await deleteFormDoc(id);
-    refresh();
+    const deleted = await deleteFormDoc(id);
+    if (!deleted) {
+      setNotice("삭제하지 못했어요. 로그인 상태와 폼 소유자 권한을 확인해주세요.");
+      window.setTimeout(() => setNotice(null), 3500);
+      return;
+    }
+    setNotice("폼과 응답이 삭제되었습니다.");
+    window.setTimeout(() => setNotice(null), 2500);
+    await refresh();
   };
 
   return (
@@ -183,7 +191,8 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
 
                 <button
                   onClick={() => setOpenMenuId(openMenuId === f.id ? null : f.id)}
-                  className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#FFFDF8]/95 text-[#59645E] opacity-0 shadow-sm transition hover:bg-white group-hover:opacity-100"
+                  aria-label={`${f.title} 메뉴 열기`}
+                  className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#FFFDF8]/95 text-[#59645E] opacity-100 shadow-sm transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100"
                 >
                   <MoreVertical size={16} />
                 </button>
@@ -215,6 +224,12 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           </div>
         )}
       </div>
+
+      {notice && (
+        <div role="status" className={`fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full px-4 py-2.5 text-sm text-white shadow-lg ${notice.startsWith("삭제하지") ? "bg-[#B3261E]" : "bg-[#17251F]"}`}>
+          {notice}
+        </div>
+      )}
 
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#DDE1D9] pt-5 text-xs text-[#78837C]">
         <span>Private Pilot · 응답은 브라우저에서 암호화됩니다.</span>
