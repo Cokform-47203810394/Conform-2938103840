@@ -3,10 +3,14 @@ import { getSupabaseClient } from "./supabaseClient";
 export async function signInWithGoogle() {
   const supabase = getSupabaseClient();
   if (!supabase) {
-    window.alert("설정 탭에서 Supabase 연동을 먼저 완료해주세요.");
+    window.alert("서비스 연결이 아직 준비되지 않았어요.");
     return;
   }
-  await supabase.auth.signInWithOAuth({ provider: "google" });
+  const redirectTo = new URL(import.meta.env.BASE_URL || "/", window.location.origin).toString();
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo },
+  });
 }
 
 export async function signOut() {
