@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import HomePage from "./pages/HomePage";
 import FormEditorPage from "./pages/FormEditorPage";
 import RespondPage from "./pages/RespondPage";
 import SettingsPage from "./pages/SettingsPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import AuthControl from "./components/AuthControl";
+import { subscribeAuth } from "./lib/auth";
 import { ArrowLeft } from "lucide-react";
 import { ELEV1 } from "./theme";
 
@@ -26,11 +28,36 @@ function Builder() {
   // view: 'home' | 'editor' | 'settings'
   const [view, setView] = useState("home");
   const [currentFormId, setCurrentFormId] = useState(null);
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeAuth((nextUser) => {
+      setUser(nextUser);
+      setAuthReady(true);
+    });
+    return unsubscribe;
+  }, []);
 
   if (view === "editor" && currentFormId) {
+    if (!authReady || !user) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-[#F5F3EC] px-4">
+          <div className="w-full max-w-md rounded-2xl bg-[#FFFDF8] p-6 text-center shadow-sm">
+            <h1 className="text-xl font-semibold text-[#17251F]">작성자 로그인이 필요해요</h1>
+            <p className="mt-2 text-sm leading-6 text-[#59645E]">폼과 응답은 작성자 계정에만 연결됩니다. Google 로그인 후 다시 열어주세요.</p>
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <button onClick={() => setView("home")} className="rounded-full border border-[#C9CEC6] px-4 py-2 text-sm font-semibold text-[#59645E]">홈으로</button>
+              <AuthControl />
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <FormEditorPage
         formId={currentFormId}
+        user={user}
         onBack={() => setView("home")}
       />
     );
@@ -49,6 +76,7 @@ function Builder() {
               <ArrowLeft size={18} />
             </button>
             <span className="text-lg font-normal text-[#17251F]">설정</span>
+            <div className="ml-auto"><AuthControl user={user} compact /></div>
           </div>
         </div>
         <div className="mx-auto max-w-3xl px-3 py-4 sm:px-4 sm:py-6">
@@ -64,6 +92,8 @@ function Builder() {
         setCurrentFormId(id);
         setView("editor");
       }}
+      user={user}
+      authReady={authReady}
       onOpenSettings={() => setView("settings")}
     />
   );

@@ -1,4 +1,4 @@
-import { getSupabaseClient } from "./supabaseClient";
+import { getSupabaseClient, hasSupabaseConfig } from "./supabaseClient";
 import { uid } from "../questionTypes";
 import { decryptAnswers, encryptAnswers, isEncryptedEnvelope } from "./secureResponses";
 
@@ -78,6 +78,7 @@ export async function listForms() {
     }));
   });
   if (remote !== undefined) return remote;
+  if (hasSupabaseConfig()) return [];
   return readIndexLocal().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 }
 
@@ -112,6 +113,9 @@ export async function getFormDoc(id) {
     return { form: stored.form || stored, responses };
   });
   if (remote !== undefined) return remote;
+  // Production must never open an old browser-local editor snapshot when
+  // Supabase is configured. Public users use the RespondPage route instead.
+  if (hasSupabaseConfig()) return null;
 
   try {
     const raw = localStorage.getItem(`${DOC_PREFIX}:${id}`);
@@ -237,6 +241,7 @@ export async function deleteFormDoc(id) {
   });
 
   if (!deletedRemotely) {
+    if (hasSupabaseConfig()) return false;
     localStorage.removeItem(`${DOC_PREFIX}:${id}`);
     localStorage.removeItem(`${RESPONSE_PREFIX}:${id}`);
     writeIndexLocal(readIndexLocal().filter((f) => f.id !== id));

@@ -22,11 +22,12 @@ import { clearResponses as clearStoredResponses, getFormDoc, saveFormDoc, submit
 import { emptyForm, defaultQuestion, uid } from "../questionTypes";
 import { ensureFormKeyPair } from "../lib/secureResponses";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
+import AuthControl from "../components/AuthControl";
 
 const PALETTE_SWATCHES = [MD.primary, ...CHART_PALETTE.filter((c) => c !== MD.primary), NAVER_GREEN];
 const BACKGROUND_SWATCHES = ["#F5F3EC", "#FFFDF8", "#FFF2E8", "#EAF6EF", "#EAF1FB", "#FCEFEF"];
 
-export default function FormEditorPage({ formId, onBack }) {
+export default function FormEditorPage({ formId, user, onBack }) {
   const [form, setForm] = useState(emptyForm());
   const [responses, setResponses] = useState([]);
   const [tab, setTab] = useState("edit");
@@ -195,9 +196,10 @@ export default function FormEditorPage({ formId, onBack }) {
     updateForm((f) => ({ ...f, collaborators: (f.collaborators || []).filter((e) => e !== email) }));
   };
 
+  const canViewResponses = Boolean(user?.id);
   const tabs = [
     { id: "edit", label: "흐름" },
-    { id: "responses", label: "답변", badge: responses.length },
+    ...(canViewResponses ? [{ id: "responses", label: "답변", badge: responses.length }] : []),
     { id: "settings", label: "운영" },
   ];
 
@@ -281,6 +283,7 @@ export default function FormEditorPage({ formId, onBack }) {
             <IconButton title="공동작업자" onClick={() => setCollabOpen(true)}>
               <UserPlus size={18} />
             </IconButton>
+            <AuthControl user={user} />
             <button
               onClick={() => setShareOpen(true)}
               className="ml-1 shrink-0 rounded-full bg-[#17866D] px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(23,37,31,0.12)] transition hover:bg-[#0F705B]"
@@ -352,7 +355,12 @@ export default function FormEditorPage({ formId, onBack }) {
               </div>
             )}
 
-            {tab === "responses" && <ResponsesView form={form} responses={responses} onClear={clearResponses} />}
+            {tab === "responses" && canViewResponses && (
+              <div>
+                <div className="mb-3 text-xs font-medium text-[#59645E]">작성자 전용 · 이 폼의 소유자만 응답을 복호화하고 내보낼 수 있어요.</div>
+                <ResponsesView form={form} responses={responses} onClear={clearResponses} />
+              </div>
+            )}
 
             {tab === "settings" && (
               <div className="space-y-4">

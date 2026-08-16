@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown } from "lucide-react";
+import AuthControl from "../components/AuthControl";
+import { signInWithGoogle } from "../lib/auth";
 import FormThumbnail from "../components/FormThumbnail";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
 import { listForms, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
@@ -15,7 +17,7 @@ function formatRelative(iso) {
   return new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
 }
 
-export default function HomePage({ onOpenForm, onOpenSettings }) {
+export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }) {
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -49,6 +51,10 @@ export default function HomePage({ onOpenForm, onOpenSettings }) {
   }, [forms, query, sortBy]);
 
   const handleCreate = async (template) => {
+    if (!user) {
+      await signInWithGoogle();
+      return;
+    }
     setCreating(template.key);
     const id = newFormId();
     const form = template.build();
@@ -92,17 +98,29 @@ export default function HomePage({ onOpenForm, onOpenSettings }) {
             />
           </div>
 
-          <button
-            onClick={onOpenSettings}
-            title="설정"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition hover:bg-[#D8F5E8] hover:text-[#0B4D3D]"
-          >
-            <Settings size={19} />
-          </button>
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+            <button
+              onClick={onOpenSettings}
+              title="설정"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition hover:bg-[#D8F5E8] hover:text-[#0B4D3D]"
+            >
+              <Settings size={19} />
+            </button>
+            <AuthControl user={user} />
+          </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-6xl px-3 py-8 sm:px-6 sm:py-10">
+        {!authReady ? (
+          <div className="mb-6 rounded-2xl border border-[#C9CEC6] bg-[#FFFDF8] px-4 py-3 text-sm text-[#59645E]">로그인 상태를 확인하는 중…</div>
+        ) : !user ? (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#B8C5BA] bg-[#EAF6EF] px-4 py-3 text-sm text-[#355C45]">
+            <span><strong>내 폼을 만들려면 Google 로그인</strong>이 필요합니다. 공개 응답 링크는 로그인 없이 열립니다.</span>
+            <button onClick={signInWithGoogle} className="rounded-full bg-[#17866D] px-4 py-2 text-xs font-bold text-white hover:bg-[#0F705B]">지금 로그인</button>
+          </div>
+        ) : null}
+
         {/* templates */}
         <div className="mb-2 cok-eyebrow">START WITH A SIGNAL</div>
         <h1 className="cok-display mb-2">무엇을 물어볼까요?</h1>
