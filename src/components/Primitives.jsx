@@ -16,23 +16,24 @@ export function IconButton({ onClick, title, children, danger, disabled }) {
 
 export function Toggle({ checked, onChange, label }) {
   return (
-    <label className="flex select-none items-center gap-2 text-sm text-[#59645E]">
+    <div className="inline-flex select-none items-center gap-2 text-sm text-[#59645E]">
       {label && <span>{label}</span>}
       <button
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label || "설정 전환"}
         onClick={() => onChange(!checked)}
-        className={`relative h-8 w-[52px] rounded-full border-2 transition-colors ${
-          checked ? "border-[#17866D] bg-[#17866D]" : "border-[#78837C] bg-transparent"
+        className={`relative h-6 w-11 shrink-0 rounded-full p-0.5 outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#17866D]/40 active:scale-[0.97] ${
+          checked ? "bg-[#17866D]" : "bg-[#C9CEC6]"
         }`}
       >
         <span
-          className={`absolute top-1/2 -translate-y-1/2 rounded-full bg-white shadow transition-all ${
-            checked ? "left-[26px] h-6 w-6" : "left-1 h-4 w-4"
+          className={`block h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgba(23,37,31,0.28)] transition-transform duration-150 ${
+            checked ? "translate-x-5" : "translate-x-0"
           }`}
         />
       </button>
-    </label>
+    </div>
   );
 }

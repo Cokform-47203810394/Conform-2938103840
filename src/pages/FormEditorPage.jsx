@@ -23,6 +23,7 @@ import { emptyForm, defaultQuestion, uid } from "../questionTypes";
 import { ensureFormKeyPair } from "../lib/secureResponses";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
 import AuthControl from "../components/AuthControl";
+import QuickAddToolbar from "../components/QuickAddToolbar";
 
 const PALETTE_SWATCHES = [MD.primary, ...CHART_PALETTE.filter((c) => c !== MD.primary), NAVER_GREEN];
 const BACKGROUND_SWATCHES = ["#F5F3EC", "#FFFDF8", "#FFF2E8", "#EAF6EF", "#EAF1FB", "#FCEFEF"];
@@ -126,8 +127,8 @@ export default function FormEditorPage({ formId, user, onBack }) {
       return { ...f, questions };
     });
   };
-  const addQuestion = () => {
-    updateForm((f) => ({ ...f, questions: [...f.questions, defaultQuestion("short")] }));
+  const addQuestion = (type = "short") => {
+    updateForm((f) => ({ ...f, questions: [...f.questions, defaultQuestion(type)] }));
   };
 
   // ---- drag reorder (native HTML5 DnD, no extra dependency) ----
@@ -319,6 +320,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
           <>
             {tab === "edit" && (
               <div className="space-y-3 sm:space-y-4">
+                <QuickAddToolbar onAdd={addQuestion} />
                 <div className="rounded-xl border-t-8 bg-white p-4 sm:p-5" style={{ borderTopColor: accent, boxShadow: "0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)" }}>
                   <RichTextInput
                     value={form.description}
@@ -346,11 +348,12 @@ export default function FormEditorPage({ formId, user, onBack }) {
                 ))}
 
                 <button
-                  onClick={addQuestion}
-                  className={`fixed bottom-6 right-4 z-20 flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-medium text-white transition-shadow active:scale-95 sm:right-8 ${ELEV3}`}
+                  type="button"
+                  onClick={() => addQuestion("short")}
+                  className={`fixed bottom-6 right-4 z-20 flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-medium text-white transition-shadow active:scale-95 sm:right-8 lg:hidden ${ELEV3}`}
                   style={{ backgroundColor: accent }}
                 >
-                  <Plus size={20} /> 질문 콕 찍기
+                  <Plus size={20} /> 질문 추가
                 </button>
               </div>
             )}
