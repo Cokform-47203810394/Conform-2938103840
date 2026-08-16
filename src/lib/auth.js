@@ -6,7 +6,12 @@ export async function signInWithGoogle() {
     window.alert("서비스 연결이 아직 준비되지 않았어요.");
     return;
   }
-  const redirectTo = new URL(import.meta.env.BASE_URL || "/", window.location.origin).toString();
+  // Always return to the canonical production origin after OAuth. Using
+  // window.location.origin here sends preview/local builds to temporary hosts
+  // such as localhost, which can be rejected or become confusing in pilot use.
+  const redirectTo = import.meta.env.DEV
+    ? new URL(import.meta.env.BASE_URL || "/", window.location.origin).toString()
+    : "https://cokform.pages.dev/";
   await supabase.auth.signInWithOAuth({
     provider: "google",
     options: { redirectTo },
