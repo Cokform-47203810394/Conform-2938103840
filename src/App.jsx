@@ -3,22 +3,22 @@ import HomePage from "./pages/HomePage";
 import FormEditorPage from "./pages/FormEditorPage";
 import RespondPage from "./pages/RespondPage";
 import SettingsPage from "./pages/SettingsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import { ArrowLeft } from "lucide-react";
 import { ELEV1 } from "./theme";
 
-function getRespondFormId() {
-  if (typeof window === "undefined") return null;
-  return new URLSearchParams(window.location.search).get("respond");
+function getQueryMode() {
+  if (typeof window === "undefined") return { respond: null, privacy: false };
+  const params = new URLSearchParams(window.location.search);
+  return { respond: params.get("respond"), privacy: params.get("privacy") === "1" };
 }
 
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const respondFormId = getRespondFormId();
-  if (respondFormId) {
-    return <RespondPage formId={respondFormId} />;
-  }
-
+  const { respond: respondFormId, privacy } = getQueryMode();
+  if (respondFormId) return <RespondPage formId={respondFormId} />;
+  if (privacy) return <PrivacyPage onBack={() => { window.location.href = window.location.pathname; }} />;
   return <Builder />;
 }
 

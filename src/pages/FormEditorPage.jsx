@@ -20,6 +20,7 @@ import { IconButton, Toggle } from "../components/Primitives";
 import { Popover, Modal } from "../components/Overlay";
 import { clearResponses as clearStoredResponses, getFormDoc, saveFormDoc, submitResponse } from "../lib/formsStore";
 import { emptyForm, defaultQuestion, uid } from "../questionTypes";
+import { ensureFormKeyPair } from "../lib/secureResponses";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
 
 const PALETTE_SWATCHES = [MD.primary, ...CHART_PALETTE.filter((c) => c !== MD.primary), NAVER_GREEN];
@@ -80,7 +81,10 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
     setFuture([]);
     (async () => {
       const doc = await getFormDoc(formId);
-      setForm(doc?.form || emptyForm());
+      let nextForm = doc?.form || emptyForm();
+      const keyPair = await ensureFormKeyPair(formId);
+      if (!nextForm.publicKey) nextForm = { ...nextForm, publicKey: keyPair.publicJwk };
+      setForm(nextForm);
       setResponses(doc?.responses || []);
       setLoaded(true);
     })();
@@ -140,13 +144,13 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
   };
 
   const handleFormSubmit = useCallback(async (answers) => {
-    const result = await submitResponse(formId, answers);
+    const result = await submitResponse(formId, answers, form.publicKey);
     if (!result.ok) {
       window.alert("응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
       return;
     }
     setResponses((r) => [...r, result.response]);
-  }, [formId]);
+  }, [formId, form.publicKey]);
   const clearResponses = async () => {
     const cleared = await clearStoredResponses(formId);
     if (!cleared) {
@@ -384,6 +388,28 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
                         checked={form.settings?.acceptingResponses}
                         onChange={(v) => updateForm((f) => ({ ...f, settings: { ...f.settings, acceptingResponses: v } }))}
                       />
+                    </div>
+                    <div className="border-t border-[#F0EEE6] pt-4">
+                      <label className="flex items-center justify-between gap-4">
+                        <span>
+                          <span className="block text-sm text-[#17251F]">응답 보관기간</span>
+                          <span className="block text-xs text-[#78837C]">목적 달성 후 파기할 기준을 정하세요.</span>
+                        </span>
+                        <span className="flex items-center gap-2 text-sm text-[#17251F]">
+                          <input
+                            type="number"
+                            min="1"
+                            max="3650"
+                            value={form.settings?.retentionDays ?? 180}
+                            onChange={(e) => updateForm((f) => ({ ...f, settings: { ...f.settings, retentionDays: Number(e.target.value) || 180 } }))}
+                            className="w-20 rounded-lg border border-[#C9CEC6] bg-[#FFFDF8] px-2 py-1.5 text-right outline-none focus:border-[#17251F]"
+                          />일
+                        </span>
+                      </label>
+                    </div>
+                    <div className="rounded-lg bg-[#EAF6EF] px-3 py-2.5 text-xs leading-5 text-[#355C45]">
+                      <strong>암호화 저장 중</strong> · 응답은 제출자의 브라우저에서 암호화되며, 이 브라우저에서만 복호화·내보내기됩니다.
+                      <span className="mt-1 block text-[#59645E]">브라우저 저장 데이터를 삭제하거나 다른 기기에서 열면 기존 응답을 복호화할 수 없습니다. 파일럿 기간에는 브라우저 프로필을 유지하세요.</span>
                     </div>
                   </div>
                 </div>

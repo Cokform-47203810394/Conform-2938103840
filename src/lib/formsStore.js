@@ -1,5 +1,6 @@
 import { getSupabaseClient } from "./supabaseClient";
 import { uid } from "../questionTypes";
+import { decryptAnswers, encryptAnswers, isEncryptedEnvelope } from "./secureResponses";
 
 const INDEX_KEY = "form-builder:index";
 const DOC_PREFIX = "form-builder:doc";
@@ -99,11 +100,14 @@ export async function getFormDoc(id) {
       .eq("form_id", id)
       .order("submitted_at", { ascending: true });
     if (!result.error) {
-      responses = (result.data || []).map((row) => ({
+      const decrypted = await Promise.all((result.data || []).map(async (row) => ({
         id: row.id,
         submittedAt: row.submitted_at,
-        answers: row.answers,
-      }));
+        answers: isEncryptedEnvelope(row.answers)
+          ? await decryptAnswers(id, row.answers).catch(() => null)
+          : row.answers,
+      })));
+      responses = decrypted.filter((row) => row.answers !== null);
     }
     return { form: stored.form || stored, responses };
   });
@@ -112,7 +116,14 @@ export async function getFormDoc(id) {
   try {
     const raw = localStorage.getItem(`${DOC_PREFIX}:${id}`);
     const stored = raw ? JSON.parse(raw) : null;
-    return stored ? { form: stored.form || stored, responses: readResponsesLocal(id) } : null;
+    if (!stored) return null;
+    const localResponses = await Promise.all(readResponsesLocal(id).map(async (row) => ({
+      ...row,
+      answers: isEncryptedEnvelope(row.answers)
+        ? await decryptAnswers(id, row.answers).catch(() => null)
+        : row.answers,
+    })));
+    return { form: stored.form || stored, responses: localResponses.filter((row) => row.answers !== null) };
   } catch {
     return null;
   }
@@ -167,14 +178,16 @@ export async function saveFormDoc(id, doc) {
   }
 }
 
-export async function submitResponse(formId, answers) {
+export async function submitResponse(formId, answers, publicKey) {
+  const encryptedAnswers = publicKey ? await encryptAnswers(publicKey, answers) : answers;
   const response = { id: uid(), submittedAt: new Date().toISOString(), answers };
   const savedRemotely = await trySupabase("응답 제출", async (supabase) => {
+    if (!publicKey) return undefined;
     const { error } = await supabase.from(RESPONSE_TABLE).insert({
       id: response.id,
       form_id: formId,
       submitted_at: response.submittedAt,
-      answers,
+      answers: encryptedAnswers,
     });
     return error ? undefined : true;
   });
@@ -182,7 +195,8 @@ export async function submitResponse(formId, answers) {
   if (getSupabaseClient()) return { ok: false, response: null };
 
   try {
-    const responses = [...readResponsesLocal(formId), response];
+    const localResponse = { ...response, answers: encryptedAnswers };
+    const responses = [...readResponsesLocal(formId), localResponse];
     writeResponsesLocal(formId, responses);
     return { ok: true, response };
   } catch (e) {

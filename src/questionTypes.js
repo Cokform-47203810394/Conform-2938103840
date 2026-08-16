@@ -72,6 +72,7 @@ export function emptyForm() {
       collectEmail: false,
       limitOneResponse: false,
       acceptingResponses: true,
+      retentionDays: 180,
     },
     collaborators: [],
   };

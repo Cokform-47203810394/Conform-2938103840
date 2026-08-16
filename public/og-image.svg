@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">콕폼 — 개인정보를 먼저 생각하는 폼</title>
+  <desc id="desc">응답은 브라우저에서 암호화하고 운영은 한국 실무에 맞게 간단하게</desc>
+  <rect width="1200" height="630" fill="#F5F3EC"/>
+  <circle cx="1020" cy="-20" r="310" fill="#D8ED59"/>
+  <circle cx="110" cy="600" r="210" fill="#E7F0D2"/>
+  <rect x="82" y="76" width="96" height="96" rx="28" fill="#17251F"/>
+  <path d="M111 103h39c18 0 29 10 29 26s-11 26-29 26h-39v-52Zm19 17v18h19c7 0 11-3 11-9s-4-9-11-9h-19Z" fill="#D8ED59"/>
+  <text x="82" y="258" font-family="Pretendard, Arial, sans-serif" font-size="34" font-weight="700" fill="#59645E" letter-spacing="2">ASK IT WELL</text>
+  <text x="78" y="380" font-family="Pretendard, Arial, sans-serif" font-size="78" font-weight="800" fill="#17251F">개인정보를 먼저 생각하는 폼</text>
+  <text x="82" y="454" font-family="Pretendard, Arial, sans-serif" font-size="32" font-weight="500" fill="#59645E">응답은 브라우저에서 암호화하고, 운영은 한국 실무에 맞게.</text>
+  <text x="82" y="548" font-family="Pretendard, Arial, sans-serif" font-size="30" font-weight="800" fill="#17251F">콕폼 / COKFORM</text>
+</svg>

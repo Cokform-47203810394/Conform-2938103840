@@ -1,9 +1,10 @@
-import { Trash2 } from "lucide-react";
+import { Download, FileSpreadsheet, Trash2 } from "lucide-react";
 import { IconButton } from "./Primitives";
 import Bar from "./Bar";
 import { MD, TYPE_COLORS, CHART_PALETTE, ELEV1 } from "../theme";
 import { TYPE_LABEL } from "../questionTypes";
 import { richTextToPlain } from "../lib/sanitizeRichText";
+import { downloadCsv, downloadExcelCompatible } from "../lib/exportResponses";
 
 export default function ResponsesView({ form, responses, onClear }) {
   if (responses.length === 0) {
@@ -21,9 +22,27 @@ export default function ResponsesView({ form, responses, onClear }) {
           <div className="font-mono text-2xl font-bold text-[#17251F]">{responses.length}</div>
           <div className="text-xs text-[#78837C]">개 응답</div>
         </div>
-        <IconButton title="응답 전체 삭제" onClick={onClear} danger>
-          <Trash2 size={16} />
-        </IconButton>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            title="CSV 다운로드"
+            onClick={() => downloadCsv(form, responses)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C9CEC6] px-2.5 py-2 text-xs font-medium text-[#59645E] hover:bg-[#F5F3EC]"
+          >
+            <Download size={14} /> CSV
+          </button>
+          <button
+            type="button"
+            title="Excel 호환 파일 다운로드"
+            onClick={() => downloadExcelCompatible(form, responses)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#C9CEC6] px-2.5 py-2 text-xs font-medium text-[#59645E] hover:bg-[#F5F3EC]"
+          >
+            <FileSpreadsheet size={14} /> Excel
+          </button>
+          <IconButton title="응답 전체 삭제" onClick={onClear} danger>
+            <Trash2 size={16} />
+          </IconButton>
+        </div>
       </div>
 
       {form.questions.map((q) => {

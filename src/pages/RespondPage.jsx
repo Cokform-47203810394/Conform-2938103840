@@ -29,7 +29,7 @@ export default function RespondPage({ formId }) {
   const blocked = form.settings?.limitOneResponse && alreadyResponded;
 
   const handleSubmit = async (answers) => {
-    const result = await submitResponse(formId, answers);
+    const result = await submitResponse(formId, answers, form.publicKey);
     if (!result.ok) {
       window.alert("응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
       return;

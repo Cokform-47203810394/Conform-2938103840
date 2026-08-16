@@ -1,0 +1,12 @@
+{
+  "name": "콕폼",
+  "short_name": "콕폼",
+  "description": "개인정보를 먼저 생각하는 한국형 폼 빌더",
+  "lang": "ko-KR",
+  "start_url": "/Conform-2938103840/",
+  "scope": "/Conform-2938103840/",
+  "display": "standalone",
+  "background_color": "#F5F3EC",
+  "theme_color": "#D8ED59",
+  "icons": []
+}

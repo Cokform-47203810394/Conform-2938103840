@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /?respond=
+Sitemap: https://cokform-47203810394.github.io/Conform-2938103840/sitemap.xml
