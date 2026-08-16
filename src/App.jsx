@@ -32,7 +32,6 @@ function Builder() {
       <FormEditorPage
         formId={currentFormId}
         onBack={() => setView("home")}
-        onOpenAppSettings={() => setView("settings")}
       />
     );
   }

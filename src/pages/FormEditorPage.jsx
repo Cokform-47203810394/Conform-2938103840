@@ -26,7 +26,7 @@ import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
 const PALETTE_SWATCHES = [MD.primary, ...CHART_PALETTE.filter((c) => c !== MD.primary), NAVER_GREEN];
 const BACKGROUND_SWATCHES = ["#F5F3EC", "#FFFDF8", "#FFF2E8", "#EAF6EF", "#EAF1FB", "#FCEFEF"];
 
-export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
+export default function FormEditorPage({ formId, onBack }) {
   const [form, setForm] = useState(emptyForm());
   const [responses, setResponses] = useState([]);
   const [tab, setTab] = useState("edit");
@@ -414,9 +414,6 @@ export default function FormEditorPage({ formId, onBack, onOpenAppSettings }) {
                   </div>
                 </div>
 
-                <button onClick={onOpenAppSettings} className="text-sm font-medium hover:underline" style={{ color: accent }}>
-                  데이터 저장소 · 계정 설정 열기 →
-                </button>
               </div>
             )}
           </>
