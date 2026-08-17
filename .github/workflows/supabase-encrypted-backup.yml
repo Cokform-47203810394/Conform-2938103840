@@ -1,0 +1,77 @@
+name: Encrypted Supabase backup
+
+on:
+  schedule:
+    # 04:29 KST — Cloudflare 배포와 겹치지 않게 매일 한 번 실행합니다.
+    - cron: "29 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cokform-supabase-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      # Age public recipient only. The corresponding private identity must never
+      # enter GitHub, Supabase, Cloudflare, or Cokform.
+      BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+    steps:
+      - name: Check backup configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_DB_URL" || { echo "SUPABASE_DB_URL GitHub Secret이 없습니다."; exit 1; }
+          test -n "$BACKUP_AGE_RECIPIENT" || { echo "BACKUP_AGE_RECIPIENT GitHub Variable이 없습니다."; exit 1; }
+          case "$BACKUP_AGE_RECIPIENT" in
+            age1*) ;;
+            *) echo "BACKUP_AGE_RECIPIENT는 age1로 시작하는 공개키여야 합니다."; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install age encryption utility
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends age
+
+      - name: Create and encrypt logical database backup
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          backup_dir="$(mktemp -d)"
+          trap 'rm -rf "$backup_dir"' EXIT
+          backup_stamp="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
+
+          # Supabase's documented order is roles → schema → data.
+          supabase db dump --db-url "$SUPABASE_DB_URL" --file "$backup_dir/roles.sql" --role-only
+          supabase db dump --db-url "$SUPABASE_DB_URL" --file "$backup_dir/schema.sql"
+          supabase db dump --db-url "$SUPABASE_DB_URL" --file "$backup_dir/data.sql" --data-only --use-copy
+
+          tar -C "$backup_dir" -czf "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz" roles.sql schema.sql data.sql
+          age --recipient "$BACKUP_AGE_RECIPIENT" --output "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz.age" "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz"
+          rm -f "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz"
+          sha256sum "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz.age" > "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz.age.sha256"
+
+      - name: Upload encrypted recovery artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cokform-supabase-encrypted-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/cokform-supabase-*.tar.gz.age
+            ${{ runner.temp }}/cokform-supabase-*.tar.gz.age.sha256
+          if-no-files-found: error
+          retention-days: 90

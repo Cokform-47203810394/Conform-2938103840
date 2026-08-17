@@ -1,10 +1,21 @@
-const PRIVATE_KEY_PREFIX = "cokform:e2ee:private:";
-const VERSION = 1;
+const LEGACY_PRIVATE_KEY_PREFIX = "cokform:e2ee:private:";
+const KEY_VAULT_PREFIX = "cokform:e2ee:vault:";
+const ENVELOPE_VERSION = 2;
+const LEGACY_ENVELOPE_VERSION = 1;
+const VAULT_VERSION = 1;
+const PBKDF2_ITERATIONS = 600_000;
+const memoryPrivateKeys = new Map();
 
 function assertCrypto() {
   if (!globalThis.crypto?.subtle) {
     throw new Error("이 브라우저는 안전한 암호화를 지원하지 않습니다.");
   }
+}
+
+function keyError(code, message) {
+  const error = new Error(message);
+  error.code = code;
+  return error;
 }
 
 function bytesToBase64(bytes) {
@@ -17,6 +28,27 @@ function base64ToBytes(value) {
   return Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
 }
 
+function encode(value) {
+  return new TextEncoder().encode(value);
+}
+
+function normalizePassphrase(value) {
+  return String(value || "").normalize("NFKC");
+}
+
+function publicJwkFromPrivate(privateJwk) {
+  const { d: _private, key_ops: _ops, ...publicJwk } = privateJwk || {};
+  return { ...publicJwk, key_ops: [] };
+}
+
+function vaultAad(formId) {
+  return encode(`cokform:key-vault:v${VAULT_VERSION}:${formId}`);
+}
+
+function envelopeAad(formId, purpose) {
+  return encode(`cokform:response-envelope:v${ENVELOPE_VERSION}:${formId}:${purpose}`);
+}
+
 async function exportJwk(key) {
   return crypto.subtle.exportKey("jwk", key);
 }
@@ -26,7 +58,9 @@ async function importPublicKey(jwk) {
 }
 
 async function importPrivateKey(jwk) {
-  return crypto.subtle.importKey("jwk", jwk, { name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey"]);
+  // The private key is deliberately non-extractable after an unlock. Code can
+  // derive a response key, but cannot export the private material again.
+  return crypto.subtle.importKey("jwk", jwk, { name: "ECDH", namedCurve: "P-256" }, false, ["deriveKey"]);
 }
 
 async function deriveResponseKey(privateKey, publicKey) {
@@ -39,33 +73,283 @@ async function deriveResponseKey(privateKey, publicKey) {
   );
 }
 
-export async function ensureFormKeyPair(formId) {
-  assertCrypto();
-  const stored = localStorage.getItem(`${PRIVATE_KEY_PREFIX}${formId}`);
-  if (stored) {
-    const privateJwk = JSON.parse(stored);
-    const privateKey = await importPrivateKey(privateJwk);
-    return { privateKey, privateJwk, publicJwk: { ...privateJwk, d: undefined, key_ops: [] } };
-  }
-
-  const pair = await crypto.subtle.generateKey(
-    { name: "ECDH", namedCurve: "P-256" },
-    true,
+async function deriveVaultKey(passphrase, salt) {
+  const material = await crypto.subtle.importKey(
+    "raw",
+    encode(normalizePassphrase(passphrase)),
+    "PBKDF2",
+    false,
     ["deriveKey"],
   );
-  const privateJwk = await exportJwk(pair.privateKey);
-  const publicJwk = await exportJwk(pair.publicKey);
-  localStorage.setItem(`${PRIVATE_KEY_PREFIX}${formId}`, JSON.stringify(privateJwk));
-  return { privateKey: pair.privateKey, privateJwk, publicJwk };
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      hash: "SHA-256",
+      salt,
+      iterations: PBKDF2_ITERATIONS,
+    },
+    material,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"],
+  );
+}
+
+function readJson(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function readVault(formId) {
+  const vault = readJson(`${KEY_VAULT_PREFIX}${formId}`);
+  if (!vault || vault.version !== VAULT_VERSION || !vault.salt || !vault.iv || !vault.ciphertext) return null;
+  return vault;
+}
+
+async function wrapPrivateJwk(formId, privateJwk, passphrase) {
+  assertCrypto();
+  const normalized = normalizePassphrase(passphrase);
+  if (normalized.length < 12) {
+    throw keyError("weak_recovery_password", "복구 비밀번호는 12자 이상으로 설정해 주세요.");
+  }
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const wrappingKey = await deriveVaultKey(normalized, salt);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, additionalData: vaultAad(formId), tagLength: 128 },
+    wrappingKey,
+    encode(JSON.stringify(privateJwk)),
+  );
+  return {
+    version: VAULT_VERSION,
+    algorithm: "PBKDF2-HMAC-SHA256/AES-256-GCM",
+    iterations: PBKDF2_ITERATIONS,
+    salt: bytesToBase64(salt),
+    iv: bytesToBase64(iv),
+    ciphertext: bytesToBase64(new Uint8Array(ciphertext)),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+async function unwrapPrivateJwk(formId, vault, passphrase) {
+  assertCrypto();
+  const normalized = normalizePassphrase(passphrase);
+  if (!normalized) throw keyError("missing_recovery_password", "복구 비밀번호를 입력해 주세요.");
+  try {
+    const wrappingKey = await deriveVaultKey(normalized, base64ToBytes(vault.salt));
+    const plaintext = await crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: base64ToBytes(vault.iv),
+        additionalData: vaultAad(formId),
+        tagLength: 128,
+      },
+      wrappingKey,
+      base64ToBytes(vault.ciphertext),
+    );
+    const privateJwk = JSON.parse(new TextDecoder().decode(plaintext));
+    if (!privateJwk?.d || privateJwk.kty !== "EC") throw new Error("invalid_private_key");
+    return privateJwk;
+  } catch {
+    throw keyError("invalid_recovery_password", "복구 비밀번호가 맞지 않거나 키 백업이 손상됐습니다.");
+  }
+}
+
+function cachePrivateKey(formId, privateJwk, privateKey) {
+  memoryPrivateKeys.set(formId, { privateJwk, privateKey, publicJwk: publicJwkFromPrivate(privateJwk) });
+}
+
+/**
+ * Returns the protection state without exposing key material.
+ * `legacy_unprotected` is only present for data created before the key vault.
+ */
+export function getFormKeyVaultState(formId) {
+  if (memoryPrivateKeys.has(formId)) return "unlocked";
+  if (readVault(formId)) return "locked";
+  if (localStorage.getItem(`${LEGACY_PRIVATE_KEY_PREFIX}${formId}`)) return "legacy_unprotected";
+  return "setup_required";
+}
+
+export function isFormKeyUnlocked(formId) {
+  return memoryPrivateKeys.has(formId);
+}
+
+export function lockFormKeyVault(formId) {
+  memoryPrivateKeys.delete(formId);
+}
+
+/**
+ * Creates a new per-form ECDH key or migrates the former plaintext local key,
+ * then stores only a passphrase-encrypted vault record in persistent storage.
+ */
+export async function setupFormKeyVault(formId, passphrase) {
+  assertCrypto();
+  const existing = readVault(formId);
+  if (existing) return unlockFormKeyVault(formId, passphrase);
+
+  let privateJwk = readJson(`${LEGACY_PRIVATE_KEY_PREFIX}${formId}`);
+  if (!privateJwk?.d) {
+    const pair = await crypto.subtle.generateKey(
+      { name: "ECDH", namedCurve: "P-256" },
+      true,
+      ["deriveKey"],
+    );
+    privateJwk = await exportJwk(pair.privateKey);
+  }
+
+  const vault = await wrapPrivateJwk(formId, privateJwk, passphrase);
+  localStorage.setItem(`${KEY_VAULT_PREFIX}${formId}`, JSON.stringify(vault));
+  localStorage.removeItem(`${LEGACY_PRIVATE_KEY_PREFIX}${formId}`);
+  const privateKey = await importPrivateKey(privateJwk);
+  cachePrivateKey(formId, privateJwk, privateKey);
+  return { privateKey, publicJwk: publicJwkFromPrivate(privateJwk) };
+}
+
+export async function unlockFormKeyVault(formId, passphrase) {
+  assertCrypto();
+  const cached = memoryPrivateKeys.get(formId);
+  if (cached) return { privateKey: cached.privateKey, publicJwk: cached.publicJwk };
+  const vault = readVault(formId);
+  if (!vault) throw keyError("key_vault_missing", "이 기기에 복구 가능한 개인키가 없습니다. 암호화된 키 백업을 가져와 주세요.");
+  const privateJwk = await unwrapPrivateJwk(formId, vault, passphrase);
+  const privateKey = await importPrivateKey(privateJwk);
+  cachePrivateKey(formId, privateJwk, privateKey);
+  return { privateKey, publicJwk: publicJwkFromPrivate(privateJwk) };
+}
+
+export async function changeFormKeyVaultPassphrase(formId, currentPassphrase, nextPassphrase) {
+  const vault = readVault(formId);
+  if (!vault) throw keyError("key_vault_missing", "먼저 개인키 금고를 설정해 주세요.");
+  const privateJwk = await unwrapPrivateJwk(formId, vault, currentPassphrase);
+  const nextVault = await wrapPrivateJwk(formId, privateJwk, nextPassphrase);
+  localStorage.setItem(`${KEY_VAULT_PREFIX}${formId}`, JSON.stringify(nextVault));
+  const privateKey = await importPrivateKey(privateJwk);
+  cachePrivateKey(formId, privateJwk, privateKey);
+  return { privateKey, publicJwk: publicJwkFromPrivate(privateJwk) };
+}
+
+/**
+ * A recovery export contains an already encrypted vault copy only. The raw
+ * private JWK, the recovery passphrase, and response plaintext never enter it.
+ */
+export function exportEncryptedKeyBackup(formId) {
+  const vault = readVault(formId);
+  if (!vault) throw keyError("key_vault_missing", "먼저 개인키 금고를 설정해 주세요.");
+  return {
+    format: "cokform-encrypted-key-backup",
+    version: 1,
+    formId,
+    exportedAt: new Date().toISOString(),
+    vault,
+  };
+}
+
+export function importEncryptedKeyBackup(backup) {
+  if (backup?.format !== "cokform-encrypted-key-backup" || backup?.version !== 1 || !backup.formId || !backup.vault) {
+    throw keyError("invalid_key_backup", "Cokform 암호화 키 백업 파일이 아닙니다.");
+  }
+  const vault = backup.vault;
+  if (vault.version !== VAULT_VERSION || !vault.salt || !vault.iv || !vault.ciphertext) {
+    throw keyError("invalid_key_backup", "키 백업 내용이 손상됐습니다.");
+  }
+  localStorage.setItem(`${KEY_VAULT_PREFIX}${backup.formId}`, JSON.stringify(vault));
+  localStorage.removeItem(`${LEGACY_PRIVATE_KEY_PREFIX}${backup.formId}`);
+  memoryPrivateKeys.delete(backup.formId);
+  return backup.formId;
+}
+
+function recoveryDataAad(formId) {
+  return encode(`cokform:recovery-data:v1:${formId}`);
+}
+
+/**
+ * Creates a portable disaster-recovery bundle without decrypting the stored
+ * responses. It contains the already encrypted key vault and a separately
+ * passphrase-encrypted copy of form metadata, response envelopes and versions.
+ */
+export async function createEncryptedFormRecoveryBundle(formId, payload, passphrase) {
+  const keyVault = readVault(formId);
+  if (!keyVault) throw keyError("key_vault_missing", "먼저 개인키 금고를 설정해 주세요.");
+  // Verify that the caller knows the recovery password before allowing export.
+  await unwrapPrivateJwk(formId, keyVault, passphrase);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveVaultKey(passphrase, salt);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, additionalData: recoveryDataAad(formId), tagLength: 128 },
+    key,
+    encode(JSON.stringify(payload)),
+  );
+  return {
+    format: "cokform-encrypted-form-recovery",
+    version: 1,
+    formId,
+    exportedAt: new Date().toISOString(),
+    keyVault,
+    data: {
+      algorithm: "PBKDF2-HMAC-SHA256/AES-256-GCM",
+      iterations: PBKDF2_ITERATIONS,
+      salt: bytesToBase64(salt),
+      iv: bytesToBase64(iv),
+      ciphertext: bytesToBase64(new Uint8Array(ciphertext)),
+    },
+  };
+}
+
+export async function openEncryptedFormRecoveryBundle(bundle, passphrase) {
+  if (bundle?.format !== "cokform-encrypted-form-recovery" || bundle?.version !== 1 || !bundle.formId || !bundle.keyVault || !bundle.data) {
+    throw keyError("invalid_recovery_bundle", "Cokform 암호화 복구 번들 파일이 아닙니다.");
+  }
+  const { data } = bundle;
+  if (!data.salt || !data.iv || !data.ciphertext) throw keyError("invalid_recovery_bundle", "복구 번들 내용이 손상됐습니다.");
+  // Decrypting the vault first validates both the recovery password and the key
+  // binding before any database payload is accepted.
+  await unwrapPrivateJwk(bundle.formId, bundle.keyVault, passphrase);
+  try {
+    const key = await deriveVaultKey(passphrase, base64ToBytes(data.salt));
+    const plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: base64ToBytes(data.iv), additionalData: recoveryDataAad(bundle.formId), tagLength: 128 },
+      key,
+      base64ToBytes(data.ciphertext),
+    );
+    const payload = JSON.parse(new TextDecoder().decode(plaintext));
+    if (payload?.formId !== bundle.formId || !payload?.form?.data?.form) throw new Error("invalid_payload");
+    return payload;
+  } catch {
+    throw keyError("invalid_recovery_password", "복구 비밀번호가 맞지 않거나 복구 번들이 손상됐습니다.");
+  }
+}
+
+export function importRecoveryBundleKeyVault(bundle) {
+  return importEncryptedKeyBackup({
+    format: "cokform-encrypted-key-backup",
+    version: 1,
+    formId: bundle?.formId,
+    vault: bundle?.keyVault,
+  });
+}
+
+// Compatibility guard: forms can only become editable after the user explicitly
+// creates or unlocks their local key vault.
+export async function ensureFormKeyPair(formId) {
+  const cached = memoryPrivateKeys.get(formId);
+  if (cached) return { privateKey: cached.privateKey, publicJwk: cached.publicJwk };
+  const state = getFormKeyVaultState(formId);
+  if (state === "locked") throw keyError("key_locked", "개인키 금고를 먼저 잠금 해제해 주세요.");
+  if (state === "legacy_unprotected") throw keyError("key_migration_required", "기존 개인키를 암호화 금고로 보호해 주세요.");
+  throw keyError("key_setup_required", "개인키 금고를 먼저 설정해 주세요.");
 }
 
 export async function getStoredPrivateKey(formId) {
   assertCrypto();
-  const stored = localStorage.getItem(`${PRIVATE_KEY_PREFIX}${formId}`);
-  return stored ? importPrivateKey(JSON.parse(stored)) : null;
+  return memoryPrivateKeys.get(formId)?.privateKey || null;
 }
 
-export async function encryptAnswers(publicJwk, answers) {
+export async function encryptAnswers(publicJwk, answers, { formId = "", purpose = "response" } = {}) {
   assertCrypto();
   const recipientPublic = await importPublicKey(publicJwk);
   const ephemeral = await crypto.subtle.generateKey(
@@ -76,9 +360,13 @@ export async function encryptAnswers(publicJwk, answers) {
   const key = await deriveResponseKey(ephemeral.privateKey, recipientPublic);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const plaintext = new TextEncoder().encode(JSON.stringify(answers));
-  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plaintext);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, additionalData: envelopeAad(formId, purpose), tagLength: 128 },
+    key,
+    plaintext,
+  );
   return {
-    version: VERSION,
+    version: ENVELOPE_VERSION,
     algorithm: "ECDH-P256/AES-256-GCM",
     ephemeralPublicKey: await exportJwk(ephemeral.publicKey),
     iv: bytesToBase64(iv),
@@ -86,20 +374,19 @@ export async function encryptAnswers(publicJwk, answers) {
   };
 }
 
-export async function decryptAnswers(formId, envelope) {
-  if (!envelope || envelope.version !== VERSION) return null;
+export async function decryptAnswers(formId, envelope, { purpose = "response" } = {}) {
+  if (!envelope || ![LEGACY_ENVELOPE_VERSION, ENVELOPE_VERSION].includes(envelope.version)) return null;
   const privateKey = await getStoredPrivateKey(formId);
   if (!privateKey) return null;
   const ephemeralPublic = await importPublicKey(envelope.ephemeralPublicKey);
   const key = await deriveResponseKey(privateKey, ephemeralPublic);
-  const plaintext = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: base64ToBytes(envelope.iv) },
-    key,
-    base64ToBytes(envelope.ciphertext),
-  );
+  const params = envelope.version === ENVELOPE_VERSION
+    ? { name: "AES-GCM", iv: base64ToBytes(envelope.iv), additionalData: envelopeAad(formId, purpose), tagLength: 128 }
+    : { name: "AES-GCM", iv: base64ToBytes(envelope.iv) };
+  const plaintext = await crypto.subtle.decrypt(params, key, base64ToBytes(envelope.ciphertext));
   return JSON.parse(new TextDecoder().decode(plaintext));
 }
 
 export function isEncryptedEnvelope(value) {
-  return Boolean(value && value.version === VERSION && value.ciphertext && value.iv);
+  return Boolean(value && [LEGACY_ENVELOPE_VERSION, ENVELOPE_VERSION].includes(value.version) && value.ciphertext && value.iv);
 }

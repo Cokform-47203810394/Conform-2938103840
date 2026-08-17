@@ -14,6 +14,10 @@ import {
   History,
   RotateCcw,
   Clock3,
+  LockKeyhole,
+  ShieldCheck,
+  Download,
+  Upload,
 } from "lucide-react";
 import QuestionEditor from "../components/QuestionEditor";
 import RichTextInput from "../components/RichTextInput";
@@ -21,9 +25,20 @@ import PreviewForm from "../components/PreviewForm";
 import ResponsesView from "../components/ResponsesView";
 import { IconButton, Toggle } from "../components/Primitives";
 import { Popover, Modal } from "../components/Overlay";
-import { clearResponses as clearStoredResponses, getFormDoc, getFormVersions, recordFormAuditEvent, saveFormDoc, saveFormVersion, submitResponse } from "../lib/formsStore";
+import { clearResponses as clearStoredResponses, exportFormRecoveryData, getFormDoc, getFormVersions, recordFormAuditEvent, restoreFormRecoveryData, saveFormDoc, saveFormVersion, submitResponse } from "../lib/formsStore";
 import { emptyForm, defaultQuestion, uid } from "../questionTypes";
-import { ensureFormKeyPair } from "../lib/secureResponses";
+import {
+  createEncryptedFormRecoveryBundle,
+  ensureFormKeyPair,
+  exportEncryptedKeyBackup,
+  getFormKeyVaultState,
+  importEncryptedKeyBackup,
+  importRecoveryBundleKeyVault,
+  openEncryptedFormRecoveryBundle,
+  lockFormKeyVault,
+  setupFormKeyVault,
+  unlockFormKeyVault,
+} from "../lib/secureResponses";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
 import { analyzePrivacyRisk, PRIVACY_AUDIT_LEVEL } from "../lib/privacyAudit";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
@@ -68,6 +83,14 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [versions, setVersions] = useState([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
+  const [keyVaultState, setKeyVaultState] = useState("checking");
+  const [keyVaultOpen, setKeyVaultOpen] = useState(false);
+  const [keyVaultBusy, setKeyVaultBusy] = useState(false);
+  const [keyVaultError, setKeyVaultError] = useState("");
+  const [recoveryPassphrase, setRecoveryPassphrase] = useState("");
+  const [recoveryPassphraseConfirm, setRecoveryPassphraseConfirm] = useState("");
+  const keyBackupInputRef = useRef(null);
+  const recoveryBundleInputRef = useRef(null);
   const saveTimer = useRef(null);
   const versionTimer = useRef(null);
   const lastVersionFingerprint = useRef("");
@@ -77,6 +100,154 @@ export default function FormEditorPage({ formId, user, onBack }) {
   useEffect(() => {
     formRef.current = form;
   }, [form]);
+
+  const finishSecureLoad = useCallback(async (keyPair) => {
+    const doc = await getFormDoc(formId);
+    let nextForm = normalizeForm(doc?.form);
+    if (!nextForm.publicKey) nextForm = { ...nextForm, publicKey: keyPair.publicJwk };
+    formRef.current = nextForm;
+    setForm(nextForm);
+    setResponses(doc?.responses || []);
+    lastVersionFingerprint.current = JSON.stringify(nextForm);
+    const loadedVersions = await getFormVersions(formId);
+    if (loadedVersions.length) {
+      setVersions(loadedVersions);
+    } else {
+      const created = await saveFormVersion(formId, nextForm, "initial");
+      if (created) setVersions(await getFormVersions(formId));
+    }
+    setKeyVaultState("unlocked");
+    setKeyVaultError("");
+    setRecoveryPassphrase("");
+    setRecoveryPassphraseConfirm("");
+    loadedRef.current = true;
+    setLoaded(true);
+  }, [formId]);
+
+  const handleKeyVaultUnlock = useCallback(async () => {
+    setKeyVaultBusy(true);
+    setKeyVaultError("");
+    try {
+      let keyPair;
+      const needsSetup = ["setup_required", "legacy_unprotected"].includes(keyVaultState);
+      if (needsSetup) {
+        if (recoveryPassphrase !== recoveryPassphraseConfirm) {
+          throw new Error("복구 비밀번호가 서로 다릅니다.");
+        }
+        keyPair = await setupFormKeyVault(formId, recoveryPassphrase);
+      } else {
+        keyPair = await unlockFormKeyVault(formId, recoveryPassphrase);
+      }
+      await finishSecureLoad(keyPair);
+      setKeyVaultOpen(false);
+    } catch (error) {
+      setKeyVaultError(error?.message || "개인키 금고를 열지 못했습니다.");
+    } finally {
+      setKeyVaultBusy(false);
+    }
+  }, [finishSecureLoad, formId, keyVaultState, recoveryPassphrase, recoveryPassphraseConfirm]);
+
+  const downloadKeyBackup = useCallback(() => {
+    try {
+      const backup = exportEncryptedKeyBackup(formId);
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `cokform-key-${formId.slice(0, 8)}.cokform-key.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setKeyVaultError("");
+    } catch (error) {
+      setKeyVaultError(error?.message || "암호화 키 백업을 만들지 못했습니다.");
+      setKeyVaultOpen(true);
+    }
+  }, [formId]);
+
+  const handleKeyBackupImport = useCallback(async (file) => {
+    if (!file) return;
+    setKeyVaultBusy(true);
+    setKeyVaultError("");
+    try {
+      const backup = JSON.parse(await file.text());
+      if (backup?.formId !== formId) throw new Error("이 키 백업은 현재 열려 있는 폼의 것이 아닙니다.");
+      importEncryptedKeyBackup(backup);
+      setKeyVaultState("locked");
+      setKeyVaultOpen(true);
+      setRecoveryPassphrase("");
+    } catch (error) {
+      setKeyVaultError(error?.message || "암호화 키 백업 파일을 가져오지 못했습니다.");
+    } finally {
+      setKeyVaultBusy(false);
+      if (keyBackupInputRef.current) keyBackupInputRef.current.value = "";
+    }
+  }, [formId]);
+
+  const downloadRecoveryBundle = useCallback(async () => {
+    if (!recoveryPassphrase) {
+      setKeyVaultError("전체 복구 번들을 만들려면 복구 비밀번호를 다시 입력해 주세요.");
+      setKeyVaultOpen(true);
+      return;
+    }
+    setKeyVaultBusy(true);
+    setKeyVaultError("");
+    try {
+      const payload = await exportFormRecoveryData(formId);
+      const bundle = await createEncryptedFormRecoveryBundle(formId, payload, recoveryPassphrase);
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `cokform-recovery-${formId.slice(0, 8)}.cokform-recovery.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      await recordFormAuditEvent(formId, "export", { format: "encrypted_recovery", responseCount: payload.responses?.length || 0 });
+      setRecoveryPassphrase("");
+    } catch (error) {
+      setKeyVaultError(error?.message || "암호화 복구 번들을 만들지 못했습니다.");
+    } finally {
+      setKeyVaultBusy(false);
+    }
+  }, [formId, recoveryPassphrase]);
+
+  const handleRecoveryBundleImport = useCallback(async (file) => {
+    if (!file) return;
+    setKeyVaultBusy(true);
+    setKeyVaultError("");
+    try {
+      if (!recoveryPassphrase) throw new Error("복구 번들을 열 복구 비밀번호를 먼저 입력해 주세요.");
+      const bundle = JSON.parse(await file.text());
+      if (bundle?.formId !== formId) throw new Error("이 복구 번들은 현재 열려 있는 폼 ID와 다릅니다.");
+      const payload = await openEncryptedFormRecoveryBundle(bundle, recoveryPassphrase);
+      importRecoveryBundleKeyVault(bundle);
+      const keyPair = await unlockFormKeyVault(formId, recoveryPassphrase);
+      await restoreFormRecoveryData(payload);
+      await finishSecureLoad(keyPair);
+      setKeyVaultOpen(false);
+    } catch (error) {
+      setKeyVaultError(error?.message || "암호화 복구 번들을 가져오지 못했습니다.");
+    } finally {
+      setKeyVaultBusy(false);
+      if (recoveryBundleInputRef.current) recoveryBundleInputRef.current.value = "";
+    }
+  }, [finishSecureLoad, formId, recoveryPassphrase]);
+
+  const lockCurrentKeyVault = useCallback(() => {
+    lockFormKeyVault(formId);
+    setResponses([]);
+    setVersions([]);
+    setTab("edit");
+    setLoaded(false);
+    loadedRef.current = false;
+    setKeyVaultState("locked");
+    setKeyVaultOpen(true);
+    setRecoveryPassphrase("");
+    setRecoveryPassphraseConfirm("");
+  }, [formId]);
 
   // ---- undo / redo (coalesces rapid edits into one checkpoint every 600ms) ----
   const [past, setPast] = useState([]);
@@ -144,25 +315,23 @@ export default function FormEditorPage({ formId, user, onBack }) {
     historyTimer.current = null;
     versionTimer.current = null;
     (async () => {
-      const doc = await getFormDoc(formId);
-      let nextForm = normalizeForm(doc?.form);
-      const keyPair = await ensureFormKeyPair(formId);
-      if (!nextForm.publicKey) nextForm = { ...nextForm, publicKey: keyPair.publicJwk };
-      formRef.current = nextForm;
-      setForm(nextForm);
-      setResponses(doc?.responses || []);
-      lastVersionFingerprint.current = JSON.stringify(nextForm);
-      const loadedVersions = await getFormVersions(formId);
-      if (loadedVersions.length) {
-        setVersions(loadedVersions);
-      } else {
-        const created = await saveFormVersion(formId, nextForm, "initial");
-        if (created) setVersions(await getFormVersions(formId));
+      const state = getFormKeyVaultState(formId);
+      setKeyVaultState(state);
+      setKeyVaultError("");
+      if (state !== "unlocked") {
+        setKeyVaultOpen(true);
+        return;
       }
-      loadedRef.current = true;
-      setLoaded(true);
+      try {
+        const keyPair = await ensureFormKeyPair(formId);
+        await finishSecureLoad(keyPair);
+      } catch (error) {
+        setKeyVaultError(error?.message || "개인키 금고를 확인하지 못했습니다.");
+        setKeyVaultState(getFormKeyVaultState(formId));
+        setKeyVaultOpen(true);
+      }
     })();
-  }, [formId]);
+  }, [finishSecureLoad, formId]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -774,8 +943,29 @@ export default function FormEditorPage({ formId, user, onBack }) {
                       )}
                     </div>
                     <div className="rounded-lg bg-[#EAF6EF] px-3 py-2.5 text-xs leading-5 text-[#355C45]">
-                      <strong>암호화 저장 중</strong> · 응답은 제출자의 브라우저에서 암호화되며, 이 브라우저에서만 복호화·내보내기됩니다.
-                      <span className="mt-1 block text-[#59645E]">브라우저 저장 데이터를 삭제하거나 다른 기기에서 열면 기존 응답을 복호화할 수 없습니다. 파일럿 기간에는 브라우저 프로필을 유지하세요.</span>
+                      <strong>종단간 암호화</strong> · 응답은 제출자의 브라우저에서 암호화되고, Cokform·Supabase·Cloudflare에는 복호화 키가 저장되지 않습니다.
+                      <span className="mt-1 block text-[#59645E]">응답을 열 때만 이 브라우저에서 개인키 금고를 잠금 해제합니다. 금고가 잠기면 응답 평문은 화면과 메모리에서 즉시 비웁니다.</span>
+                    </div>
+                    <div className="rounded-xl border border-[#B7DCC8] bg-[#F6FCF8] p-3.5">
+                      <div className="flex items-start gap-2.5">
+                        <div className="mt-0.5 rounded-lg bg-[#D8F5E8] p-2 text-[#0B4D3D]"><ShieldCheck size={16} /></div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-[#17251F]">개인키 금고와 복구</div>
+                          <p className="mt-1 text-xs leading-5 text-[#59645E]">개인키는 600,000회 PBKDF2와 AES-256-GCM으로 이 기기에 암호화해 보관합니다. 복구 비밀번호와 키 백업 파일이 모두 없으면 응답 복구는 불가능합니다.</p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                            <span className={`rounded-full px-2 py-1 font-semibold ${keyVaultState === "unlocked" ? "bg-[#D8F5E8] text-[#0B4D3D]" : "bg-[#FFF4E5] text-[#8A4B08]"}`}>{keyVaultState === "unlocked" ? "이 세션에서 잠금 해제됨" : "개인키 금고 잠김"}</span>
+                            <span className="text-[#78837C]">Cokform은 복구 비밀번호를 알거나 재설정할 수 없어요.</span>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button type="button" onClick={() => setKeyVaultOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-[#B7DCC8] bg-white px-3 py-1.5 text-xs font-semibold text-[#0B4D3D] hover:bg-[#EAF6EF]"><LockKeyhole size={13} /> {keyVaultState === "unlocked" ? "금고 관리" : "금고 열기"}</button>
+                            <button type="button" onClick={downloadKeyBackup} className="inline-flex items-center gap-1.5 rounded-full border border-[#B7DCC8] bg-white px-3 py-1.5 text-xs font-semibold text-[#0B4D3D] hover:bg-[#EAF6EF]"><Download size={13} /> 암호화 키 백업</button>
+                            <button type="button" onClick={() => setKeyVaultOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-[#B7DCC8] bg-white px-3 py-1.5 text-xs font-semibold text-[#0B4D3D] hover:bg-[#EAF6EF]"><Download size={13} /> 전체 복구 번들</button>
+                            <button type="button" onClick={() => keyBackupInputRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-full border border-[#B7DCC8] bg-white px-3 py-1.5 text-xs font-semibold text-[#0B4D3D] hover:bg-[#EAF6EF]"><Upload size={13} /> 키 백업 가져오기</button>
+                            {keyVaultState === "unlocked" && <button type="button" onClick={lockCurrentKeyVault} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-[#59645E] hover:bg-white"><LockKeyhole size={13} /> 지금 잠그기</button>}
+                          </div>
+                          <input ref={keyBackupInputRef} type="file" accept="application/json,.cokform-key.json" className="sr-only" onChange={(event) => handleKeyBackupImport(event.target.files?.[0])} />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -785,6 +975,56 @@ export default function FormEditorPage({ formId, user, onBack }) {
           </>
         )}
       </div>
+
+      {keyVaultOpen && (
+        <Modal title="개인키 금고" onClose={() => keyVaultState === "unlocked" && setKeyVaultOpen(false)}>
+          <div className="space-y-4">
+            <div className="rounded-xl border border-[#B7DCC8] bg-[#F6FCF8] p-3 text-xs leading-5 text-[#355C45]">
+              <div className="flex items-center gap-2 font-semibold text-[#0B4D3D]"><LockKeyhole size={15} /> 작성자만 아는 복구 비밀번호</div>
+              <p className="mt-1">개인키는 이 기기에 암호화해 보관됩니다. Cokform·Supabase·Cloudflare는 이 비밀번호와 개인키를 저장하거나 재설정할 수 없습니다.</p>
+            </div>
+
+            {keyVaultState === "legacy_unprotected" && <p className="rounded-lg bg-[#FFF4E5] px-3 py-2.5 text-xs leading-5 text-[#8A4B08]">기존 개인키가 안전하지 않은 브라우저 저장소에 있습니다. 계속하면 평문 키를 삭제하고 암호화 금고로 옮깁니다.</p>}
+            {keyVaultState === "setup_required" && <p className="text-xs leading-5 text-[#59645E]">이 폼은 아직 개인키가 없습니다. 복구 비밀번호를 만들면 공개키와 개인키를 생성하고, 이후 응답은 이 키로만 복호화할 수 있습니다.</p>}
+            {keyVaultState === "locked" && <p className="text-xs leading-5 text-[#59645E]">응답과 암호화된 버전 기록을 보려면 복구 비밀번호로 이 기기의 개인키 금고를 열어야 합니다.</p>}
+
+            <label className="block text-xs font-semibold text-[#355C45]">
+              {keyVaultState === "setup_required" || keyVaultState === "legacy_unprotected" ? "새 복구 비밀번호" : "복구 비밀번호"}
+              <input
+                type="password"
+                autoComplete={["setup_required", "legacy_unprotected"].includes(keyVaultState) ? "new-password" : "current-password"}
+                value={recoveryPassphrase}
+                onChange={(event) => setRecoveryPassphrase(event.target.value)}
+                placeholder="12자 이상, 다른 서비스와 다른 문구"
+                className="mt-1.5 w-full rounded-lg border border-[#C9CEC6] bg-white px-3 py-2.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]"
+              />
+            </label>
+            {["setup_required", "legacy_unprotected"].includes(keyVaultState) && (
+              <label className="block text-xs font-semibold text-[#355C45]">
+                복구 비밀번호 다시 입력
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={recoveryPassphraseConfirm}
+                  onChange={(event) => setRecoveryPassphraseConfirm(event.target.value)}
+                  placeholder="같은 비밀번호를 한 번 더 입력"
+                  className="mt-1.5 w-full rounded-lg border border-[#C9CEC6] bg-white px-3 py-2.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]"
+                />
+              </label>
+            )}
+            {keyVaultError && <p className="rounded-lg bg-[#FBE4E0] px-3 py-2 text-xs leading-5 text-[#B3261E]">{keyVaultError}</p>}
+
+            <div className="flex flex-wrap justify-end gap-2 border-t border-[#F0EEE6] pt-4">
+              <button type="button" onClick={() => recoveryBundleInputRef.current?.click()} disabled={keyVaultBusy || !recoveryPassphrase} className="inline-flex items-center gap-1.5 rounded-full border border-[#C9CEC6] bg-white px-3 py-2 text-xs font-semibold text-[#59645E] hover:bg-[#F5F3EC] disabled:opacity-50"><Upload size={13} /> 전체 복구 가져오기</button>
+              <button type="button" onClick={() => keyBackupInputRef.current?.click()} disabled={keyVaultBusy} className="inline-flex items-center gap-1.5 rounded-full border border-[#C9CEC6] bg-white px-3 py-2 text-xs font-semibold text-[#59645E] hover:bg-[#F5F3EC] disabled:opacity-50"><Upload size={13} /> 키 백업 가져오기</button>
+              {keyVaultState === "unlocked" && <button type="button" onClick={downloadRecoveryBundle} disabled={keyVaultBusy || !recoveryPassphrase} className="inline-flex items-center gap-1.5 rounded-full border border-[#B7DCC8] bg-white px-3 py-2 text-xs font-semibold text-[#0B4D3D] hover:bg-[#EAF6EF] disabled:opacity-50"><Download size={13} /> 전체 복구 번들</button>}
+              <button type="button" onClick={handleKeyVaultUnlock} disabled={keyVaultBusy || !recoveryPassphrase} className="inline-flex items-center gap-1.5 rounded-full bg-[#17866D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0F705B] disabled:cursor-wait disabled:opacity-60"><LockKeyhole size={13} /> {keyVaultBusy ? "보호 중…" : ["setup_required", "legacy_unprotected"].includes(keyVaultState) ? "금고 만들기" : "금고 열기"}</button>
+            </div>
+            <input ref={recoveryBundleInputRef} type="file" accept="application/json,.cokform-recovery.json" className="sr-only" onChange={(event) => handleRecoveryBundleImport(event.target.files?.[0])} />
+            <p className="text-[11px] leading-5 text-[#78837C]">`.cokform-recovery.json`에는 개인키 금고와 응답 암호문·폼·버전이 모두 다시 암호화되어 들어갑니다. 복구 비밀번호와 파일은 서로 다른 안전한 곳에 보관하세요.</p>
+          </div>
+        </Modal>
+      )}
 
       {historyOpen && (
         <Modal title="버전 기록" onClose={() => setHistoryOpen(false)}>

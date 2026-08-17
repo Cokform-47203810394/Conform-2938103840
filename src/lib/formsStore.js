@@ -277,7 +277,7 @@ export async function saveFormDoc(id, doc) {
 
 export async function saveFormVersion(formId, form, reason = "autosave") {
   if (!form?.publicKey) return false;
-  const snapshot = await encryptAnswers(form.publicKey, { form: compactVersionForm(form) });
+  const snapshot = await encryptAnswers(form.publicKey, { form: compactVersionForm(form) }, { formId, purpose: "form-version" });
   const summary = versionSummary(form, reason);
   const now = new Date().toISOString();
 
@@ -319,7 +319,7 @@ export async function getFormVersions(formId) {
     if (error) return undefined;
     const versions = await Promise.all((data || []).map(async (row) => {
       const decoded = isEncryptedEnvelope(row.snapshot)
-        ? await decryptAnswers(formId, row.snapshot).catch(() => null)
+        ? await decryptAnswers(formId, row.snapshot, { purpose: "form-version" }).catch(() => null)
         : null;
       if (!decoded?.form) return null;
       return {
@@ -336,7 +336,7 @@ export async function getFormVersions(formId) {
 
   const versions = await Promise.all(readVersionsLocal(formId).map(async (row) => {
     const decoded = isEncryptedEnvelope(row.snapshot)
-      ? await decryptAnswers(formId, row.snapshot).catch(() => null)
+      ? await decryptAnswers(formId, row.snapshot, { purpose: "form-version" }).catch(() => null)
       : null;
     if (!decoded?.form) return null;
     return {
@@ -347,6 +347,132 @@ export async function getFormVersions(formId) {
     };
   }));
   return versions.filter(Boolean);
+}
+
+function assertRecoveryCiphertext(payload) {
+  const hasPlainResponse = (payload?.responses || []).some((row) => !isEncryptedEnvelope(row?.answers));
+  const hasPlainVersion = (payload?.versions || []).some((row) => !isEncryptedEnvelope(row?.snapshot));
+  if (hasPlainResponse || hasPlainVersion) {
+    throw new Error("암호화되지 않은 이전 응답 또는 버전이 있어 안전한 복구 번들을 만들 수 없습니다. 해당 데이터를 먼저 검토·삭제해 주세요.");
+  }
+}
+
+export async function exportFormRecoveryData(formId) {
+  const remote = await trySupabase("복구 데이터 내보내기", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return undefined;
+    const [formResult, responseResult, versionResult] = await Promise.all([
+      supabase.from(TABLE).select("id, title, data, created_at, updated_at").eq("id", formId).maybeSingle(),
+      supabase.from(RESPONSE_TABLE).select("id, form_id, submitted_at, answers, respondent_token").eq("form_id", formId).order("submitted_at", { ascending: true }),
+      supabase.from(VERSION_TABLE).select("created_at, snapshot, summary").eq("form_id", formId).order("created_at", { ascending: true }),
+    ]);
+    if (formResult.error || !formResult.data || responseResult.error || versionResult.error) return undefined;
+    return {
+      format: "cokform-form-data",
+      version: 1,
+      formId,
+      exportedAt: new Date().toISOString(),
+      form: formResult.data,
+      responses: responseResult.data || [],
+      versions: versionResult.data || [],
+    };
+  });
+  if (remote !== undefined) {
+    assertRecoveryCiphertext(remote);
+    return remote;
+  }
+  if (hasSupabaseConfig()) throw new Error("서버 복구 데이터를 가져오지 못했습니다.");
+
+  const raw = localStorage.getItem(`${DOC_PREFIX}:${formId}`);
+  const stored = raw ? JSON.parse(raw) : null;
+  if (!stored?.form) throw new Error("복구할 폼 데이터를 찾지 못했습니다.");
+  const payload = {
+    format: "cokform-form-data",
+    version: 1,
+    formId,
+    exportedAt: new Date().toISOString(),
+    form: { id: formId, title: stored.form.title || "제목 없는 설문지", data: stored },
+    responses: readResponsesLocal(formId).map((row) => ({
+      id: row.id,
+      form_id: formId,
+      submitted_at: row.submittedAt,
+      answers: row.answers,
+      respondent_token: row.respondentToken || null,
+    })),
+    versions: readVersionsLocal(formId).map((row) => ({ created_at: row.createdAt, snapshot: row.snapshot, summary: row.summary })),
+  };
+  assertRecoveryCiphertext(payload);
+  return payload;
+}
+
+/**
+ * Restores only ciphertext and public form configuration. The browser never
+ * decrypts response answers while importing, and ownership is reassigned to
+ * the currently authenticated Cokform account by the normal RLS rules.
+ */
+export async function restoreFormRecoveryData(payload) {
+  if (payload?.format !== "cokform-form-data" || payload?.version !== 1 || !payload?.formId || !payload?.form?.data?.form) {
+    throw new Error("Cokform 복구 데이터 형식이 아닙니다.");
+  }
+  assertRecoveryCiphertext(payload);
+  const formId = payload.formId;
+  const form = payload.form.data.form;
+  const title = form.title?.trim() || "제목 없는 설문지";
+  const remote = await trySupabase("복구 데이터 가져오기", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return undefined;
+    const { error: formError } = await supabase.from(TABLE).upsert({
+      id: formId,
+      title,
+      data: { form },
+      owner: authData.user.id,
+      updated_at: new Date().toISOString(),
+    });
+    if (formError) return undefined;
+    const { error: publicError } = await supabase.from(PUBLIC_TABLE).upsert({
+      id: formId,
+      title,
+      data: publicFormData(form),
+      updated_at: new Date().toISOString(),
+    });
+    if (publicError) return undefined;
+
+    const responses = (payload.responses || []).map((row) => ({
+      id: row.id,
+      form_id: formId,
+      submitted_at: row.submitted_at,
+      answers: row.answers,
+      respondent_token: row.respondent_token || null,
+    }));
+    if (responses.length) {
+      const { error } = await supabase.from(RESPONSE_TABLE).insert(responses);
+      if (error) return undefined;
+    }
+    const versions = (payload.versions || []).map((row) => ({
+      form_id: formId,
+      created_at: row.created_at,
+      snapshot: row.snapshot,
+      summary: row.summary || {},
+    }));
+    if (versions.length) {
+      const { error } = await supabase.from(VERSION_TABLE).insert(versions);
+      if (error) return undefined;
+    }
+    return { ok: true, responseCount: responses.length, versionCount: versions.length };
+  });
+  if (remote !== undefined) return remote;
+  if (hasSupabaseConfig()) throw new Error("서버 복구 데이터를 저장하지 못했습니다.");
+
+  localStorage.setItem(`${DOC_PREFIX}:${formId}`, JSON.stringify({ form }));
+  writeResponsesLocal(formId, (payload.responses || []).map((row) => ({ id: row.id, submittedAt: row.submitted_at, answers: row.answers })));
+  writeVersionsLocal(formId, (payload.versions || []).map((row) => ({ id: uid(), createdAt: row.created_at, snapshot: row.snapshot, summary: row.summary || {} })));
+  const index = readIndexLocal();
+  const existing = index.find((item) => item.id === formId);
+  const summary = { id: formId, title, updatedAt: new Date().toISOString(), createdAt: new Date().toISOString(), questions: (form.questions || []).slice(0, 3) };
+  if (existing) Object.assign(existing, summary);
+  else index.push(summary);
+  writeIndexLocal(index);
+  return { ok: true, responseCount: (payload.responses || []).length, versionCount: (payload.versions || []).length };
 }
 
 export async function listParticipatedForms() {
@@ -411,7 +537,7 @@ export async function recordFormParticipation(formId, form) {
 }
 
 export async function submitResponse(formId, answers, publicKey, settings = {}) {
-  const encryptedAnswers = publicKey ? await encryptAnswers(publicKey, answers) : answers;
+  const encryptedAnswers = publicKey ? await encryptAnswers(publicKey, answers, { formId, purpose: "response" }) : answers;
   const response = { id: uid(), submittedAt: new Date().toISOString(), answers };
   const respondentToken = settings.limitOneResponse ? (() => {
     try {
