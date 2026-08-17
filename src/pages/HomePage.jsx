@@ -154,7 +154,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           <div className="order-1 flex shrink-0 items-center gap-2">
             <img
               src={`${import.meta.env.BASE_URL}brand/cokform-logo.svg`}
-              alt="콕폼 · FORM, CLEARLY"
+              alt="콕폼 · 원하는 대로, 콕 묻고 받아요"
               className="h-11 w-auto"
             />
           </div>
@@ -416,7 +416,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
 
           <div className="flex flex-col gap-3 pt-6 text-[11px] leading-5 text-[#718077] sm:flex-row sm:items-start sm:justify-between">
             <div><p>© 2026 Cokform. All rights reserved.</p><p className="mt-1 max-w-3xl">응답 원문은 암호화되어 저장되도록 설계됩니다. 개인정보 수집의 목적·항목·보관기간과 응답자 권리 고지는 각 폼 운영자가 실제 운영 내용에 맞게 설정해야 합니다.</p></div>
-            <p className="shrink-0 font-medium text-[#9DAAA1]">FORM, CLEARLY.</p>
+            <p className="shrink-0 font-medium text-[#9DAAA1]">원하는 대로, 콕 묻고 받아요.</p>
           </div>
         </div>
       </footer>
