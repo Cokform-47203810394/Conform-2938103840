@@ -33,6 +33,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const [responses, setResponses] = useState([]);
   const [tab, setTab] = useState("edit");
   const [loaded, setLoaded] = useState(false);
+  const [saveState, setSaveState] = useState("saved");
   const saveTimer = useRef(null);
 
   // ---- undo / redo (coalesces rapid edits into one checkpoint every 600ms) ----
@@ -95,8 +96,15 @@ export default function FormEditorPage({ formId, user, onBack }) {
   useEffect(() => {
     if (!loaded) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveFormDoc(formId, { form });
+    saveTimer.current = setTimeout(async () => {
+      setSaveState("saving");
+      try {
+        const didSave = await saveFormDoc(formId, { form });
+        if (!didSave) throw new Error("save_failed");
+        setSaveState("saved");
+      } catch {
+        setSaveState("error");
+      }
     }, 400);
     return () => clearTimeout(saveTimer.current);
   }, [form, loaded, formId]);
@@ -106,6 +114,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     updateForm((f) => ({ ...f, questions: f.questions.map((q) => (q.id === id ? next : q)) }));
   };
   const deleteQuestion = (id) => {
+    if (typeof window !== "undefined" && !window.confirm("이 질문을 삭제할까요? 실행 취소로 복원할 수 있어요.")) return;
     updateForm((f) => ({ ...f, questions: f.questions.filter((q) => q.id !== id) }));
   };
   const duplicateQuestion = (id) => {
@@ -227,6 +236,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
             onChange={(e) => updateForm((f) => ({ ...f, title: e.target.value }))}
             className="min-w-0 flex-1 bg-transparent text-base font-semibold tracking-[-0.03em] text-[#17251F] outline-none sm:text-lg"
           />
+          <span aria-live="polite" className={`hidden shrink-0 text-[11px] sm:inline ${saveState === "error" ? "text-[#B3261E]" : "text-[#78837C]"}`}>
+            {saveState === "saving" ? "저장 중…" : saveState === "error" ? "저장 실패" : "저장됨"}
+          </span>
           <IconButton title={form.starred ? "즐겨찾기 해제" : "즐겨찾기"} onClick={() => updateForm((f) => ({ ...f, starred: !f.starred }))}>
             <Star size={18} fill={form.starred ? accent : "none"} color={form.starred ? accent : "currentColor"} />
           </IconButton>
@@ -284,7 +296,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
             <IconButton title="공동작업자" onClick={() => setCollabOpen(true)}>
               <UserPlus size={18} />
             </IconButton>
-            <AuthControl user={user} />
+            <AuthControl user={user} showLogout={false} />
             <button
               onClick={() => setShareOpen(true)}
               className="ml-1 shrink-0 rounded-full bg-[#17866D] px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(23,37,31,0.12)] transition hover:bg-[#0F705B]"
@@ -417,6 +429,69 @@ export default function FormEditorPage({ formId, user, onBack }) {
                           />일
                         </span>
                       </label>
+                    </div>
+                    <div className="border-t border-[#F0EEE6] pt-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-medium text-[#17251F]">개인정보 수집 안내 표시</div>
+                          <div className="text-xs leading-5 text-[#78837C]">켜면 폼 소개 아래에 수집 목적·항목·보관기간 안내가 자동으로 표시돼요.</div>
+                        </div>
+                        <Toggle
+                          checked={Boolean(form.settings?.privacyNotice)}
+                          onChange={(v) => updateForm((f) => ({ ...f, settings: { ...f.settings, privacyNotice: v } }))}
+                        />
+                      </div>
+                      {form.settings?.privacyNotice && (
+                        <div className="mt-3 space-y-3 rounded-lg border border-[#B7DCC8] bg-[#F6FCF8] p-3">
+                          <label className="block text-xs font-medium text-[#355C45]">
+                            수집 목적
+                            <input
+                              value={form.settings?.privacyPurpose || ""}
+                              onChange={(e) => updateForm((f) => ({ ...f, settings: { ...f.settings, privacyPurpose: e.target.value } }))}
+                              className="mt-1 w-full rounded-lg border border-[#C9CEC6] bg-white px-3 py-2 text-sm text-[#17251F] outline-none focus:border-[#17866D]"
+                              placeholder="예: 행사 참석 확인 및 안내"
+                            />
+                          </label>
+                          <label className="block text-xs font-medium text-[#355C45]">
+                            수집 항목
+                            <input
+                              value={form.settings?.privacyItems || ""}
+                              onChange={(e) => updateForm((f) => ({ ...f, settings: { ...f.settings, privacyItems: e.target.value } }))}
+                              className="mt-1 w-full rounded-lg border border-[#C9CEC6] bg-white px-3 py-2 text-sm text-[#17251F] outline-none focus:border-[#17866D]"
+                              placeholder="예: 이름, 연락처, 응답 내용"
+                            />
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => addQuestion("privacy_consent")}
+                              className="rounded-full border border-[#17866D] px-3 py-1.5 text-xs font-semibold text-[#0B4D3D] hover:bg-[#D8F5E8]"
+                            >
+                              동의 질문 추가
+                            </button>
+                            <label className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs text-[#355C45]">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(form.settings?.privacyThirdParty)}
+                                onChange={(e) => updateForm((f) => ({ ...f, settings: { ...f.settings, privacyThirdParty: e.target.checked } }))}
+                              />
+                              제3자 제공 있음
+                            </label>
+                            <label className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs text-[#355C45]">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(form.settings?.privacyOutsourcing)}
+                                onChange={(e) => updateForm((f) => ({ ...f, settings: { ...f.settings, privacyOutsourcing: e.target.checked } }))}
+                              />
+                              처리 위탁 있음
+                            </label>
+                          </div>
+                          {!form.questions.some((q) => q.type === "privacy_consent") && (
+                            <p className="rounded-md bg-[#FFF4E5] px-2.5 py-2 text-[11px] leading-5 text-[#8A4B08]">현재 폼에 동의 질문이 없어요. 개인정보를 수집한다면 `동의 질문 추가`를 함께 넣고, 목적·항목·보유기간을 실제 내용에 맞게 확인하세요.</p>
+                          )}
+                          <p className="text-[11px] leading-5 text-[#59645E]">자동 안내문은 고지 작성을 돕는 기능이며, 개인정보보호법 준수나 법적 책임 면제를 보장하지 않아요.</p>
+                        </div>
+                      )}
                     </div>
                     <div className="rounded-lg bg-[#EAF6EF] px-3 py-2.5 text-xs leading-5 text-[#355C45]">
                       <strong>암호화 저장 중</strong> · 응답은 제출자의 브라우저에서 암호화되며, 이 브라우저에서만 복호화·내보내기됩니다.

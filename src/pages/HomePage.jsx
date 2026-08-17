@@ -114,7 +114,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             >
               <Settings size={19} />
             </button>
-            <AuthControl user={user} />
+            <AuthControl user={user} showLogout={false} />
           </div>
         </div>
       </div>

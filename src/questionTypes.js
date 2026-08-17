@@ -73,6 +73,11 @@ export function emptyForm() {
       limitOneResponse: false,
       acceptingResponses: true,
       retentionDays: 180,
+      privacyNotice: false,
+      privacyPurpose: "설문 응답 접수 및 결과 분석",
+      privacyItems: "",
+      privacyThirdParty: false,
+      privacyOutsourcing: false,
     },
     collaborators: [],
   };

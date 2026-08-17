@@ -86,6 +86,18 @@ export default function PreviewForm({ form, onSubmit, accent }) {
           />
         )}
       </div>
+      {form.settings?.privacyNotice && (
+        <div className="rounded-xl border border-[#B7DCC8] bg-[#F1FAF4] p-4 text-sm leading-6 text-[#355C45]" role="note">
+          <div className="font-semibold text-[#0B4D3D]">개인정보 수집 안내</div>
+          <p className="mt-1">
+            이 폼은 <strong>{form.settings.privacyPurpose || "설문 응답 접수 및 결과 분석"}</strong>을 위해 개인정보를 수집할 수 있습니다.
+            {form.settings.privacyItems ? ` 수집 항목은 ${form.settings.privacyItems}입니다.` : " 수집 항목과 입력 내용은 응답 전에 확인해 주세요."}
+            {` 응답 데이터는 ${form.settings.retentionDays ?? 180}일간 보관 후 파기됩니다.`}
+            {form.settings.privacyThirdParty ? " 제3자 제공이 있을 수 있습니다." : " 제3자 제공은 별도 동의 없이 진행하지 않습니다."}
+            {form.settings.privacyOutsourcing ? " 처리 위탁이 있을 수 있습니다." : " 처리 위탁 여부는 폼 작성자의 안내를 확인해 주세요."}
+          </p>
+        </div>
+      )}
       {form.questions.map((q) => (
         <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={handleChange} />
       ))}

@@ -76,7 +76,7 @@ function Builder() {
               <ArrowLeft size={18} />
             </button>
             <span className="text-lg font-normal text-[#17251F]">설정</span>
-            <div className="ml-auto"><AuthControl user={user} compact /></div>
+            <div className="ml-auto"><AuthControl user={user} compact showLogout={false} /></div>
           </div>
         </div>
         <div className="mx-auto max-w-3xl px-3 py-4 sm:px-4 sm:py-6">
