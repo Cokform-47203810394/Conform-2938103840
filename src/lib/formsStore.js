@@ -82,9 +82,11 @@ function compactVersionForm(form) {
   const copy = JSON.parse(JSON.stringify(form || {}));
   // Data-URL images can be up to 2 MB each. Repeating them in up to 60 snapshots
   // would make storage unpredictable, so preserve only the structural form history.
-  if (copy.descriptionImage?.src?.startsWith("data:")) {
-    copy.descriptionImage = { ...copy.descriptionImage, src: "", versionImageOmitted: true };
-  }
+  ["descriptionImage", "coverImage"].forEach((field) => {
+    if (copy[field]?.src?.startsWith("data:")) {
+      copy[field] = { ...copy[field], src: "", versionImageOmitted: true };
+    }
+  });
   return copy;
 }
 
@@ -97,8 +99,9 @@ function versionSummary(form, reason = "autosave") {
 }
 
 function publicFormData(form) {
-  // Collaborator emails are editor metadata and must never be in the public row.
-  const { collaborators: _private, ...safeForm } = form || {};
+  // Collaborator emails and private home-card media are editor metadata and
+  // must never be copied to the public respondent row.
+  const { collaborators: _private, coverImage: _cover, ...safeForm } = form || {};
   return safeForm;
 }
 
@@ -137,6 +140,7 @@ export async function listForms() {
       updatedAt: row.updated_at,
       createdAt: row.created_at,
       questions: (row.data?.form?.questions || []).slice(0, 3),
+      coverImage: row.data?.form?.coverImage || null,
       responseCount: responseCounts[row.id] || 0,
       viewCount: viewCounts[row.id] || 0,
       acceptingResponses: row.data?.form?.settings?.acceptingResponses !== false,

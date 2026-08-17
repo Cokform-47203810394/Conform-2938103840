@@ -449,9 +449,11 @@ export default function FormEditorPage({ formId, user, onBack }) {
         const current = normalizeForm(formRef.current);
         await saveFormVersion(formId, current, "before_restore");
         const versionForm = normalizeForm(confirmAction.version.form);
-        const restored = versionForm.descriptionImage?.versionImageOmitted
-          ? { ...versionForm, descriptionImage: current.descriptionImage || null }
-          : versionForm;
+        const restored = {
+          ...versionForm,
+          descriptionImage: versionForm.descriptionImage?.versionImageOmitted ? current.descriptionImage || null : versionForm.descriptionImage,
+          coverImage: versionForm.coverImage?.versionImageOmitted ? current.coverImage || null : versionForm.coverImage,
+        };
         const didSave = await saveFormDoc(formId, { form: restored });
         if (!didSave) {
           setToast("이전 버전을 저장하지 못했어요. 네트워크와 로그인 상태를 확인해주세요.");
@@ -500,6 +502,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   }, [toast]);
 
   const accent = form.accentColor || MD.primary;
+  const coverImageSrc = sanitizeImageSource(form.coverImage?.src);
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}?respond=${formId}` : "";
   const privacyAudit = analyzePrivacyRisk(form);
 
@@ -526,14 +529,15 @@ export default function FormEditorPage({ formId, user, onBack }) {
     }
   };
 
-  const handleDescriptionImageUpload = (file) => {
+  const handleImageUpload = (field, file) => {
     if (!file) return;
     if (!new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]).has(file.type)) {
       setToast("PNG, JPG, GIF, WebP 이미지만 넣을 수 있어요.");
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setToast("이미지는 2MB 이하로 넣어주세요.");
+    const limit = field === "coverImage" ? 1 * 1024 * 1024 : 2 * 1024 * 1024;
+    if (file.size > limit) {
+      setToast(`${field === "coverImage" ? "커버 이미지는" : "이미지는"} ${field === "coverImage" ? "1MB" : "2MB"} 이하로 넣어주세요.`);
       return;
     }
     const reader = new FileReader();
@@ -543,10 +547,13 @@ export default function FormEditorPage({ formId, user, onBack }) {
         setToast("안전한 이미지 형식인지 확인해주세요.");
         return;
       }
-      updateForm((f) => ({ ...f, descriptionImage: { src, alt: file.name.replace(/\\.[^.]+$/, "") } }));
+      updateForm((f) => ({ ...f, [field]: { src, alt: file.name.replace(/\\.[^.]+$/, "") } }));
     };
     reader.readAsDataURL(file);
   };
+
+  const handleDescriptionImageUpload = (file) => handleImageUpload("descriptionImage", file);
+  const handleCoverImageUpload = (file) => handleImageUpload("coverImage", file);
 
   const addCollaborator = () => {
     const email = collabInput.trim();
@@ -729,7 +736,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
                   <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EEE6] pt-3">
                     <label className="cursor-pointer rounded-full border border-[#C9CEC6] bg-[#FFFDF8] px-3 py-1.5 text-xs font-semibold text-[#59645E] hover:border-[#17866D] hover:bg-[#F1FAF4]">
                       설명 이미지 넣기
-                      <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleDescriptionImageUpload(e.target.files?.[0])} />
+                      <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="sr-only" onChange={(e) => handleDescriptionImageUpload(e.target.files?.[0])} />
                     </label>
                     <input
                       value={form.descriptionImage?.src?.startsWith("data:") ? "" : form.descriptionImage?.src || ""}
@@ -807,6 +814,42 @@ export default function FormEditorPage({ formId, user, onBack }) {
                     </div>
                   )}
                   <div className="space-y-4">
+                    <section className="overflow-hidden rounded-xl border border-[#DDE1D9] bg-[#F8F9F4]">
+                      <div className="border-b border-[#DDE1D9] px-3.5 py-3">
+                        <div className="text-sm font-semibold text-[#17251F]">첫 화면 커버 이미지</div>
+                        <p className="mt-1 text-xs leading-5 text-[#78837C]">내가 만든 폼 카드에만 표시되는 16:9 이미지예요. 공개 응답 화면에는 노출하지 않아요.</p>
+                      </div>
+                      <div className="grid gap-3 p-3.5 sm:grid-cols-[10.5rem_1fr]">
+                        <div className="aspect-video overflow-hidden rounded-lg border border-[#DDE1D9] bg-[#F5F3EC]">
+                          {coverImageSrc ? <img src={coverImageSrc} alt={form.coverImage?.alt || "폼 커버 이미지"} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-3 text-center text-[11px] leading-4 text-[#78837C]">커버 이미지를 넣으면 첫 화면 카드에 표시돼요.</div>}
+                        </div>
+                        <div className="min-w-0 space-y-2">
+                          <label className="inline-flex cursor-pointer items-center rounded-full border border-[#C9CEC6] bg-white px-3 py-1.5 text-xs font-semibold text-[#59645E] hover:border-[#17866D] hover:bg-[#F1FAF4]">
+                            {coverImageSrc ? "커버 이미지 교체" : "커버 이미지 추가"}
+                            <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="sr-only" onChange={(event) => handleCoverImageUpload(event.target.files?.[0])} />
+                          </label>
+                          <input
+                            value={form.coverImage?.src?.startsWith("data:") ? "" : form.coverImage?.src || ""}
+                            onChange={(event) => updateForm((current) => ({ ...current, coverImage: event.target.value ? { ...(current.coverImage || {}), src: event.target.value } : null }))}
+                            onBlur={() => updateForm((current) => ({ ...current, coverImage: sanitizeImageSource(current.coverImage?.src) ? current.coverImage : null }))}
+                            placeholder="HTTPS 이미지 URL 붙여넣기"
+                            className="w-full rounded-lg border border-[#C9CEC6] bg-white px-3 py-2 text-xs text-[#17251F] outline-none focus:border-[#17866D]"
+                          />
+                          {form.coverImage?.src && (
+                            <div className="flex flex-wrap gap-2">
+                              <input
+                                value={form.coverImage.alt || ""}
+                                onChange={(event) => updateForm((current) => ({ ...current, coverImage: { ...current.coverImage, alt: event.target.value } }))}
+                                placeholder="대체텍스트"
+                                className="min-w-[9rem] flex-1 rounded-lg border border-[#C9CEC6] bg-white px-3 py-2 text-xs text-[#17251F] outline-none focus:border-[#17866D]"
+                              />
+                              <button type="button" onClick={() => updateForm((current) => ({ ...current, coverImage: null }))} className="rounded-lg px-3 py-2 text-xs font-semibold text-[#B3261E] hover:bg-[#FBE4E0]">삭제</button>
+                            </div>
+                          )}
+                          <p className="text-[11px] leading-5 text-[#78837C]">PNG·JPG·GIF·WebP, 최대 1MB. 민감한 원본 이미지는 넣지 마세요.</p>
+                        </div>
+                      </div>
+                    </section>
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <div className="text-sm text-[#17251F]">이메일 주소 수집</div>

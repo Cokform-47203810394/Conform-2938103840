@@ -7,6 +7,7 @@ import { Modal } from "../components/Overlay";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
 import { listForms, listParticipatedForms, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
 import { BRAND, MD, TYPE_COLORS, ELEV1, ELEV1_HOVER } from "../theme";
+import { sanitizeImageSource } from "../lib/sanitizeRichText";
 
 function formatRelative(iso) {
   if (!iso) return "";
@@ -263,8 +264,10 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
                 className={`group relative overflow-hidden rounded-[18px] border border-[#DDE1D9] bg-[#FFFDF8] transition-all ${ELEV1_HOVER}`}
               >
                 <button onClick={() => onOpenForm(f.id)} className="block w-full text-left">
-                  <div className="h-[112px] border-b border-[#DDE1D9] bg-[#F5F3EC] sm:h-[128px]">
-                    <FormThumbnail questions={f.questions || []} />
+                  <div className="h-[112px] overflow-hidden border-b border-[#DDE1D9] bg-[#F5F3EC] sm:h-[128px]">
+                    {sanitizeImageSource(f.coverImage?.src)
+                      ? <img src={sanitizeImageSource(f.coverImage.src)} alt="" className="h-full w-full object-cover" />
+                      : <FormThumbnail questions={f.questions || []} />}
                   </div>
                   <div className="px-3 pb-2.5 pt-2.5">
                     <div className="truncate text-sm font-semibold text-[#17251F]">{f.title}</div>
