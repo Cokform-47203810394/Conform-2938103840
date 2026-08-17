@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import HomePage from "./pages/HomePage";
-import FormEditorPage from "./pages/FormEditorPage";
 import RespondPage from "./pages/RespondPage";
-import SettingsPage from "./pages/SettingsPage";
-import PrivacyPage from "./pages/PrivacyPage";
-import TermsPage from "./pages/TermsPage";
-import SitemapPage from "./pages/SitemapPage";
+const FormEditorPage = lazy(() => import("./pages/FormEditorPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const SitemapPage = lazy(() => import("./pages/SitemapPage"));
 import AuthControl from "./components/AuthControl";
 import { subscribeAuth } from "./lib/auth";
 import { ArrowLeft } from "lucide-react";
 import { ELEV1 } from "./theme";
+
+function PageLoading() {
+  return <div className="flex min-h-screen items-center justify-center bg-[#F5F3EC] text-sm text-[#78837C]">불러오는 중…</div>;
+}
 
 function getQueryMode() {
   if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false };
@@ -28,16 +32,17 @@ export default function App() {
   // with none of the builder chrome — this is what makes 공유 actually work
   const { respond: respondFormId, privacy, terms, sitemap } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
-  if (privacy) return <PrivacyPage onBack={() => { window.location.href = "/"; }} />;
-  if (terms) return <TermsPage onBack={() => { window.location.href = "/"; }} />;
-  if (sitemap) return <SitemapPage onBack={() => { window.location.href = "/"; }} />;
+  if (privacy) return <Suspense fallback={<PageLoading />}><PrivacyPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
+  if (terms) return <Suspense fallback={<PageLoading />}><TermsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
+  if (sitemap) return <Suspense fallback={<PageLoading />}><SitemapPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   return <Builder />;
 }
 
 function Builder() {
   // view: 'home' | 'editor' | 'settings'
-  const [view, setView] = useState("home");
-  const [currentFormId, setCurrentFormId] = useState(null);
+  const workspaceReturnForm = typeof window !== "undefined" ? sessionStorage.getItem("cokform:workspace:return-form") : null;
+  const [view, setView] = useState(() => workspaceReturnForm ? "editor" : "home");
+  const [currentFormId, setCurrentFormId] = useState(() => workspaceReturnForm || null);
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
 
@@ -48,6 +53,10 @@ function Builder() {
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (authReady && user && currentFormId) sessionStorage.removeItem("cokform:workspace:return-form");
+  }, [authReady, currentFormId, user]);
 
   if (view === "editor" && currentFormId) {
     if (!authReady || !user) {
@@ -65,11 +74,13 @@ function Builder() {
       );
     }
     return (
-      <FormEditorPage
-        formId={currentFormId}
-        user={user}
-        onBack={() => setView("home")}
-      />
+      <Suspense fallback={<PageLoading />}>
+        <FormEditorPage
+          formId={currentFormId}
+          user={user}
+          onBack={() => { setCurrentFormId(null); setView("home"); }}
+        />
+      </Suspense>
     );
   }
 
@@ -90,7 +101,7 @@ function Builder() {
           </div>
         </div>
         <div className="mx-auto max-w-3xl px-3 py-4 sm:px-4 sm:py-6">
-          <SettingsPage />
+          <Suspense fallback={<div className="py-10 text-center text-sm text-[#78837C]">설정을 불러오는 중…</div>}><SettingsPage /></Suspense>
         </div>
       </div>
     );

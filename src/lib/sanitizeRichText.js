@@ -32,3 +32,18 @@ export function richTextToPlain(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
   return doc.body.textContent || "";
 }
+
+// Form descriptions are public content. Permit only local paths, HTTPS images, or
+// small raster data URLs so custom image fields cannot become an unexpected URL scheme.
+export function sanitizeImageSource(value) {
+  const source = String(value || "").trim();
+  if (!source || source.length > 3_000_000) return "";
+  if (/^data:image\/(png|jpeg|gif|webp);base64,[a-z0-9+/=]+$/i.test(source)) return source;
+  if (source.startsWith("/") && !source.startsWith("//")) return source;
+  try {
+    const url = new URL(source);
+    return url.protocol === "https:" ? url.href : "";
+  } catch {
+    return "";
+  }
+}

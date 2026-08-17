@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Check, Mail } from "lucide-react";
 import QuestionField from "./QuestionField";
-import { sanitizeRichText } from "../lib/sanitizeRichText";
+import { sanitizeImageSource, sanitizeRichText } from "../lib/sanitizeRichText";
 import { ELEV1, ELEV1_HOVER, MD } from "../theme";
 
 export default function PreviewForm({ form, onSubmit, accent }) {
   const color = accent || MD.primary;
+  const descriptionImageSrc = sanitizeImageSource(form.descriptionImage?.src);
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -100,9 +101,9 @@ export default function PreviewForm({ form, onSubmit, accent }) {
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(form.description) }}
           />
         )}
-        {form.descriptionImage?.src && (
+        {descriptionImageSrc && (
           <img
-            src={form.descriptionImage.src}
+            src={descriptionImageSrc}
             alt={form.descriptionImage.alt || "설명 이미지"}
             className="mt-4 max-h-72 w-full rounded-lg object-cover"
           />

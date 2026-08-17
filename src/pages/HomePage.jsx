@@ -3,6 +3,7 @@ import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, Arrow
 import AuthControl from "../components/AuthControl";
 import { signInWithGoogle } from "../lib/auth";
 import FormThumbnail from "../components/FormThumbnail";
+import { Modal } from "../components/Overlay";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
 import { listForms, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
 import { BRAND, MD, TYPE_COLORS, ELEV1, ELEV1_HOVER } from "../theme";
@@ -27,6 +28,8 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
   const [notice, setNotice] = useState(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -94,18 +97,29 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
     if (newId) refresh();
   };
 
-  const handleDelete = async (id, title) => {
+  const requestDelete = (id, title) => {
     setOpenMenuId(null);
-    if (!window.confirm(`"${title}" 설문지를 삭제할까요? 응답 데이터도 함께 삭제됩니다.`)) return;
-    const deleted = await deleteFormDoc(id);
-    if (!deleted) {
-      setNotice("삭제하지 못했어요. 로그인 상태와 폼 소유자 권한을 확인해주세요.");
-      window.setTimeout(() => setNotice(null), 3500);
-      return;
+    setDeleteTarget({ id, title });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    const target = deleteTarget;
+    setDeleting(true);
+    try {
+      const deleted = await deleteFormDoc(target.id);
+      if (!deleted) {
+        setNotice("삭제하지 못했어요. 로그인 상태와 폼 소유자 권한을 확인해주세요.");
+        window.setTimeout(() => setNotice(null), 3500);
+        return;
+      }
+      setDeleteTarget(null);
+      setNotice("폼과 응답이 삭제되었습니다.");
+      window.setTimeout(() => setNotice(null), 2500);
+      await refresh();
+    } finally {
+      setDeleting(false);
     }
-    setNotice("폼과 응답이 삭제되었습니다.");
-    window.setTimeout(() => setNotice(null), 2500);
-    await refresh();
   };
 
   return (
@@ -187,9 +201,9 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         {/* premium / institutional templates */}
         <div className="mb-2 flex items-center gap-2">
           <div className="cok-eyebrow">READY-MADE FLOWS</div>
-          <span className="rounded-full bg-[#D8ED59] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#17251F]">PRO</span>
+          <span className="rounded-full bg-[#D8ED59] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#17251F]">PRO · 무료 공개 중</span>
         </div>
-        <p className="mb-4 text-sm text-[#59645E]">신청·동의·피드백처럼 자주 쓰는 흐름을 바로 시작해요.</p>
+        <p className="mb-4 text-sm leading-6 text-[#59645E]">신청·동의·피드백처럼 자주 쓰는 흐름을 바로 시작해요. <strong className="font-semibold text-[#0B4D3D]">파일럿 기간에는 PRO 템플릿을 몇 달간 무료로 공개합니다.</strong> 유료 전환 전에는 이 페이지에서 미리 안내해요.</p>
         <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] sm:gap-5">
           {PREMIUM_TEMPLATES.map((t) => (
             <TemplateCard key={t.key} template={t} onCreate={handleCreate} busy={creating !== null} creating={creating === t.key} premium />
@@ -276,7 +290,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
                       <Copy size={14} /> 사본 만들기
                     </button>
                     <button
-                      onClick={() => handleDelete(f.id, f.title)}
+                      onClick={() => requestDelete(f.id, f.title)}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#B3261E] hover:bg-[#F9DEDC]/60"
                     >
                       <Trash2 size={14} /> 삭제
@@ -295,6 +309,16 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         </div>
       )}
 
+      {deleteTarget && (
+        <Modal title="폼 삭제" onClose={() => !deleting && setDeleteTarget(null)}>
+          <p className="text-sm leading-6 text-[#59645E]"><strong className="text-[#17251F]">“{deleteTarget.title}”</strong>을 삭제합니다. 폼과 연결된 암호화 응답도 함께 삭제되며, 이 작업은 복원할 수 없습니다.</p>
+          <div className="mt-5 flex justify-end gap-2">
+            <button type="button" onClick={() => setDeleteTarget(null)} disabled={deleting} className="rounded-full border border-[#C9CEC6] bg-white px-4 py-2 text-sm font-semibold text-[#59645E] transition-colors hover:bg-[#F5F3EC] disabled:opacity-50">취소</button>
+            <button type="button" onClick={confirmDelete} disabled={deleting} className="rounded-full bg-[#B3261E] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#8C1D18] disabled:cursor-wait disabled:opacity-60">{deleting ? "삭제 중…" : "삭제"}</button>
+          </div>
+        </Modal>
+      )}
+
       <footer className="mt-14 bg-[#101713] text-[#D6E1D8]">
         <div className="mx-auto max-w-6xl px-5 py-10 sm:px-6 sm:py-12">
           <div className="grid gap-10 border-t border-white/10 pt-8 lg:grid-cols-[1.45fr_0.8fr_0.9fr] lg:gap-12">
@@ -303,7 +327,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
               <p className="mt-4 max-w-sm text-sm leading-6 text-[#9DAAA1]">한국 실무 흐름에 맞춘 개인정보 보호형 폼 빌더. 응답은 브라우저에서 암호화되어, 폼 작성자만 자신의 키로 읽도록 설계합니다.</p>
               <div className="mt-5 flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-[0.08em]">
                 <a href="https://github.com/haroseo" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[#D6E1D8] transition hover:text-[#D8ED59]"><Github size={16} /> GitHub <ExternalLink size={12} /></a>
-                <span title="공개 문의 메일 등록 전" className="inline-flex cursor-not-allowed items-center gap-2 text-[#718077]"><Mail size={16} /> Contact 준비 중</span>
+                <a href="mailto:seoharo0111@gmail.com" className="inline-flex items-center gap-2 text-[#D6E1D8] transition hover:text-[#D8ED59]"><Mail size={16} /> 문의하기</a>
               </div>
             </div>
 
@@ -323,7 +347,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
                 <a href="/privacy" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">개인정보처리방침 <ShieldCheck size={14} /></a>
                 <a href="/terms" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">이용약관 <FileText size={14} /></a>
                 <a href="/sitemap.xml" className="transition hover:text-[#D8ED59]">검색엔진용 XML 사이트맵</a>
-                <span className="text-xs leading-5 text-[#718077]">문의 이메일은 정식 공개 전 등록됩니다.</span>
+                <a href="mailto:seoharo0111@gmail.com" className="text-xs leading-5 text-[#9DAAA1] transition hover:text-[#D8ED59]">문의: seoharo0111@gmail.com</a>
               </div>
             </nav>
           </div>
@@ -368,7 +392,7 @@ function TemplateCard({ template: t, onCreate, busy, creating, premium }) {
     >
       {premium && (
         <span className="absolute right-1.5 top-1.5 z-10 rounded-full bg-[#D8ED59] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[#17251F]">
-          PRO
+          무료
         </span>
       )}
       <div className="flex h-[104px] items-center justify-center border-b border-[#DDE1D9] bg-[#F5F3EC] sm:h-[118px]">

@@ -11,6 +11,9 @@ import {
   UserPlus,
   X,
   Copy,
+  History,
+  RotateCcw,
+  Clock3,
 } from "lucide-react";
 import QuestionEditor from "../components/QuestionEditor";
 import RichTextInput from "../components/RichTextInput";
@@ -18,15 +21,28 @@ import PreviewForm from "../components/PreviewForm";
 import ResponsesView from "../components/ResponsesView";
 import { IconButton, Toggle } from "../components/Primitives";
 import { Popover, Modal } from "../components/Overlay";
-import { clearResponses as clearStoredResponses, getFormDoc, saveFormDoc, submitResponse } from "../lib/formsStore";
+import { clearResponses as clearStoredResponses, getFormDoc, getFormVersions, saveFormDoc, saveFormVersion, submitResponse } from "../lib/formsStore";
 import { emptyForm, defaultQuestion, uid } from "../questionTypes";
 import { ensureFormKeyPair } from "../lib/secureResponses";
+import { sanitizeImageSource } from "../lib/sanitizeRichText";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
 import AuthControl from "../components/AuthControl";
 import QuickAddToolbar from "../components/QuickAddToolbar";
 
 const PALETTE_SWATCHES = [MD.primary, ...CHART_PALETTE.filter((c) => c !== MD.primary), NAVER_GREEN];
 const BACKGROUND_SWATCHES = ["#F5F3EC", "#FFFDF8", "#FFF2E8", "#EAF6EF", "#EAF1FB", "#FCEFEF"];
+
+function formatVersionDate(value) {
+  if (!value) return "저장 시각 없음";
+  return new Date(value).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function versionReasonLabel(reason) {
+  if (reason === "initial") return "처음 저장";
+  if (reason === "before_restore") return "복원 전 자동 보관";
+  if (reason === "restore") return "이전 버전 복원";
+  return "자동 저장";
+}
 
 function normalizeForm(value) {
   const fallback = emptyForm();
@@ -46,7 +62,14 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const [tab, setTab] = useState("edit");
   const [loaded, setLoaded] = useState(false);
   const [saveState, setSaveState] = useState("saved");
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [versions, setVersions] = useState([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
   const saveTimer = useRef(null);
+  const versionTimer = useRef(null);
+  const lastVersionFingerprint = useRef("");
   const loadedRef = useRef(false);
   const formRef = useRef(form);
 
@@ -112,9 +135,13 @@ export default function FormEditorPage({ formId, user, onBack }) {
     loadedRef.current = false;
     setPast([]);
     setFuture([]);
+    setVersions([]);
+    lastVersionFingerprint.current = "";
     pendingSnapshot.current = null;
     if (historyTimer.current) clearTimeout(historyTimer.current);
+    if (versionTimer.current) clearTimeout(versionTimer.current);
     historyTimer.current = null;
+    versionTimer.current = null;
     (async () => {
       const doc = await getFormDoc(formId);
       let nextForm = normalizeForm(doc?.form);
@@ -123,6 +150,14 @@ export default function FormEditorPage({ formId, user, onBack }) {
       formRef.current = nextForm;
       setForm(nextForm);
       setResponses(doc?.responses || []);
+      lastVersionFingerprint.current = JSON.stringify(nextForm);
+      const loadedVersions = await getFormVersions(formId);
+      if (loadedVersions.length) {
+        setVersions(loadedVersions);
+      } else {
+        const created = await saveFormVersion(formId, nextForm, "initial");
+        if (created) setVersions(await getFormVersions(formId));
+      }
       loadedRef.current = true;
       setLoaded(true);
     })();
@@ -144,13 +179,46 @@ export default function FormEditorPage({ formId, user, onBack }) {
     return () => clearTimeout(saveTimer.current);
   }, [form, loaded, formId]);
 
+  useEffect(() => {
+    if (!loaded || !form.publicKey) return undefined;
+    const fingerprint = JSON.stringify(form);
+    if (fingerprint === lastVersionFingerprint.current) return undefined;
+    if (versionTimer.current) clearTimeout(versionTimer.current);
+    versionTimer.current = setTimeout(async () => {
+      const saved = await saveFormVersion(formId, form, "autosave");
+      if (!saved) return;
+      lastVersionFingerprint.current = fingerprint;
+      setVersions(await getFormVersions(formId));
+    }, 8_000);
+    return () => clearTimeout(versionTimer.current);
+  }, [form, formId, loaded]);
+
+  const openVersionHistory = async () => {
+    setHistoryOpen(true);
+    setVersionsLoading(true);
+    try {
+      setVersions(await getFormVersions(formId));
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  const requestVersionRestore = (version) => {
+    setHistoryOpen(false);
+    setConfirmAction({
+      kind: "version",
+      version,
+      title: "이전 버전 복원",
+      description: `${formatVersionDate(version.createdAt)}에 저장된 “${version.summary?.title || "제목 없는 설문지"}” 버전으로 돌아갑니다. 현재 상태도 먼저 암호화된 버전으로 보관합니다.`,
+    });
+  };
+
   // ---- question CRUD ----
   const updateQuestion = (id, next) => {
     updateForm((f) => ({ ...f, questions: f.questions.map((q) => (q.id === id ? next : q)) }));
   };
-  const deleteQuestion = (id) => {
-    if (typeof window !== "undefined" && !window.confirm("이 질문을 삭제할까요? 실행 취소로 복원할 수 있어요.")) return;
-    updateForm((f) => ({ ...f, questions: f.questions.filter((q) => q.id !== id) }));
+  const requestQuestionDelete = (id) => {
+    setConfirmAction({ kind: "question", id, title: "질문 삭제", description: "이 질문을 삭제합니다. 저장 후에도 버전 기록에서 이전 상태를 확인할 수 있어요." });
   };
   const duplicateQuestion = (id) => {
     updateForm((f) => {
@@ -192,19 +260,57 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const handleFormSubmit = useCallback(async (answers) => {
     const result = await submitResponse(formId, answers, form.publicKey);
     if (!result.ok) {
-      window.alert("응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
+      setToast("응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
       return;
     }
     setResponses((r) => [...r, result.response]);
   }, [formId, form.publicKey]);
-  const clearResponses = async () => {
-    if (typeof window !== "undefined" && !window.confirm("모든 응답을 삭제할까요? 이 작업은 되돌릴 수 없어요.")) return;
-    const cleared = await clearStoredResponses(formId);
-    if (!cleared) {
-      window.alert("응답을 삭제할 권한이 없거나 저장소에 연결되지 않았어요.");
-      return;
+  const requestClearResponses = () => {
+    setConfirmAction({ kind: "responses", title: "모든 응답 삭제", description: "이 폼의 암호화된 응답을 모두 삭제합니다. 이 작업은 되돌릴 수 없습니다." });
+  };
+
+  const performConfirmation = async () => {
+    if (!confirmAction || confirming) return;
+    setConfirming(true);
+    try {
+      if (confirmAction.kind === "version") {
+        const current = normalizeForm(formRef.current);
+        await saveFormVersion(formId, current, "before_restore");
+        const versionForm = normalizeForm(confirmAction.version.form);
+        const restored = versionForm.descriptionImage?.versionImageOmitted
+          ? { ...versionForm, descriptionImage: current.descriptionImage || null }
+          : versionForm;
+        const didSave = await saveFormDoc(formId, { form: restored });
+        if (!didSave) {
+          setToast("이전 버전을 저장하지 못했어요. 네트워크와 로그인 상태를 확인해주세요.");
+          return;
+        }
+        formRef.current = restored;
+        lastVersionFingerprint.current = JSON.stringify(restored);
+        setForm(restored);
+        await saveFormVersion(formId, restored, "restore");
+        setVersions(await getFormVersions(formId));
+        setConfirmAction(null);
+        setToast("이전 버전으로 복원했습니다.");
+        return;
+      }
+      if (confirmAction.kind === "question") {
+        updateForm((f) => ({ ...f, questions: f.questions.filter((q) => q.id !== confirmAction.id) }));
+        setConfirmAction(null);
+        return;
+      }
+      if (confirmAction.kind === "responses") {
+        const cleared = await clearStoredResponses(formId);
+        if (!cleared) {
+          setToast("응답을 삭제할 권한이 없거나 저장소에 연결되지 않았어요.");
+          return;
+        }
+        setResponses([]);
+        setConfirmAction(null);
+      }
+    } finally {
+      setConfirming(false);
     }
-    setResponses([]);
   };
 
   // ---- share / theme / collaborators ----
@@ -234,8 +340,8 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   const handleDescriptionImageUpload = (file) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setToast("이미지 파일만 넣을 수 있어요.");
+    if (!new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]).has(file.type)) {
+      setToast("PNG, JPG, GIF, WebP 이미지만 넣을 수 있어요.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
@@ -243,7 +349,14 @@ export default function FormEditorPage({ formId, user, onBack }) {
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => updateForm((f) => ({ ...f, descriptionImage: { src: reader.result, alt: file.name.replace(/\\.[^.]+$/, "") } }));
+    reader.onload = () => {
+      const src = sanitizeImageSource(reader.result);
+      if (!src) {
+        setToast("안전한 이미지 형식인지 확인해주세요.");
+        return;
+      }
+      updateForm((f) => ({ ...f, descriptionImage: { src, alt: file.name.replace(/\\.[^.]+$/, "") } }));
+    };
     reader.readAsDataURL(file);
   };
 
@@ -351,6 +464,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
             <IconButton title="다시 실행" onClick={redo} disabled={future.length === 0}>
               <Redo2 size={18} />
             </IconButton>
+            <IconButton title="버전 기록" onClick={openVersionHistory}>
+              <History size={18} />
+            </IconButton>
             <IconButton title="링크 복사" onClick={copyLink}>
               <LinkIcon size={18} />
             </IconButton>
@@ -372,6 +488,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
           <IconButton title="미리보기" onClick={() => window.open(shareUrl, "_blank")}><Eye size={17} /></IconButton>
           <IconButton title="실행 취소" onClick={undo} disabled={past.length === 0}><Undo2 size={17} /></IconButton>
           <IconButton title="다시 실행" onClick={redo} disabled={future.length === 0}><Redo2 size={17} /></IconButton>
+          <IconButton title="버전 기록" onClick={openVersionHistory}><History size={17} /></IconButton>
           <IconButton title="링크 복사" onClick={copyLink}><LinkIcon size={17} /></IconButton>
           <button type="button" onClick={() => setShareOpen(true)} className="ml-1 flex-1 rounded-full px-3 py-2 text-xs font-semibold text-white" style={{ backgroundColor: accent }}>공유</button>
         </div>
@@ -455,7 +572,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
                     q={q}
                     index={i}
                     onChange={(next) => updateQuestion(q.id, next)}
-                    onDelete={() => deleteQuestion(q.id)}
+                    onDelete={() => requestQuestionDelete(q.id)}
                     onDuplicate={() => duplicateQuestion(q.id)}
                     onMove={(dir) => moveQuestion(q.id, dir)}
                     onDragStart={() => setDragIndex(i)}
@@ -469,7 +586,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
                 <button
                   type="button"
                   onClick={() => addQuestion("short")}
-                  className={`fixed bottom-6 right-4 z-20 flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-medium text-white transition-shadow active:scale-95 sm:right-8 lg:hidden ${ELEV3}`}
+                  className={`fixed bottom-6 right-4 z-20 flex items-center gap-2 rounded-2xl px-5 py-4 text-sm font-medium text-white transition-colors duration-150 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 sm:right-8 lg:hidden ${ELEV3}`}
                   style={{ backgroundColor: accent }}
                 >
                   <Plus size={20} /> 질문 추가
@@ -480,7 +597,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
             {tab === "responses" && canViewResponses && (
               <div>
                 <div className="mb-3 text-xs font-medium text-[#59645E]">작성자 전용 · 이 폼의 소유자만 응답을 복호화하고 내보낼 수 있어요.</div>
-                <ResponsesView form={form} responses={responses} onClear={clearResponses} />
+                <ResponsesView form={form} formId={formId} responses={responses} onClear={requestClearResponses} />
               </div>
             )}
 
@@ -627,6 +744,42 @@ export default function FormEditorPage({ formId, user, onBack }) {
           </>
         )}
       </div>
+
+      {historyOpen && (
+        <Modal title="버전 기록" onClose={() => setHistoryOpen(false)}>
+          <p className="mb-4 text-xs leading-5 text-[#59645E]">변경 후 8초간 입력이 멈추면 현재 폼 구조·설정이 암호화된 상태로 자동 보관됩니다. 응답 원문과 업로드 이미지 원본은 복원 대상에 포함되지 않습니다.</p>
+          {versionsLoading ? (
+            <div className="py-8 text-center text-sm text-[#78837C]">버전 기록을 불러오는 중…</div>
+          ) : versions.length ? (
+            <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
+              {versions.map((version, index) => (
+                <article key={version.id} className="rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="mt-0.5 rounded-lg bg-[#EAF6EF] p-1.5 text-[#17866D]"><Clock3 size={14} /></div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2"><strong className="truncate text-sm text-[#17251F]">{version.summary?.title || "제목 없는 설문지"}</strong>{index === 0 && <span className="rounded-full bg-[#D8ED59] px-1.5 py-0.5 text-[10px] font-bold text-[#17251F]">최신</span>}</div>
+                      <p className="mt-1 text-xs text-[#78837C]">{formatVersionDate(version.createdAt)} · 질문 {version.summary?.questionCount ?? version.form.questions?.length ?? 0}개 · {versionReasonLabel(version.summary?.reason)}</p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => requestVersionRestore(version)} className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#B7DCC8] bg-white px-3 py-1.5 text-xs font-semibold text-[#0B4D3D] transition-colors hover:bg-[#EAF6EF]"><RotateCcw size={13} /> 이 버전으로 복원</button>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-[#C9CEC6] bg-[#F8F9F4] px-4 py-8 text-center text-sm leading-6 text-[#78837C]">아직 복원할 버전이 없어요. 폼을 수정하면 자동저장 버전이 여기에 쌓입니다.</div>
+          )}
+        </Modal>
+      )}
+
+      {confirmAction && (
+        <Modal title={confirmAction.title} onClose={() => !confirming && setConfirmAction(null)}>
+          <p className="text-sm leading-6 text-[#59645E]">{confirmAction.description}</p>
+          <div className="mt-5 flex justify-end gap-2">
+            <button type="button" onClick={() => setConfirmAction(null)} disabled={confirming} className="rounded-full border border-[#C9CEC6] bg-white px-4 py-2 text-sm font-semibold text-[#59645E] transition-colors hover:bg-[#F5F3EC] disabled:opacity-50">취소</button>
+            <button type="button" onClick={performConfirmation} disabled={confirming} className="rounded-full bg-[#B3261E] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#8C1D18] disabled:cursor-wait disabled:opacity-60">{confirming ? "처리 중…" : "삭제"}</button>
+          </div>
+        </Modal>
+      )}
 
       {shareOpen && (
         <Modal title="공유" onClose={() => setShareOpen(false)}>

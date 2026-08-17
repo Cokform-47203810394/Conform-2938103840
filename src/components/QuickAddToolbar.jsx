@@ -31,8 +31,8 @@ function QuickAddButton({ item, onAdd, compact = false }) {
       title={`${item.label} 질문 추가`}
       aria-label={`${item.label} 질문 추가`}
       className={compact
-        ? "group flex shrink-0 items-center gap-1.5 rounded-xl border border-[#DDE1D9] bg-white px-3 py-2 text-xs font-semibold text-[#59645E] shadow-sm transition hover:-translate-y-0.5 hover:border-[#17866D] hover:text-[#0B4D3D] active:scale-[0.97]"
-        : "group flex h-12 w-12 items-center justify-center rounded-2xl border border-[#DDE1D9] bg-white text-[#59645E] shadow-[0_2px_8px_rgba(23,37,31,0.10)] transition hover:-translate-y-0.5 hover:border-[#17866D] hover:bg-[#F0FAF6] hover:text-[#0B4D3D] active:scale-[0.97]"
+        ? "group flex shrink-0 items-center gap-1.5 rounded-xl border border-[#DDE1D9] bg-white px-3 py-2 text-xs font-semibold text-[#59645E] shadow-sm transition-colors duration-150 hover:border-[#17866D] hover:bg-[#F0FAF6] hover:text-[#0B4D3D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/40"
+        : "group flex h-12 w-12 items-center justify-center rounded-2xl border border-[#DDE1D9] bg-white text-[#59645E] shadow-[0_2px_8px_rgba(23,37,31,0.10)] transition-colors duration-150 hover:border-[#17866D] hover:bg-[#F0FAF6] hover:text-[#0B4D3D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/40"
       }
     >
       <Icon size={compact ? 15 : 19} strokeWidth={1.8} />

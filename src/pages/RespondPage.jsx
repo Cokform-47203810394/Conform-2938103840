@@ -6,6 +6,7 @@ import { ELEV1, MD } from "../theme";
 export default function RespondPage({ formId }) {
   const [doc, setDoc] = useState(undefined); // undefined = loading, null = not found
   const [alreadyResponded, setAlreadyResponded] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     getFormDoc(formId).then((d) => {
@@ -32,9 +33,10 @@ export default function RespondPage({ formId }) {
   const blocked = form.settings?.limitOneResponse && alreadyResponded;
 
   const handleSubmit = async (answers) => {
+    setSubmitError("");
     const result = await submitResponse(formId, answers, form.publicKey, form.settings);
     if (!result.ok) {
-      window.alert(result.reason === "duplicate" ? "이미 이 폼에 응답을 제출했어요." : "응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
+      setSubmitError(result.reason === "duplicate" ? "이미 이 폼에 응답을 제출했어요." : "응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
       return false;
     }
     if (form.settings?.limitOneResponse) {
@@ -60,6 +62,7 @@ export default function RespondPage({ formId }) {
   return (
     <div className="min-h-[100dvh] px-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-4 sm:py-6" style={{ backgroundColor: form.backgroundColor || "#F5F3EC" }}>
       <div className="mx-auto max-w-2xl">
+        {submitError && <div role="alert" className="mb-3 rounded-xl border border-[#F2B8B5] bg-[#FFF6F5] px-4 py-3 text-sm text-[#8C1D18]">{submitError}</div>}
         <PreviewForm form={form} onSubmit={handleSubmit} accent={accent} />
       </div>
     </div>

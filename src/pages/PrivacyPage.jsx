@@ -29,18 +29,18 @@ export default function PrivacyPage({ onBack }) {
           <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D8ED59] text-[#17251F]"><ShieldCheck size={24} /></div>
           <p className="font-mono text-xs font-bold tracking-[0.18em] text-[#D8ED59]">COKFORM / PRIVACY & LEGAL</p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">개인정보·법적 안내</h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#D6E1D8]">콕폼은 응답 내용을 가능한 한 운영자 브라우저에서만 읽을 수 있도록 설계합니다. 아래 안내는 콕폼 플랫폼의 처리와 폼 운영자의 책임을 분리해 설명합니다.</p>
-          <div className="mt-5 flex flex-wrap gap-2 text-xs text-[#D6E1D8]"><span className="rounded-full bg-white/10 px-3 py-1.5">시행 예정일: 2026년 __월 __일</span><span className="rounded-full bg-white/10 px-3 py-1.5">파일럿 정책 초안</span></div>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#D6E1D8]">콕폼은 응답 내용을 가능한 한 운영자 브라우저에서만 읽을 수 있도록 설계합니다. 아래 방침은 콕폼 플랫폼의 처리와 폼 운영자의 책임을 분리해 설명합니다.</p>
+          <div className="mt-5 flex flex-wrap gap-2 text-xs text-[#D6E1D8]"><span className="rounded-full bg-white/10 px-3 py-1.5">시행일: 2026년 8월 18일</span><span className="rounded-full bg-white/10 px-3 py-1.5">파일럿 운영 정책</span></div>
         </header>
 
         <section className="mb-8 rounded-2xl border border-[#E4C77A] bg-[#FFF8DE] p-4 text-sm leading-6 text-[#65521A]">
-          <strong>공개 전 필수 확정 항목:</strong> 대표자·법인명, 사업자등록번호, 주소, 개인정보 보호책임자와 이메일, 실제 데이터베이스·호스팅·메일 업체의 처리지역과 계약 정보는 운영자가 확정해 빈칸 없이 채워야 합니다. 이 페이지는 법률 자문을 대신하지 않습니다.
+          <strong>운영 정보 안내:</strong> 개인정보 보호 관련 문의는 <a href="mailto:seoharo0111@gmail.com" className="font-semibold underline underline-offset-2">seoharo0111@gmail.com</a>으로 보내주세요. 대표자·사업자 정보와 실제 데이터베이스·호스팅·메일 업체의 처리지역·계약 정보는 서비스 운영 범위가 확정되는 대로 변경 이력과 함께 보완합니다.
         </section>
 
         <div className="space-y-4">
           <section className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(23,37,31,0.06)] sm:p-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold"><FileCheck2 size={19} className="text-[#17866D]" /> 콕폼 플랫폼 개인정보처리방침</h2>
-            <p className="mt-2 text-sm leading-6 text-[#59645E]">정식 공개본에는 수집 항목·목적·보유기간, 법적 근거, 제3자 제공, 처리위탁, 국외 이전, 파기, 권리행사, 안전성 확보조치, 책임자, 변경 이력을 포함합니다.</p>
+            <p className="mt-2 text-sm leading-6 text-[#59645E]">이 방침은 콕폼이 처리하는 정보의 항목·목적·보유, 응답 원문 보호 방식, 권리 행사와 변경 이력을 설명합니다. 서비스에 접속하거나 이용하는 경우 이 방침의 적용을 확인한 것으로 봅니다. 다만 법령상 별도 동의가 필요한 개인정보 수집·이용, 제3자 제공 등의 사항은 각 폼 또는 해당 화면에서 별도로 명시적 동의를 받습니다.</p>
           </section>
           {platformSections.map(([title, body]) => <InfoSection key={title} title={title} body={body} />)}
 
@@ -52,7 +52,7 @@ export default function PrivacyPage({ onBack }) {
 
           <section className="rounded-2xl border border-[#B7DCC8] bg-[#F1FAF4] p-5 text-sm leading-6 text-[#355C45] sm:p-6">
             <h2 className="font-semibold text-[#0B4D3D]">권리 행사 및 문의</h2>
-            <p className="mt-2">콕폼 계정·서비스 운영 정보에 대한 문의: <strong>[privacy@cokform.example — 실제 주소로 교체]</strong></p>
+            <p className="mt-2">콕폼 계정·서비스 운영 정보에 대한 문의: <a href="mailto:seoharo0111@gmail.com" className="font-semibold underline underline-offset-2">seoharo0111@gmail.com</a></p>
             <p className="mt-1">응답 원문에 대한 열람·정정·삭제 요청: 해당 폼의 운영자에게 문의하세요. 콕폼은 암호화된 응답 원문을 복호화할 수 없습니다.</p>
           </section>
 
@@ -61,7 +61,7 @@ export default function PrivacyPage({ onBack }) {
             <div className="mt-3 grid gap-2 text-sm text-[#59645E]"><a className="inline-flex items-center gap-1.5 hover:text-[#0B4D3D] hover:underline" href="https://www.pipc.go.kr/np/cop/bbs/selectBoardArticle.do?bbsId=BS217&mCode=D010030000.Updated&nttId=12018" target="_blank" rel="noreferrer">개인정보보호위원회 처리방침 작성지침 <ExternalLink size={14} /></a><a className="inline-flex items-center gap-1.5 hover:text-[#0B4D3D] hover:underline" href="https://www.law.go.kr/lsInfoP.do?lsId=011357&ancYnChk=0" target="_blank" rel="noreferrer">국가법령정보센터 개인정보 보호법 <ExternalLink size={14} /></a></div>
           </section>
         </div>
-        <p className="mt-8 text-xs leading-5 text-[#78837C]">최종 공개 전 실제 처리업체·리전·계약·문의처를 확인하고 법률 전문가의 검토를 받으세요. 문서 변경 시 시행일과 변경 내용을 기록합니다.</p>
+        <p className="mt-8 text-xs leading-5 text-[#78837C]">시행일: 2026년 8월 18일 · 문서 변경 시 시행일과 변경 내용을 이 페이지에 기록합니다. 실제 처리업체·리전·계약 범위가 달라지면 이 방침도 함께 갱신합니다.</p>
       </div>
     </main>
   );

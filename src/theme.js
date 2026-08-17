@@ -58,8 +58,10 @@ export const NAVER_GREEN = BRAND.green;
 export const ELEV1 = "shadow-[0_2px_4px_rgba(23,37,31,0.06),0_8px_20px_rgba(23,37,31,0.04)]";
 export const ELEV2 = "shadow-[0_4px_12px_rgba(23,37,31,0.08),0_16px_32px_rgba(23,37,31,0.06)]";
 export const ELEV3 = "shadow-[0_8px_24px_rgba(23,37,31,0.12),0_24px_48px_rgba(23,37,31,0.08)]";
+// 클릭 표면은 위치·크기를 바꾸지 않습니다. 포인터가 경계 위에서 반복 진입하는
+// hover jitter를 막고, 색상·그림자만으로 상태를 알려줍니다.
 export const ELEV1_HOVER =
-  "shadow-[0_2px_4px_rgba(23,37,31,0.06),0_8px_20px_rgba(23,37,31,0.04)] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(23,37,31,0.12),0_24px_48px_rgba(23,37,31,0.08)]";
+  "shadow-[0_2px_4px_rgba(23,37,31,0.06),0_8px_20px_rgba(23,37,31,0.04)] transition-shadow duration-150 hover:shadow-[0_8px_24px_rgba(23,37,31,0.12),0_24px_48px_rgba(23,37,31,0.08)]";
 
 export const FIELD =
   "w-full rounded-xl bg-[#F5F3EC] px-3.5 py-3 text-base text-[#17251F] outline-none ring-1 ring-inset ring-[#DDE1D9] focus:bg-white focus:ring-2 focus:ring-[#17866D] transition-colors";

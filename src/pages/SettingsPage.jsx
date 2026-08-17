@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Cloud, CloudOff, LogIn, LogOut, ShieldCheck, ExternalLink } from "lucide-react";
+import { Cloud, CloudOff, LogIn, LogOut, ShieldCheck, ExternalLink, Table2 } from "lucide-react";
 import { ELEV1, MD } from "../theme";
 import { hasSupabaseConfig } from "../lib/supabaseClient";
 import { signInWithGoogle, signOut, subscribeAuth } from "../lib/auth";
@@ -55,6 +55,12 @@ export default function SettingsPage() {
             <LogIn size={15} /> Google로 로그인
           </button>
         )}
+      </div>
+
+      <div className={`rounded-xl bg-white p-5 ${ELEV1}`}>
+        <div className="flex items-center gap-2 text-base font-medium text-[#17251F]"><Table2 size={18} className="text-[#17866D]" /> 외부 내보내기</div>
+        <p className="mt-2 text-sm leading-6 text-[#59645E]">응답 화면의 <strong>내보내기</strong>에서 CSV·Excel·JSON·요약 PNG·PPTX를 이 기기에서 만들 수 있고, 원할 때만 Google Sheets 또는 내 Google Drive로 보낼 수 있어요.</p>
+        <p className="mt-2 text-xs leading-5 text-[#78837C]">Drive 연결은 파일 생성에 필요한 최소 권한만 요청하며, 자동 동기화는 기본으로 켜지지 않습니다. 복호화된 응답 원문은 버튼을 누른 작성자의 브라우저에서만 외부로 전송됩니다.</p>
       </div>
 
       <div className="rounded-xl border border-[#B7DCC8] bg-[#F1FAF4] p-5 text-sm leading-6 text-[#355C45]">

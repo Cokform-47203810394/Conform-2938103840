@@ -1,6 +1,8 @@
 import { getSupabaseClient } from "./supabaseClient";
 
-export async function signInWithGoogle() {
+export const GOOGLE_PROVIDER_TOKEN_KEY = "cokform:google:provider-token";
+
+export async function signInWithGoogle({ scopes, prompt } = {}) {
   const supabase = getSupabaseClient();
   if (!supabase) {
     window.alert("서비스 연결이 아직 준비되지 않았어요.");
@@ -14,7 +16,11 @@ export async function signInWithGoogle() {
     : "https://cokform.pages.dev/";
   await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo },
+    options: {
+      redirectTo,
+      ...(scopes ? { scopes } : {}),
+      ...(prompt ? { queryParams: { prompt } } : {}),
+    },
   });
 }
 
@@ -33,9 +39,13 @@ export function subscribeAuth(callback) {
     return () => {};
   }
 
-  supabase.auth.getUser().then(({ data }) => callback(data?.user ?? null));
+  supabase.auth.getSession().then(({ data }) => {
+    if (data?.session?.provider_token) sessionStorage.setItem(GOOGLE_PROVIDER_TOKEN_KEY, data.session.provider_token);
+    callback(data?.session?.user ?? null);
+  });
 
   const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.provider_token) sessionStorage.setItem(GOOGLE_PROVIDER_TOKEN_KEY, session.provider_token);
     callback(session?.user ?? null);
   });
 

@@ -5,7 +5,7 @@ export function IconButton({ onClick, title, children, danger, disabled }) {
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition-colors active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent hover:bg-[#17251F]/[0.08] ${
+      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/45 disabled:opacity-30 disabled:hover:bg-transparent hover:bg-[#17251F]/[0.08] ${
         danger ? "hover:text-[#B3261E]" : "hover:text-[#17251F]"
       }`}
     >
@@ -24,7 +24,7 @@ export function Toggle({ checked, onChange, label }) {
         aria-checked={checked}
         aria-label={label || "설정 전환"}
         onClick={() => onChange(!checked)}
-        className={`relative h-6 w-11 shrink-0 rounded-full p-0.5 outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#17866D]/40 active:scale-[0.97] ${
+        className={`relative h-6 w-11 shrink-0 rounded-full p-0.5 outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#17866D]/40 ${
           checked ? "bg-[#17866D]" : "bg-[#C9CEC6]"
         }`}
       >

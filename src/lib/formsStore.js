@@ -5,9 +5,12 @@ import { decryptAnswers, encryptAnswers, isEncryptedEnvelope } from "./secureRes
 const INDEX_KEY = "form-builder:index";
 const DOC_PREFIX = "form-builder:doc";
 const RESPONSE_PREFIX = "form-builder:responses";
+const VERSION_PREFIX = "form-builder:versions";
 const TABLE = "forms";
 const PUBLIC_TABLE = "form_public";
 const RESPONSE_TABLE = "responses";
+const VERSION_TABLE = "form_versions";
+const MAX_LOCAL_VERSIONS = 60;
 
 function readIndexLocal() {
   try {
@@ -39,6 +42,37 @@ function readResponsesLocal(id) {
 
 function writeResponsesLocal(id, responses) {
   localStorage.setItem(`${RESPONSE_PREFIX}:${id}`, JSON.stringify(responses));
+}
+
+function readVersionsLocal(id) {
+  try {
+    const raw = localStorage.getItem(`${VERSION_PREFIX}:${id}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeVersionsLocal(id, versions) {
+  localStorage.setItem(`${VERSION_PREFIX}:${id}`, JSON.stringify(versions.slice(0, MAX_LOCAL_VERSIONS)));
+}
+
+function compactVersionForm(form) {
+  const copy = JSON.parse(JSON.stringify(form || {}));
+  // Data-URL images can be up to 2 MB each. Repeating them in up to 60 snapshots
+  // would make storage unpredictable, so preserve only the structural form history.
+  if (copy.descriptionImage?.src?.startsWith("data:")) {
+    copy.descriptionImage = { ...copy.descriptionImage, src: "", versionImageOmitted: true };
+  }
+  return copy;
+}
+
+function versionSummary(form, reason = "autosave") {
+  return {
+    title: form?.title?.trim() || "제목 없는 설문지",
+    questionCount: Array.isArray(form?.questions) ? form.questions.length : 0,
+    reason,
+  };
 }
 
 function publicFormData(form) {
@@ -220,6 +254,80 @@ export async function saveFormDoc(id, doc) {
   }
 }
 
+export async function saveFormVersion(formId, form, reason = "autosave") {
+  if (!form?.publicKey) return false;
+  const snapshot = await encryptAnswers(form.publicKey, { form: compactVersionForm(form) });
+  const summary = versionSummary(form, reason);
+  const now = new Date().toISOString();
+
+  const savedRemotely = await trySupabase("버전 저장", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return undefined;
+    const { error } = await supabase.from(VERSION_TABLE).insert({
+      form_id: formId,
+      snapshot,
+      summary,
+      created_at: now,
+    });
+    return error ? undefined : true;
+  });
+  if (savedRemotely) return true;
+  if (getSupabaseClient()) return false;
+
+  try {
+    const versions = readVersionsLocal(formId);
+    versions.unshift({ id: uid(), createdAt: now, snapshot, summary });
+    writeVersionsLocal(formId, versions);
+    return true;
+  } catch (error) {
+    console.warn("폼 버전 저장 실패", error);
+    return false;
+  }
+}
+
+export async function getFormVersions(formId) {
+  const remote = await trySupabase("버전 조회", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return undefined;
+    const { data, error } = await supabase
+      .from(VERSION_TABLE)
+      .select("id, created_at, snapshot, summary")
+      .eq("form_id", formId)
+      .order("created_at", { ascending: false })
+      .limit(MAX_LOCAL_VERSIONS);
+    if (error) return undefined;
+    const versions = await Promise.all((data || []).map(async (row) => {
+      const decoded = isEncryptedEnvelope(row.snapshot)
+        ? await decryptAnswers(formId, row.snapshot).catch(() => null)
+        : null;
+      if (!decoded?.form) return null;
+      return {
+        id: row.id,
+        createdAt: row.created_at,
+        form: decoded.form,
+        summary: row.summary || versionSummary(decoded.form),
+      };
+    }));
+    return versions.filter(Boolean);
+  });
+  if (remote !== undefined) return remote;
+  if (hasSupabaseConfig()) return [];
+
+  const versions = await Promise.all(readVersionsLocal(formId).map(async (row) => {
+    const decoded = isEncryptedEnvelope(row.snapshot)
+      ? await decryptAnswers(formId, row.snapshot).catch(() => null)
+      : null;
+    if (!decoded?.form) return null;
+    return {
+      id: row.id,
+      createdAt: row.createdAt,
+      form: decoded.form,
+      summary: row.summary || versionSummary(decoded.form),
+    };
+  }));
+  return versions.filter(Boolean);
+}
+
 export async function submitResponse(formId, answers, publicKey, settings = {}) {
   const encryptedAnswers = publicKey ? await encryptAnswers(publicKey, answers) : answers;
   const response = { id: uid(), submittedAt: new Date().toISOString(), answers };
@@ -302,6 +410,7 @@ export async function deleteFormDoc(id) {
     if (hasSupabaseConfig()) return false;
     localStorage.removeItem(`${DOC_PREFIX}:${id}`);
     localStorage.removeItem(`${RESPONSE_PREFIX}:${id}`);
+    localStorage.removeItem(`${VERSION_PREFIX}:${id}`);
     writeIndexLocal(readIndexLocal().filter((f) => f.id !== id));
   }
   return true;
