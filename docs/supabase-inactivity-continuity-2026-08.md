@@ -34,3 +34,9 @@ Supabase 공식 정책상 무료 플랜 프로젝트는 지난 7일간 충분한
 - 기존 `supabase-encrypted-backup.yml`은 매일 04:29 KST 실행되도록 등록돼 있으나, 실제 수동 실행에서 `SUPABASE_DB_URL GitHub Secret이 없습니다.`로 시작 단계에서 실패했다.
 - 따라서 현재는 암호화 DB 백업이 생성되지 않으며, 이 워크플로가 Supabase 활동을 유지한다는 보장도 없다.
 - `SUPABASE_DB_URL`과 `BACKUP_AGE_RECIPIENT`를 설정한 뒤 수동 실행 1회 성공을 확인해야 백업 보호를 활성화로 판단할 수 있다.
+
+## 2일 주기 유지 요청 검증
+
+`Keep Cokform Supabase active` 워크플로를 2026-08-18에 수동 실행했고 성공했다. 이 작업은 `form_public`에서 공개 폼 식별자 최대 1개만 읽고, 응답 내용·암호문·개인정보를 출력하거나 저장하지 않는다. 다음 자동 실행은 UTC 03:17(한국 시간 12:17)에 2일 주기로 동작한다.
+
+작업이 HTTP 200 이외의 상태를 받거나 네트워크 요청에 실패하면 GitHub Actions 실행은 실패 상태로 종료된다. 운영자는 Actions의 `Keep Cokform Supabase active` 실행 결과를 확인하면 되고, GitHub 알림에서 해당 워크플로 실패 알림을 허용해 두는 것이 권장된다. 7일의 Supabase 비활성 판정 창보다 짧은 2일 간격이므로, 한 번의 예약 실행이 지연되거나 실패해도 다음 실행 전 수동 조치 여유가 있다.
