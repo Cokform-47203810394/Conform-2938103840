@@ -44,3 +44,5 @@ Vite 8 기반 코드 분할 후 로컬 홈과 `/terms`를 다시 브라우저에
 Cloudflare Pages 배포 워크플로는 커밋 `ce11f85`에서 성공했다. 운영 URL `https://cokform.pages.dev`의 홈 화면도 2026-08-18 KST에 정상 렌더링됨을 확인했다. 이전 GitHub Pages 워크플로는 Cloudflare 배포와 중복되고 이 서비스의 기준 URL이 아니므로 제거했으며, 이후 푸시에는 Cloudflare Pages 워크플로만 실행된다.
 
 첫 화면 폼 카드용 커버 이미지 기능은 로컬 프로덕션 빌드에서 다시 컴파일했다. 커버 이미지 URL 정화 규칙은 HTTPS와 사이트 상대 경로만 허용하고, `http:` 및 `javascript:` URL을 거부함을 브라우저에서 확인했다. 업로드 형식은 PNG·JPG·GIF·WebP로 제한하며, 카드용 업로드는 1MB 이하로 제한한다.
+
+응답 시작·마감 시각과 즉시 재오픈 기능은 로컬 프로덕션 빌드를 통과했다. 운영 Cokform Supabase에는 공개 삽입 RLS 정책을 갱신해 `acceptingResponses`, `responseStartAt`, `responseEndAt`을 데이터베이스의 `now()`와 비교하도록 적용했고, 적용된 정책 정의도 조회로 확인했다. 브라우저 Web Crypto 개발 환경에서는 기간 제한 없음(`open`), 시작 전(`not_started`), 기간 마감(`ended`), 수동 마감(`manually_closed`) 상태와 마감 안내 문구를 모두 정상 판정했다.

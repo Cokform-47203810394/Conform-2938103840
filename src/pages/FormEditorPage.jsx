@@ -40,6 +40,7 @@ import {
   unlockFormKeyVault,
 } from "../lib/secureResponses";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
+import { fromDateTimeLocalValue, getResponseWindowMessage, getResponseWindowState, toDateTimeLocalValue } from "../lib/responseWindow";
 import { analyzePrivacyRisk, PRIVACY_AUDIT_LEVEL } from "../lib/privacyAudit";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
 import AuthControl from "../components/AuthControl";
@@ -505,6 +506,12 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const coverImageSrc = sanitizeImageSource(form.coverImage?.src);
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}?respond=${formId}` : "";
   const privacyAudit = analyzePrivacyRisk(form);
+  const responseWindowState = getResponseWindowState(form.settings);
+  const responseScheduleInvalid = Boolean(
+    form.settings?.responseStartAt
+    && form.settings?.responseEndAt
+    && new Date(form.settings.responseEndAt).getTime() <= new Date(form.settings.responseStartAt).getTime(),
+  );
 
   const openShare = () => {
     if (privacyAudit.blocking.length) {
@@ -882,16 +889,37 @@ export default function FormEditorPage({ formId, user, onBack }) {
                         onChange={(v) => updateForm((f) => ({ ...f, settings: { ...f.settings, limitOneResponse: v } }))}
                       />
                     </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <div className="text-sm text-[#17251F]">응답 받는 중</div>
-                        <div className="text-xs text-[#78837C]">꺼두면 공유 링크로 들어와도 제출할 수 없어요</div>
+                    <section className="rounded-xl border border-[#DDE1D9] bg-[#F8F9F4] p-3.5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-[#17251F]">응답 기간과 마감</div>
+                          <p className="mt-1 text-xs leading-5 text-[#78837C]">시작·마감 시각을 비워 두면 기간 제한 없이 응답을 받아요. 시간은 폼 작성자의 현재 시간대를 기준으로 설정됩니다.</p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${responseWindowState === "open" ? "bg-[#D8F5E8] text-[#0B4D3D]" : "bg-[#FBE4E0] text-[#B3261E]"}`}>{responseWindowState === "open" ? "응답 받는 중" : responseWindowState === "not_started" ? "시작 전" : "마감"}</span>
                       </div>
-                      <Toggle
-                        checked={form.settings?.acceptingResponses}
-                        onChange={(v) => updateForm((f) => ({ ...f, settings: { ...f.settings, acceptingResponses: v } }))}
-                      />
-                    </div>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <label className="block text-xs font-medium text-[#355C45]">
+                          응답 시작
+                          <div className="mt-1 flex gap-1.5">
+                            <input type="datetime-local" value={toDateTimeLocalValue(form.settings?.responseStartAt)} onChange={(event) => updateForm((current) => ({ ...current, settings: { ...current.settings, responseStartAt: fromDateTimeLocalValue(event.target.value) } }))} className="min-w-0 flex-1 rounded-lg border border-[#C9CEC6] bg-white px-2.5 py-2 text-xs text-[#17251F] outline-none focus:border-[#17866D]" />
+                            {form.settings?.responseStartAt && <button type="button" onClick={() => updateForm((current) => ({ ...current, settings: { ...current.settings, responseStartAt: null } }))} className="rounded-lg px-2 text-xs text-[#78837C] hover:bg-white">해제</button>}
+                          </div>
+                        </label>
+                        <label className="block text-xs font-medium text-[#355C45]">
+                          응답 마감
+                          <div className="mt-1 flex gap-1.5">
+                            <input type="datetime-local" value={toDateTimeLocalValue(form.settings?.responseEndAt)} onChange={(event) => updateForm((current) => ({ ...current, settings: { ...current.settings, responseEndAt: fromDateTimeLocalValue(event.target.value) } }))} className="min-w-0 flex-1 rounded-lg border border-[#C9CEC6] bg-white px-2.5 py-2 text-xs text-[#17251F] outline-none focus:border-[#17866D]" />
+                            {form.settings?.responseEndAt && <button type="button" onClick={() => updateForm((current) => ({ ...current, settings: { ...current.settings, responseEndAt: null } }))} className="rounded-lg px-2 text-xs text-[#78837C] hover:bg-white">해제</button>}
+                          </div>
+                        </label>
+                      </div>
+                      {responseScheduleInvalid && <p className="mt-3 rounded-lg bg-[#FFF4E5] px-3 py-2 text-xs leading-5 text-[#8A4B08]">마감 시각은 시작 시각보다 뒤여야 해요. 이 상태에서는 기간을 다시 설정해 주세요.</p>}
+                      <div className="mt-3 flex flex-wrap gap-2 border-t border-[#DDE1D9] pt-3">
+                        <button type="button" onClick={() => updateForm((current) => ({ ...current, settings: { ...current.settings, acceptingResponses: false } }))} disabled={form.settings?.acceptingResponses === false} className="rounded-full border border-[#E9B8B1] bg-white px-3 py-1.5 text-xs font-semibold text-[#B3261E] hover:bg-[#FBE4E0] disabled:cursor-not-allowed disabled:opacity-50">지금 마감하기</button>
+                        <button type="button" onClick={() => updateForm((current) => ({ ...current, settings: { ...current.settings, acceptingResponses: true, responseStartAt: null, responseEndAt: null } }))} disabled={responseWindowState === "open" && !form.settings?.responseStartAt && !form.settings?.responseEndAt} className="rounded-full border border-[#B7DCC8] bg-white px-3 py-1.5 text-xs font-semibold text-[#0B4D3D] hover:bg-[#EAF6EF] disabled:cursor-not-allowed disabled:opacity-50">지금 다시 열기</button>
+                        <span className="self-center text-[11px] text-[#78837C]">{getResponseWindowMessage(responseWindowState, form.settings)}</span>
+                      </div>
+                    </section>
                     <div className="border-t border-[#F0EEE6] pt-4">
                       <label className="flex items-center justify-between gap-4">
                         <span>

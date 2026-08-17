@@ -8,6 +8,23 @@ import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
 import { listForms, listParticipatedForms, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
 import { BRAND, MD, TYPE_COLORS, ELEV1, ELEV1_HOVER } from "../theme";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
+import { getResponseWindowState } from "../lib/responseWindow";
+
+function formResponseState(form) {
+  return getResponseWindowState({
+    acceptingResponses: form.acceptingResponses,
+    responseStartAt: form.responseStartAt,
+    responseEndAt: form.responseEndAt,
+  });
+}
+
+function formResponseLabel(form) {
+  const state = formResponseState(form);
+  if (state === "open") return "응답 중";
+  if (state === "not_started") return "시작 전";
+  if (state === "ended") return "기간 마감";
+  return "마감";
+}
 
 function formatRelative(iso) {
   if (!iso) return "";
@@ -271,7 +288,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
                   </div>
                   <div className="px-3 pb-2.5 pt-2.5">
                     <div className="truncate text-sm font-semibold text-[#17251F]">{f.title}</div>
-                    <div className="mt-1 flex items-center gap-2 text-[11px] text-[#78837C]"><span className={`inline-flex items-center gap-1 ${f.acceptingResponses === false ? "text-[#B3261E]" : "text-[#17866D]"}`}><span className={`h-1.5 w-1.5 rounded-full ${f.acceptingResponses === false ? "bg-[#B3261E]" : "bg-[#17866D]"}`} />{f.acceptingResponses === false ? "마감" : "응답 중"}</span><span>조회 {f.viewCount || 0}</span><span>응답 {f.responseCount || 0}</span></div>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-[#78837C]"><span className={`inline-flex items-center gap-1 ${formResponseState(f) === "open" ? "text-[#17866D]" : "text-[#B3261E]"}`}><span className={`h-1.5 w-1.5 rounded-full ${formResponseState(f) === "open" ? "bg-[#17866D]" : "bg-[#B3261E]"}`} />{formResponseLabel(f)}</span><span>조회 {f.viewCount || 0}</span><span>응답 {f.responseCount || 0}</span></div>
                     <div className="mt-1 text-xs text-[#78837C]">마지막으로 {formatRelative(f.updatedAt)} 손봤어요</div>
                   </div>
                 </button>

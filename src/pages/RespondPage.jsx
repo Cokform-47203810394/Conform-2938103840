@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import PreviewForm from "../components/PreviewForm";
 import { getFormDoc, submitResponse, recordFormParticipation, recordFormView } from "../lib/formsStore";
 import { ELEV1, MD } from "../theme";
+import { getResponseWindowMessage, getResponseWindowState } from "../lib/responseWindow";
 
 export default function RespondPage({ formId }) {
   const [doc, setDoc] = useState(undefined); // undefined = loading, null = not found
@@ -29,14 +30,16 @@ export default function RespondPage({ formId }) {
 
   const { form } = doc;
   const accent = form.accentColor || MD.primary;
-  const closed = form.settings?.acceptingResponses === false;
+  const responseWindowState = getResponseWindowState(form.settings);
+  const closed = responseWindowState !== "open";
   const blocked = form.settings?.limitOneResponse && alreadyResponded;
 
   const handleSubmit = async (answers) => {
     setSubmitError("");
     const result = await submitResponse(formId, answers, form.publicKey, form.settings);
     if (!result.ok) {
-      setSubmitError(result.reason === "duplicate" ? "이미 이 폼에 응답을 제출했어요." : "응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
+      const windowMessage = result.reason && result.reason !== "duplicate" ? getResponseWindowMessage(result.reason, form.settings) : "";
+      setSubmitError(result.reason === "duplicate" ? "이미 이 폼에 응답을 제출했어요." : windowMessage || "응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
       return false;
     }
     if (form.settings?.limitOneResponse) {
@@ -55,7 +58,7 @@ export default function RespondPage({ formId }) {
         <div className={`mx-auto max-w-xl rounded-xl border-t-8 bg-white p-6 text-center sm:p-8 ${ELEV1}`} style={{ borderTopColor: accent }}>
           <h1 className="text-xl font-normal text-[#17251F]">{form.title}</h1>
           <p className="mt-3 text-sm text-[#59645E]">
-            {closed ? "현재 응답을 받고 있지 않은 설문지예요." : "이미 응답을 제출하셨어요. 응답은 1인 1회로 제한되어 있어요."}
+            {closed ? getResponseWindowMessage(responseWindowState, form.settings) : "이미 응답을 제출하셨어요. 응답은 1인 1회로 제한되어 있어요."}
           </p>
         </div>
       </div>

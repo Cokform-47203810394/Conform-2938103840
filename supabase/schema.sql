@@ -51,9 +51,17 @@ create policy "form public owner write" on public.form_public for all using (
 );
 
 -- Public respondents may insert answers, but cannot read, update, or delete them.
+-- The availability window is enforced in the database as well as the UI, so a
+-- direct public Data API request cannot bypass a scheduled or manual close.
 drop policy if exists "responses public insert" on public.responses;
 create policy "responses public insert" on public.responses for insert with check (
-  exists (select 1 from public.form_public p where p.id = responses.form_id)
+  exists (
+    select 1 from public.form_public p
+    where p.id = responses.form_id
+      and coalesce((p.data->'settings'->>'acceptingResponses')::boolean, true)
+      and (p.data->'settings'->>'responseStartAt' is null or (p.data->'settings'->>'responseStartAt')::timestamptz <= now())
+      and (p.data->'settings'->>'responseEndAt' is null or (p.data->'settings'->>'responseEndAt')::timestamptz > now())
+  )
 );
 drop policy if exists "responses owner read" on public.responses;
 create policy "responses owner read" on public.responses for select using (

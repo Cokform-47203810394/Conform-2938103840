@@ -1,6 +1,7 @@
 import { getSupabaseClient, hasSupabaseConfig } from "./supabaseClient";
 import { uid } from "../questionTypes";
 import { decryptAnswers, encryptAnswers, isEncryptedEnvelope } from "./secureResponses";
+import { getResponseWindowState } from "./responseWindow";
 
 const INDEX_KEY = "form-builder:index";
 const DOC_PREFIX = "form-builder:doc";
@@ -144,6 +145,8 @@ export async function listForms() {
       responseCount: responseCounts[row.id] || 0,
       viewCount: viewCounts[row.id] || 0,
       acceptingResponses: row.data?.form?.settings?.acceptingResponses !== false,
+      responseStartAt: row.data?.form?.settings?.responseStartAt || null,
+      responseEndAt: row.data?.form?.settings?.responseEndAt || null,
       ownerResponseNotification: row.data?.form?.settings?.ownerResponseNotification === true,
     }));
   });
@@ -541,6 +544,8 @@ export async function recordFormParticipation(formId, form) {
 }
 
 export async function submitResponse(formId, answers, publicKey, settings = {}) {
+  const windowState = getResponseWindowState(settings);
+  if (windowState !== "open") return { ok: false, reason: windowState, response: null };
   const encryptedAnswers = publicKey ? await encryptAnswers(publicKey, answers, { formId, purpose: "response" }) : answers;
   const response = { id: uid(), submittedAt: new Date().toISOString(), answers };
   const respondentToken = settings.limitOneResponse ? (() => {
