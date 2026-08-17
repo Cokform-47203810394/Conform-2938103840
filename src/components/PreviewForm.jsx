@@ -128,12 +128,21 @@ export default function PreviewForm({ form, onSubmit, accent }) {
         </div>
       )}
       {form.settings?.collectEmail && (
-        <div className="rounded-xl border border-[#DDE1D9] bg-white p-5 sm:p-6">
-          <label className="flex items-center gap-2 text-sm font-medium text-[#17251F]"><Mail size={16} className="text-[#17866D]" /> 이메일 주소 <span className="text-xs font-normal text-[#78837C]">응답 안내용</span></label>
-          <input type="email" value={answers._cokform_email || ""} onChange={(e) => handleChange("_cokform_email", e.target.value)} placeholder="you@example.com" className={`mt-3 w-full rounded-lg border bg-[#FFFDF8] px-3 py-3 text-base outline-none focus:border-[#17866D] focus:ring-4 focus:ring-[#D8F5E8] ${errors._cokform_email ? "border-[#B3261E]" : "border-[#C9CEC6]"}`} />
-          {errors._cokform_email && <div className="mt-1 text-xs text-[#B3261E]">유효한 이메일 주소를 입력해주세요.</div>}
-          {form.settings?.responseReceipt && <label className="mt-3 flex items-center gap-2 text-xs text-[#59645E]"><input type="checkbox" checked={Boolean(answers._cokform_receipt)} onChange={(e) => handleChange("_cokform_receipt", e.target.checked)} /> 제출 후 내 응답 사본 받기</label>}
-        </div>
+        <section className="overflow-hidden rounded-xl border border-[#B7DCC8] bg-white" aria-labelledby="email-record-title">
+          <div className="flex items-start gap-3 border-b border-[#CDE9D8] bg-[#F1FAF4] px-5 py-4 sm:px-6">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D8F5E8] text-[#0B4D3D]"><Mail size={16} /></span>
+            <div>
+              <div id="email-record-title" className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[#0B4D3D]">이 양식은 이메일 주소를 기록합니다 <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[#0B4D3D] ring-1 ring-[#B7DCC8]">필수</span></div>
+              <p className="mt-1 text-xs leading-5 text-[#355C45]">제출한 이메일 주소는 응답과 함께 기록되며, 폼 작성자만 암호화된 응답에서 확인할 수 있어요.</p>
+            </div>
+          </div>
+          <div className="p-5 sm:p-6">
+            <label htmlFor="cokform-email" className="flex items-center gap-2 text-sm font-medium text-[#17251F]"><Mail size={16} className="text-[#17866D]" /> 이메일 주소</label>
+            <input id="cokform-email" type="email" required autoComplete="email" value={answers._cokform_email || ""} onChange={(e) => handleChange("_cokform_email", e.target.value)} placeholder="you@example.com" className={`mt-3 w-full rounded-lg border bg-[#FFFDF8] px-3 py-3 text-base outline-none focus:border-[#17866D] focus:ring-4 focus:ring-[#D8F5E8] ${errors._cokform_email ? "border-[#B3261E]" : "border-[#C9CEC6]"}`} />
+            {errors._cokform_email && <div className="mt-1 text-xs text-[#B3261E]">유효한 이메일 주소를 입력해주세요.</div>}
+            {form.settings?.responseReceipt && <label className="mt-3 flex items-center gap-2 text-xs text-[#59645E]"><input type="checkbox" checked={Boolean(answers._cokform_receipt)} onChange={(e) => handleChange("_cokform_receipt", e.target.checked)} /> 제출 후 내 응답 사본 받기</label>}
+          </div>
+        </section>
       )}
       {Object.keys(errors).length > 0 && (
         <div role="alert" className="rounded-xl border border-[#F2B8B5] bg-[#FFF6F5] px-4 py-3 text-sm text-[#8C1D18]">

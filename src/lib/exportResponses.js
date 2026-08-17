@@ -31,6 +31,7 @@ export function responseRows(form, responses) {
   const questions = form.questions.filter((q) => q.type !== "privacy_notice");
   return responses.map((response, index) => {
     const row = { "응답 번호": index + 1, "제출 시각": response.submittedAt || "" };
+    if (form.settings?.collectEmail) row["이메일 주소"] = safeSpreadsheetCell(response.answers?._cokform_email);
     questions.forEach((q) => {
       row[richTextToPlain(q.title) || "제목 없는 질문"] = safeSpreadsheetCell(response.answers?.[q.id]);
     });

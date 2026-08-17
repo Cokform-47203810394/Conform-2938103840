@@ -155,7 +155,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             <img
               src={`${import.meta.env.BASE_URL}brand/cokform-logo.svg`}
               alt="콕폼 · 원하는 대로, 콕 묻고 받아요"
-              className="h-11 w-auto"
+              className="h-12 w-auto"
             />
           </div>
 

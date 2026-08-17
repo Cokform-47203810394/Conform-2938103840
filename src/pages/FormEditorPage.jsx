@@ -859,8 +859,8 @@ export default function FormEditorPage({ formId, user, onBack }) {
                     </section>
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <div className="text-sm text-[#17251F]">이메일 주소 수집</div>
-                        <div className="text-xs text-[#78837C]">응답 목록에 이메일 열을 표시해요</div>
+                        <div className="text-sm font-medium text-[#17251F]">이메일 주소 기록</div>
+                        <div className="text-xs leading-5 text-[#78837C]">켜면 응답자에게 기록 사실을 고지하고, 필수 이메일 입력칸이 표시돼요. 이메일은 응답과 함께 암호화해 저장됩니다.</div>
                       </div>
                       <Toggle
                         checked={form.settings?.collectEmail}

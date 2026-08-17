@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, FileJson, FileSpreadsheet, ImageDown, LoaderCircle, Presentation, Table2, Trash2, Upload } from "lucide-react";
+import { Download, FileJson, FileSpreadsheet, ImageDown, LoaderCircle, Mail, Presentation, Table2, Trash2, Upload } from "lucide-react";
 import { IconButton } from "./Primitives";
 import Bar from "./Bar";
 import { MD, TYPE_COLORS, CHART_PALETTE, ELEV1 } from "../theme";
@@ -121,6 +121,16 @@ export default function ResponsesView({ form, formId, responses, onClear, onAudi
           </IconButton>
         </div>
       </div>
+
+      {form.settings?.collectEmail && (() => {
+        const emails = responses.map((response) => response.answers._cokform_email).filter((value) => typeof value === "string" && value.trim());
+        return (
+          <div className={`rounded-xl border border-[#B7DCC8] bg-[#F6FCF8] p-4 sm:p-5 ${ELEV1}`}>
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#0B4D3D]"><Mail size={16} /> 기록된 이메일 주소 <span className="rounded-full bg-white px-2 py-0.5 text-[11px] ring-1 ring-[#B7DCC8]">{emails.length}개</span></div>
+            {emails.length ? <ul className="space-y-1.5 text-sm text-[#355C45]">{emails.map((email, index) => <li key={`${email}-${index}`} className="border-b border-[#DCEFE3] pb-1.5 last:border-0">{email}</li>)}</ul> : <p className="text-sm text-[#78837C]">이전 응답에는 이메일 기록이 없어요.</p>}
+          </div>
+        );
+      })()}
 
       {form.questions.map((q) => {
         if (q.type === "privacy_notice") return null;
