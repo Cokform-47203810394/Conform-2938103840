@@ -297,7 +297,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
 
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#DDE1D9] pt-5 text-xs text-[#78837C]">
         <span>Private Pilot · 응답은 브라우저에서 암호화됩니다.</span>
-        <a href="?privacy=1" className="font-medium text-[#59645E] underline underline-offset-2">개인정보 안내</a>
+        <div className="flex items-center gap-3"><a href="?privacy=1" className="font-medium text-[#59645E] underline underline-offset-2">개인정보·법적 안내</a><a href="?terms=1" className="font-medium text-[#59645E] underline underline-offset-2">이용약관</a></div>
       </footer>
 
       {/* click-away layer for the open card menu */}

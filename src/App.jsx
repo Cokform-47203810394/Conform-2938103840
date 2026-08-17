@@ -4,6 +4,7 @@ import FormEditorPage from "./pages/FormEditorPage";
 import RespondPage from "./pages/RespondPage";
 import SettingsPage from "./pages/SettingsPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
 import AuthControl from "./components/AuthControl";
 import { subscribeAuth } from "./lib/auth";
 import { ArrowLeft } from "lucide-react";
@@ -12,15 +13,16 @@ import { ELEV1 } from "./theme";
 function getQueryMode() {
   if (typeof window === "undefined") return { respond: null, privacy: false };
   const params = new URLSearchParams(window.location.search);
-  return { respond: params.get("respond"), privacy: params.get("privacy") === "1" };
+  return { respond: params.get("respond"), privacy: params.get("privacy") === "1", terms: params.get("terms") === "1" };
 }
 
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const { respond: respondFormId, privacy } = getQueryMode();
+  const { respond: respondFormId, privacy, terms } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
   if (privacy) return <PrivacyPage onBack={() => { window.location.href = window.location.pathname; }} />;
+  if (terms) return <TermsPage onBack={() => { window.location.href = window.location.pathname; }} />;
   return <Builder />;
 }
 

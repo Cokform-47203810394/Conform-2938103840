@@ -488,6 +488,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
               <div className="space-y-4">
                 <div className={`rounded-xl bg-white p-5 ${ELEV1}`}>
                   <h3 className="mb-4 text-sm font-medium text-[#17251F]">응답</h3>
+                  {(form.settings?.collectEmail || form.questions.some((q) => q.type === "privacy_consent")) && !form.settings?.privacyNotice && (
+                    <div className="rounded-lg border border-[#E4C77A] bg-[#FFF8DE] px-3 py-2.5 text-xs leading-5 text-[#65521A]">개인정보 항목을 수집하는 폼이에요. 응답자가 확인할 수 있도록 아래의 <strong>개인정보 수집 안내 표시</strong>를 켜고 목적·항목·보관기간을 작성하세요.</div>
+                  )}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-4">
                       <div>

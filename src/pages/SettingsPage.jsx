@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Cloud, CloudOff, LogIn, LogOut } from "lucide-react";
+import { Cloud, CloudOff, LogIn, LogOut, ShieldCheck, ExternalLink } from "lucide-react";
 import { ELEV1, MD } from "../theme";
 import { hasSupabaseConfig } from "../lib/supabaseClient";
 import { signInWithGoogle, signOut, subscribeAuth } from "../lib/auth";
@@ -55,6 +55,12 @@ export default function SettingsPage() {
             <LogIn size={15} /> Google로 로그인
           </button>
         )}
+      </div>
+
+      <div className="rounded-xl border border-[#B7DCC8] bg-[#F1FAF4] p-5 text-sm leading-6 text-[#355C45]">
+        <div className="flex items-center gap-2 font-semibold text-[#0B4D3D]"><ShieldCheck size={17} /> 개인정보·법적 안내</div>
+        <p className="mt-2">콕폼은 응답 원문을 복호화하지 않는 구조를 지향하지만, 폼 운영자는 수집 목적·항목·보관기간·동의 거부권·위탁·제3자 제공을 별도로 고지해야 합니다.</p>
+        <a href="?privacy=1" className="mt-3 inline-flex items-center gap-1.5 font-medium underline underline-offset-2">처리방침과 운영자 체크리스트 보기 <ExternalLink size={14} /></a>
       </div>
 
       <div className="rounded-xl border-2 border-dashed border-[#C9CEC6] p-5 text-xs leading-relaxed text-[#78837C]">
