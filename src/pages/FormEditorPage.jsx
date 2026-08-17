@@ -71,6 +71,17 @@ export default function FormEditorPage({ formId, user, onBack }) {
   }, []);
 
   const undo = () => {
+    if (pendingSnapshot.current !== null) {
+      if (historyTimer.current) clearTimeout(historyTimer.current);
+      const previous = pendingSnapshot.current;
+      pendingSnapshot.current = null;
+      setFuture((f) => [form, ...f]);
+      setPast((p) => [...p.slice(-49), previous]);
+      applyingHistory.current = true;
+      setForm(normalizeForm(previous));
+      applyingHistory.current = false;
+      return;
+    }
     if (past.length === 0) return;
     const previous = past[past.length - 1];
     setPast((p) => p.slice(0, -1));
@@ -175,6 +186,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setResponses((r) => [...r, result.response]);
   }, [formId, form.publicKey]);
   const clearResponses = async () => {
+    if (typeof window !== "undefined" && !window.confirm("모든 응답을 삭제할까요? 이 작업은 되돌릴 수 없어요.")) return;
     const cleared = await clearStoredResponses(formId);
     if (!cleared) {
       window.alert("응답을 삭제할 권한이 없거나 저장소에 연결되지 않았어요.");
@@ -206,6 +218,21 @@ export default function FormEditorPage({ formId, user, onBack }) {
     } catch {
       setToast("복사에 실패했어요. 링크를 직접 선택해 복사해주세요.");
     }
+  };
+
+  const handleDescriptionImageUpload = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setToast("이미지 파일만 넣을 수 있어요.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setToast("이미지는 2MB 이하로 넣어주세요.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => updateForm((f) => ({ ...f, descriptionImage: { src: reader.result, alt: file.name.replace(/\\.[^.]+$/, "") } }));
+    reader.readAsDataURL(file);
   };
 
   const addCollaborator = () => {
@@ -290,6 +317,16 @@ export default function FormEditorPage({ formId, user, onBack }) {
                       />
                     ))}
                   </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[#F0EEE6] pt-3">
+                    <label className="flex items-center justify-between gap-2 text-xs text-[#59645E]">
+                      강조색
+                      <input type="color" value={accent} onChange={(e) => updateForm((f) => ({ ...f, accentColor: e.target.value }))} className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent p-0" />
+                    </label>
+                    <label className="flex items-center justify-between gap-2 text-xs text-[#59645E]">
+                      배경색
+                      <input type="color" value={form.backgroundColor || "#F5F3EC"} onChange={(e) => updateForm((f) => ({ ...f, backgroundColor: e.target.value }))} className="h-8 w-10 cursor-pointer rounded border-0 bg-transparent p-0" />
+                    </label>
+                  </div>
                 </Popover>
               )}
             </div>
@@ -352,6 +389,32 @@ export default function FormEditorPage({ formId, user, onBack }) {
                     placeholder="이 폼으로 무엇을 알고 싶은지 적어보세요"
                     className="min-h-[2.5rem] w-full text-base text-[#59645E] sm:text-sm"
                   />
+                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EEE6] pt-3">
+                    <label className="cursor-pointer rounded-full border border-[#C9CEC6] bg-[#FFFDF8] px-3 py-1.5 text-xs font-semibold text-[#59645E] hover:border-[#17866D] hover:bg-[#F1FAF4]">
+                      설명 이미지 넣기
+                      <input type="file" accept="image/*" className="sr-only" onChange={(e) => handleDescriptionImageUpload(e.target.files?.[0])} />
+                    </label>
+                    <input
+                      value={form.descriptionImage?.src?.startsWith("data:") ? "" : form.descriptionImage?.src || ""}
+                      onChange={(e) => updateForm((f) => ({ ...f, descriptionImage: e.target.value ? { ...(f.descriptionImage || {}), src: e.target.value } : null }))}
+                      placeholder="이미지 URL 붙여넣기"
+                      className="min-w-[13rem] flex-1 rounded-full border border-[#C9CEC6] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#17251F] outline-none focus:border-[#17866D]"
+                    />
+                    {form.descriptionImage?.src && (
+                      <>
+                        <input
+                          value={form.descriptionImage.alt || ""}
+                          onChange={(e) => updateForm((f) => ({ ...f, descriptionImage: { ...f.descriptionImage, alt: e.target.value } }))}
+                          placeholder="대체텍스트"
+                          className="min-w-[9rem] rounded-full border border-[#C9CEC6] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#17251F] outline-none focus:border-[#17866D]"
+                        />
+                        <button type="button" onClick={() => updateForm((f) => ({ ...f, descriptionImage: null }))} className="rounded-full px-3 py-1.5 text-xs font-semibold text-[#B3261E] hover:bg-[#FBE4E0]">
+                          이미지 삭제
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <p className="mt-2 text-[11px] leading-5 text-[#78837C]">업로드 이미지는 최대 2MB이며 폼 데이터에 함께 저장돼요. 민감한 원본 이미지는 넣지 마세요.</p>
                 </div>
 
                 {form.questions.map((q, i) => (

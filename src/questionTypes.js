@@ -64,6 +64,7 @@ export function emptyForm() {
   return {
     title: "제목 없는 설문지",
     description: "",
+    descriptionImage: null,
     questions: [defaultQuestion("radio")],
     accentColor: null, // null = 기본 M3 퍼플
     backgroundColor: null, // null = 기본 페이지 배경

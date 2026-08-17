@@ -85,6 +85,13 @@ export default function PreviewForm({ form, onSubmit, accent }) {
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(form.description) }}
           />
         )}
+        {form.descriptionImage?.src && (
+          <img
+            src={form.descriptionImage.src}
+            alt={form.descriptionImage.alt || "설명 이미지"}
+            className="mt-4 max-h-72 w-full rounded-lg object-cover"
+          />
+        )}
       </div>
       {form.settings?.privacyNotice && (
         <div className="rounded-xl border border-[#B7DCC8] bg-[#F1FAF4] p-4 text-sm leading-6 text-[#355C45]" role="note">
