@@ -105,6 +105,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setLoaded(false);
     setPast([]);
     setFuture([]);
+    pendingSnapshot.current = null;
+    if (historyTimer.current) clearTimeout(historyTimer.current);
+    historyTimer.current = null;
     (async () => {
       const doc = await getFormDoc(formId);
       let nextForm = normalizeForm(doc?.form);
