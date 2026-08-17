@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown } from "lucide-react";
+import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronRight, X } from "lucide-react";
 import AuthControl from "../components/AuthControl";
 import { signInWithGoogle } from "../lib/auth";
 import FormThumbnail from "../components/FormThumbnail";
@@ -25,6 +25,8 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
   const [openMenuId, setOpenMenuId] = useState(null);
   const [creating, setCreating] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -50,6 +52,29 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
     }
     return list;
   }, [forms, query, sortBy]);
+
+  const suggestions = useMemo(() => {
+    const kw = query.trim().toLowerCase();
+    if (!kw) return [];
+    return forms
+      .map((f) => ({ form: f, score: matchScore(f.title, kw) }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || new Date(b.form.updatedAt) - new Date(a.form.updatedAt))
+      .slice(0, 6)
+      .map((item) => item.form);
+  }, [forms, query]);
+
+  const totals = useMemo(() => ({
+    forms: forms.length,
+    views: forms.reduce((sum, f) => sum + (f.viewCount || 0), 0),
+    responses: forms.reduce((sum, f) => sum + (f.responseCount || 0), 0),
+    active: forms.filter((f) => f.acceptingResponses !== false).length,
+  }), [forms]);
+
+  const notifications = useMemo(() => forms
+    .filter((f) => f.ownerResponseNotification !== false && (f.responseCount || 0) > 0)
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    .slice(0, 5), [forms]);
 
   const handleCreate = async (template) => {
     if (!user) {
@@ -101,12 +126,32 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="내 폼을 찾아볼까요?"
-              className="w-full rounded-full border border-[#DDE1D9] bg-[#F5F3EC] py-2.5 pl-10 pr-4 text-base text-[#17251F] outline-none transition focus:border-[#17866D] focus:bg-white focus:ring-4 focus:ring-[#D8F5E8] sm:text-sm"
+              onFocus={() => setSearchFocused(true)}
+              placeholder="폼 이름으로 바로 찾기"
+              className="w-full rounded-full border border-[#DDE1D9] bg-[#F5F3EC] py-2.5 pl-10 pr-10 text-base text-[#17251F] outline-none transition focus:border-[#17866D] focus:bg-white focus:ring-4 focus:ring-[#D8F5E8] sm:text-sm"
             />
+            {query && <button type="button" onClick={() => setQuery("")} aria-label="검색어 지우기" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#78837C]"><X size={16} /></button>}
+            {searchFocused && query.trim() && (
+              <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 overflow-hidden rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] shadow-[0_12px_30px_rgba(23,37,31,0.16)]">
+                {suggestions.length ? suggestions.map((f) => (
+                  <button key={f.id} type="button" onClick={() => { onOpenForm(f.id); setQuery(""); setSearchFocused(false); }} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-[#F0FAF6]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EAF6EF] text-[#17866D]"><ChevronRight size={16} /></div>
+                    <div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold text-[#17251F]">{f.title}</div><div className="mt-0.5 text-xs text-[#78837C]">조회 {f.viewCount || 0} · 응답 {f.responseCount || 0}</div></div>
+                    <ExternalLink size={15} className="shrink-0 text-[#A2AAA3]" />
+                  </button>
+                )) : <div className="px-4 py-4 text-sm text-[#78837C]">비슷한 폼을 찾지 못했어요.</div>}
+              </div>
+            )}
           </div>
 
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
+            <div className="relative">
+              <button onClick={() => setNotificationsOpen((v) => !v)} title="응답 알림" className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition hover:bg-[#D8F5E8] hover:text-[#0B4D3D]">
+                <Bell size={19} />
+                {notifications.length > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#D85B4A] ring-2 ring-[#FFFDF8]" />}
+              </button>
+              {notificationsOpen && <div className="absolute right-0 top-12 z-30 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] shadow-[0_12px_30px_rgba(23,37,31,0.16)]"><div className="flex items-center justify-between border-b border-[#F0EEE6] px-4 py-3"><strong className="text-sm text-[#17251F]">응답 알림</strong><span className="text-xs text-[#78837C]">최근 업데이트 기준</span></div>{notifications.length ? notifications.map((f) => <button key={f.id} type="button" onClick={() => onOpenForm(f.id)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[#F0FAF6]"><span className="min-w-0"><span className="block truncate text-sm font-semibold text-[#17251F]">{f.title}</span><span className="mt-0.5 block text-xs text-[#78837C]">새 응답 {f.responseCount}건 · 조회 {f.viewCount || 0}명</span></span><ChevronRight size={15} className="shrink-0 text-[#A2AAA3]" /></button>) : <div className="px-4 py-5 text-sm text-[#78837C]">아직 도착한 응답이 없어요.</div>}</div>}
+            </div>
             <button
               onClick={onOpenSettings}
               title="설정"
@@ -151,8 +196,24 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           ))}
         </div>
 
+        {!query.trim() && (
+          <section className="mb-12">
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <div><div className="cok-eyebrow">LIVE OPERATIONS</div><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">폼 운영 현황</h2></div>
+              <div className="hidden items-center gap-1 text-xs text-[#78837C] sm:flex"><BarChart3 size={14} /> 개인정보 없이 집계</div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <MetricCard label="만든 폼" value={totals.forms} icon={<BarChart3 size={17} />} />
+              <MetricCard label="전체 조회" value={totals.views} suffix="명" icon={<Eye size={17} />} />
+              <MetricCard label="전체 응답" value={totals.responses} suffix="건" icon={<CheckCircle2 size={17} />} />
+              <MetricCard label="응답 받는 폼" value={totals.active} suffix="개" icon={<ChevronRight size={17} />} />
+            </div>
+            <div className="mt-3 rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] px-4 py-3 text-xs leading-5 text-[#59645E]">응답 내용은 암호화되어 저장되고, 이 화면에는 폼별 조회·응답 건수만 표시됩니다. 조회 수는 같은 브라우저의 중복 방문을 한 번으로 계산합니다.</div>
+          </section>
+        )}
+
         {/* recent forms */}
-        <div className="mb-3 flex items-center justify-between">
+        {!query.trim() && <div className="mb-3 flex items-center justify-between">
           <div>
             <div className="cok-eyebrow">YOUR WORKBENCH</div>
             <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">내가 만든 폼</h2>
@@ -164,15 +225,17 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             <ArrowUpDown size={14} />
             {sortBy === "updated" ? "최근 수정순" : "이름순"}
           </button>
-        </div>
+        </div>}
 
-        {loading ? (
+        {query.trim() && <div className="mb-4 rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] px-4 py-3 text-sm text-[#59645E]">검색창에서 폼을 선택하면 바로 열립니다. <strong className="text-[#17251F]">{filtered.length}개</strong>의 일치 항목이 있어요.</div>}
+
+        {!query.trim() && loading ? (
           <div className="py-16 text-center text-sm text-[#78837C]">불러오는 중…</div>
-        ) : filtered.length === 0 ? (
+        ) : !query.trim() && filtered.length === 0 ? (
           <div className="rounded-[24px] border border-dashed border-[#B8C5BA] bg-[#FFFDF8]/70 py-16 text-center text-sm text-[#59645E]">
             {query ? "찾는 폼이 없어요." : "아직 만든 폼이 없어요. 위에서 하나를 골라 시작해보세요."}
           </div>
-        ) : (
+        ) : !query.trim() ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
             {filtered.map((f) => (
               <div
@@ -185,6 +248,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
                   </div>
                   <div className="px-3 pb-2.5 pt-2.5">
                     <div className="truncate text-sm font-semibold text-[#17251F]">{f.title}</div>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-[#78837C]"><span className={`inline-flex items-center gap-1 ${f.acceptingResponses === false ? "text-[#B3261E]" : "text-[#17866D]"}`}><span className={`h-1.5 w-1.5 rounded-full ${f.acceptingResponses === false ? "bg-[#B3261E]" : "bg-[#17866D]"}`} />{f.acceptingResponses === false ? "마감" : "응답 중"}</span><span>조회 {f.viewCount || 0}</span><span>응답 {f.responseCount || 0}</span></div>
                     <div className="mt-1 text-xs text-[#78837C]">마지막으로 {formatRelative(f.updatedAt)} 손봤어요</div>
                   </div>
                 </button>
@@ -222,7 +286,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
 
       {notice && (
@@ -240,6 +304,17 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
       {openMenuId && <div className="fixed inset-0 z-0" onClick={() => setOpenMenuId(null)} />}
     </div>
   );
+}
+
+function matchScore(title = "", keyword = "") {
+  const value = title.toLowerCase();
+  const tokens = keyword.split(/\s+/).filter(Boolean);
+  if (!tokens.length) return 0;
+  return tokens.reduce((score, token) => score + (value === token ? 100 : value.startsWith(token) ? 70 : value.includes(token) ? 35 : 0), 0);
+}
+
+function MetricCard({ label, value, suffix = "", icon }) {
+  return <div className="rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-4 shadow-[0_2px_8px_rgba(23,37,31,0.06)]"><div className="mb-3 flex items-center justify-between text-[#17866D]"><span className="text-xs font-semibold text-[#78837C]">{label}</span>{icon}</div><div className="text-2xl font-semibold tracking-[-0.04em] text-[#17251F]">{value.toLocaleString("ko-KR")}<span className="ml-1 text-xs font-medium text-[#78837C]">{suffix}</span></div></div>;
 }
 
 function TemplateCard({ template: t, onCreate, busy, creating, premium }) {

@@ -499,6 +499,18 @@ export default function FormEditorPage({ formId, user, onBack }) {
                         onChange={(v) => updateForm((f) => ({ ...f, settings: { ...f.settings, collectEmail: v } }))}
                       />
                     </div>
+                    {form.settings?.collectEmail && (
+                      <div className="ml-3 space-y-3 rounded-lg border border-[#DDE1D9] bg-[#F8F9F4] p-3">
+                        <div className="flex items-center justify-between gap-4">
+                          <div><div className="text-sm text-[#17251F]">응답자에게 사본 요청 허용</div><div className="text-xs leading-5 text-[#78837C]">응답자가 이메일을 입력하고 본인 응답 사본을 요청할 수 있어요.</div></div>
+                          <Toggle checked={Boolean(form.settings?.responseReceipt)} onChange={(v) => updateForm((f) => ({ ...f, settings: { ...f.settings, responseReceipt: v } }))} />
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <div><div className="text-sm text-[#17251F]">새 응답 알림</div><div className="text-xs leading-5 text-[#78837C]">새 응답이 오면 작성자 계정에 알림이 표시돼요.</div></div>
+                          <Toggle checked={Boolean(form.settings?.ownerResponseNotification)} onChange={(v) => updateForm((f) => ({ ...f, settings: { ...f.settings, ownerResponseNotification: v } }))} />
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <div className="text-sm text-[#17251F]">응답 1회로 제한</div>

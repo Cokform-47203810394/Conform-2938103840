@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import PreviewForm from "../components/PreviewForm";
-import { getFormDoc, submitResponse } from "../lib/formsStore";
+import { getFormDoc, submitResponse, recordFormView } from "../lib/formsStore";
 import { ELEV1, MD } from "../theme";
 
 export default function RespondPage({ formId }) {
@@ -8,7 +8,10 @@ export default function RespondPage({ formId }) {
   const [alreadyResponded, setAlreadyResponded] = useState(false);
 
   useEffect(() => {
-    getFormDoc(formId).then((d) => setDoc(d || null));
+    getFormDoc(formId).then((d) => {
+      setDoc(d || null);
+      if (d) recordFormView(formId);
+    });
     setAlreadyResponded(Boolean(localStorage.getItem(`form-builder:responded:${formId}`)));
   }, [formId]);
 
@@ -29,9 +32,9 @@ export default function RespondPage({ formId }) {
   const blocked = form.settings?.limitOneResponse && alreadyResponded;
 
   const handleSubmit = async (answers) => {
-    const result = await submitResponse(formId, answers, form.publicKey);
+    const result = await submitResponse(formId, answers, form.publicKey, form.settings);
     if (!result.ok) {
-      window.alert("응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
+      window.alert(result.reason === "duplicate" ? "이미 이 폼에 응답을 제출했어요." : "응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
       return;
     }
     if (form.settings?.limitOneResponse) {

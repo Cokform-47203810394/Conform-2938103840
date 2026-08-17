@@ -71,6 +71,8 @@ export function emptyForm() {
     starred: false,
     settings: {
       collectEmail: false,
+      responseReceipt: false,
+      ownerResponseNotification: false,
       limitOneResponse: false,
       acceptingResponses: true,
       retentionDays: 180,

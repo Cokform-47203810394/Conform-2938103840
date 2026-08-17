@@ -69,17 +69,55 @@ export async function listForms() {
       .select("id, title, updated_at, created_at, data")
       .order("updated_at", { ascending: false });
     if (error) return undefined;
+    const ids = (data || []).map((row) => row.id);
+    const [{ data: responseRows }, { data: viewRows }] = await Promise.all([
+      ids.length ? supabase.from(RESPONSE_TABLE).select("form_id").in("form_id", ids) : Promise.resolve({ data: [] }),
+      ids.length ? supabase.from("form_views").select("form_id").in("form_id", ids) : Promise.resolve({ data: [] }),
+    ]);
+    const responseCounts = (responseRows || []).reduce((acc, row) => ({ ...acc, [row.form_id]: (acc[row.form_id] || 0) + 1 }), {});
+    const viewCounts = (viewRows || []).reduce((acc, row) => ({ ...acc, [row.form_id]: (acc[row.form_id] || 0) + 1 }), {});
     return (data || []).map((row) => ({
       id: row.id,
       title: row.title,
       updatedAt: row.updated_at,
       createdAt: row.created_at,
       questions: (row.data?.form?.questions || []).slice(0, 3),
+      responseCount: responseCounts[row.id] || 0,
+      viewCount: viewCounts[row.id] || 0,
+      acceptingResponses: row.data?.form?.settings?.acceptingResponses !== false,
+      ownerResponseNotification: row.data?.form?.settings?.ownerResponseNotification === true,
     }));
   });
   if (remote !== undefined) return remote;
   if (hasSupabaseConfig()) return [];
   return readIndexLocal().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+}
+
+export async function recordFormView(formId) {
+  const key = `form-builder:viewed:${formId}`;
+  try {
+    if (localStorage.getItem(key)) return false;
+    localStorage.setItem(key, "1");
+  } catch {
+    return false;
+  }
+  const visitorId = (() => {
+    try {
+      const k = "form-builder:visitor-id";
+      const existing = localStorage.getItem(k);
+      if (existing) return existing;
+      const next = uid();
+      localStorage.setItem(k, next);
+      return next;
+    } catch {
+      return uid();
+    }
+  })();
+  const saved = await trySupabase("조회 기록", async (supabase) => {
+    const { error } = await supabase.from("form_views").insert({ form_id: formId, visitor_id: visitorId });
+    return error ? undefined : true;
+  });
+  return saved === true;
 }
 
 export async function getFormDoc(id) {
@@ -182,9 +220,20 @@ export async function saveFormDoc(id, doc) {
   }
 }
 
-export async function submitResponse(formId, answers, publicKey) {
+export async function submitResponse(formId, answers, publicKey, settings = {}) {
   const encryptedAnswers = publicKey ? await encryptAnswers(publicKey, answers) : answers;
   const response = { id: uid(), submittedAt: new Date().toISOString(), answers };
+  const respondentToken = settings.limitOneResponse ? (() => {
+    try {
+      const key = `form-builder:respondent-token:${formId}`;
+      const existing = localStorage.getItem(key);
+      if (existing) return existing;
+      const next = uid();
+      localStorage.setItem(key, next);
+      return next;
+    } catch { return uid(); }
+  })() : null;
+  let duplicate = false;
   const savedRemotely = await trySupabase("응답 제출", async (supabase) => {
     if (!publicKey) return undefined;
     const { error } = await supabase.from(RESPONSE_TABLE).insert({
@@ -192,9 +241,12 @@ export async function submitResponse(formId, answers, publicKey) {
       form_id: formId,
       submitted_at: response.submittedAt,
       answers: encryptedAnswers,
+      respondent_token: respondentToken,
     });
+    if (error?.code === "23505") duplicate = true;
     return error ? undefined : true;
   });
+  if (duplicate) return { ok: false, reason: "duplicate", response: null };
   if (savedRemotely) return { ok: true, response };
   if (getSupabaseClient()) return { ok: false, response: null };
 

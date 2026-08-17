@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Mail } from "lucide-react";
 import QuestionField from "./QuestionField";
 import { sanitizeRichText } from "../lib/sanitizeRichText";
 import { ELEV1, ELEV1_HOVER, MD } from "../theme";
@@ -18,6 +18,14 @@ export default function PreviewForm({ form, onSubmit, accent }) {
   const handleSubmit = () => {
     const nextErrors = {};
     let hasError = false;
+
+    if (form.settings?.collectEmail) {
+      const email = String(answers._cokform_email || "").trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        nextErrors._cokform_email = true;
+        hasError = true;
+      }
+    }
 
     form.questions.forEach((q) => {
       if (q.type === "privacy_notice") return; // 안내 전용, 응답값 없음
@@ -103,6 +111,14 @@ export default function PreviewForm({ form, onSubmit, accent }) {
             {form.settings.privacyThirdParty ? " 제3자 제공이 있을 수 있습니다." : " 제3자 제공은 별도 동의 없이 진행하지 않습니다."}
             {form.settings.privacyOutsourcing ? " 처리 위탁이 있을 수 있습니다." : " 처리 위탁 여부는 폼 작성자의 안내를 확인해 주세요."}
           </p>
+        </div>
+      )}
+      {form.settings?.collectEmail && (
+        <div className="rounded-xl border border-[#DDE1D9] bg-white p-5 sm:p-6">
+          <label className="flex items-center gap-2 text-sm font-medium text-[#17251F]"><Mail size={16} className="text-[#17866D]" /> 이메일 주소 <span className="text-xs font-normal text-[#78837C]">응답 안내용</span></label>
+          <input type="email" value={answers._cokform_email || ""} onChange={(e) => handleChange("_cokform_email", e.target.value)} placeholder="you@example.com" className={`mt-3 w-full rounded-lg border bg-[#FFFDF8] px-3 py-3 text-base outline-none focus:border-[#17866D] focus:ring-4 focus:ring-[#D8F5E8] ${errors._cokform_email ? "border-[#B3261E]" : "border-[#C9CEC6]"}`} />
+          {errors._cokform_email && <div className="mt-1 text-xs text-[#B3261E]">유효한 이메일 주소를 입력해주세요.</div>}
+          {form.settings?.responseReceipt && <label className="mt-3 flex items-center gap-2 text-xs text-[#59645E]"><input type="checkbox" checked={Boolean(answers._cokform_receipt)} onChange={(e) => handleChange("_cokform_receipt", e.target.checked)} /> 제출 후 내 응답 사본 받기</label>}
         </div>
       )}
       {form.questions.map((q) => (
