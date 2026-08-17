@@ -272,7 +272,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
       `}</style>
 
       {/* top app bar */}
-      <div className={`sticky top-0 z-10 border-b border-[#DDE1D9] bg-[#FFFDF8]/95 backdrop-blur ${ELEV1}`}>
+      <div className={`relative sticky top-0 z-10 border-b border-[#DDE1D9] bg-[#FFFDF8]/95 backdrop-blur ${ELEV1}`}>
         <div className="mx-auto flex max-w-4xl items-center gap-1 px-3 py-3 sm:px-4">
           <IconButton title="홈으로" onClick={onBack}>
             <ArrowLeft size={18} />
@@ -294,7 +294,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
             <Star size={18} fill={form.starred ? accent : "none"} color={form.starred ? accent : "currentColor"} />
           </IconButton>
 
-          <div className="ml-auto flex shrink-0 items-center gap-0.5 overflow-x-auto">
+          <div className="ml-auto hidden shrink-0 items-center gap-0.5 overflow-x-auto sm:flex">
             <div className="relative">
               <IconButton title="테마 색상" onClick={() => setPaletteOpen((v) => !v)}>
                 <Palette size={18} />
@@ -367,12 +367,32 @@ export default function FormEditorPage({ formId, user, onBack }) {
             </button>
           </div>
         </div>
-        <div className="mx-auto flex max-w-4xl justify-center gap-8 border-t border-[#DDE1D9] px-4">
+        <div className="flex items-center justify-between gap-1 border-t border-[#F0EEE6] px-3 py-1.5 sm:hidden">
+          <IconButton title="테마 색상" onClick={() => setPaletteOpen((v) => !v)}><Palette size={17} /></IconButton>
+          <IconButton title="미리보기" onClick={() => window.open(shareUrl, "_blank")}><Eye size={17} /></IconButton>
+          <IconButton title="실행 취소" onClick={undo} disabled={past.length === 0}><Undo2 size={17} /></IconButton>
+          <IconButton title="다시 실행" onClick={redo} disabled={future.length === 0}><Redo2 size={17} /></IconButton>
+          <IconButton title="링크 복사" onClick={copyLink}><LinkIcon size={17} /></IconButton>
+          <button type="button" onClick={() => setShareOpen(true)} className="ml-1 flex-1 rounded-full px-3 py-2 text-xs font-semibold text-white" style={{ backgroundColor: accent }}>공유</button>
+        </div>
+        {paletteOpen && (
+          <div className="absolute right-3 top-[6.5rem] z-30 w-[min(18rem,calc(100vw-1.5rem))] rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-3 shadow-[0_8px_24px_rgba(23,37,31,0.14)] sm:hidden">
+            <div className="mb-2 text-xs font-semibold text-[#59645E]">테마 색상</div>
+            <div className="mb-3 grid grid-cols-8 gap-2">
+              {PALETTE_SWATCHES.map((c) => <button key={c} type="button" aria-label={`강조색 ${c}`} onClick={() => { updateForm((f) => ({ ...f, accentColor: c })); setPaletteOpen(false); }} className="h-7 w-7 rounded-full border border-white ring-1 ring-[#DDE1D9]" style={{ backgroundColor: c }} />)}
+            </div>
+            <div className="grid grid-cols-2 gap-2 border-t border-[#F0EEE6] pt-3">
+              <label className="flex items-center justify-between gap-2 text-xs text-[#59645E]">강조색<input type="color" value={accent} onChange={(e) => updateForm((f) => ({ ...f, accentColor: e.target.value }))} className="h-8 w-10" /></label>
+              <label className="flex items-center justify-between gap-2 text-xs text-[#59645E]">배경색<input type="color" value={form.backgroundColor || "#F5F3EC"} onChange={(e) => updateForm((f) => ({ ...f, backgroundColor: e.target.value }))} className="h-8 w-10" /></label>
+            </div>
+          </div>
+        )}
+        <div className="mx-auto flex max-w-4xl justify-center gap-4 border-t border-[#DDE1D9] px-3 sm:gap-8 sm:px-4">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 border-b-2 px-1 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex min-w-0 flex-1 items-center justify-center gap-1 border-b-2 px-1 py-2.5 text-xs font-medium transition-colors sm:flex-none sm:gap-1.5 sm:text-sm ${
                 tab === t.id ? "text-[#0B4D3D]" : "border-transparent text-[#78837C] hover:text-[#17251F]"
               }`}
               style={{ borderColor: tab === t.id ? accent : "transparent" }}
