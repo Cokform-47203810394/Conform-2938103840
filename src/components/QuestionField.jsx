@@ -44,6 +44,9 @@ export default function QuestionField({ q, value, error, onChange }) {
           <div>
             <span className="font-medium text-[#17251F]">보유 기간</span> · {q.retention}
           </div>
+          <div>
+            <span className="font-medium text-[#17251F]">동의 거부권</span> · {q.refusalRights || "동의를 거부할 수 있으며, 거부 시 설문 제출이 제한될 수 있습니다."}
+          </div>
         </div>
         <div>
           {q.options.map((opt, i) => (

@@ -43,6 +43,7 @@ export function defaultQuestion(type = "short") {
       purpose: "설문 응답 접수 및 결과 분석",
       items: "이름, 연락처, 응답 내용",
       retention: "설문 종료 후 6개월간 보관 후 파기",
+      refusalRights: "동의를 거부할 수 있으나, 동의하지 않으면 개인정보 수집이 필요한 이 설문을 제출할 수 없습니다.",
       options: ["동의합니다", "동의하지 않습니다"],
       blockOnDecline: true,
       required: true,
@@ -80,7 +81,9 @@ export function emptyForm() {
       privacyPurpose: "설문 응답 접수 및 결과 분석",
       privacyItems: "",
       privacyThirdParty: false,
+      privacyThirdPartyDetails: "",
       privacyOutsourcing: false,
+      privacyOutsourcingDetails: "",
     },
     collaborators: [],
   };

@@ -10,6 +10,10 @@ const TABLE = "forms";
 const PUBLIC_TABLE = "form_public";
 const RESPONSE_TABLE = "responses";
 const VERSION_TABLE = "form_versions";
+const AUDIT_TABLE = "form_audit_events";
+const AUDIT_PREFIX = "form-builder:audit";
+const PARTICIPATION_PREFIX = "form-builder:participations";
+const PARTICIPATION_TABLE = "form_participations";
 const MAX_LOCAL_VERSIONS = 60;
 
 function readIndexLocal() {
@@ -42,6 +46,23 @@ function readResponsesLocal(id) {
 
 function writeResponsesLocal(id, responses) {
   localStorage.setItem(`${RESPONSE_PREFIX}:${id}`, JSON.stringify(responses));
+}
+
+function readParticipationsLocal() {
+  try {
+    const raw = localStorage.getItem(PARTICIPATION_PREFIX);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeParticipationsLocal(items) {
+  try {
+    localStorage.setItem(PARTICIPATION_PREFIX, JSON.stringify(items.slice(0, 100)));
+  } catch {
+    // Participation history is convenience metadata only; a quota failure must not block submission.
+  }
 }
 
 function readVersionsLocal(id) {
@@ -328,6 +349,67 @@ export async function getFormVersions(formId) {
   return versions.filter(Boolean);
 }
 
+export async function listParticipatedForms() {
+  const local = readParticipationsLocal();
+  const remote = await trySupabase("참여 이력 조회", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return [];
+    const { data, error } = await supabase
+      .from(PARTICIPATION_TABLE)
+      .select("form_id, form_title, question_count, first_participated_at, last_participated_at")
+      .order("last_participated_at", { ascending: false })
+      .limit(100);
+    if (error) return undefined;
+    return (data || []).map((row) => ({
+      id: row.form_id,
+      title: row.form_title,
+      questionCount: row.question_count,
+      firstParticipatedAt: row.first_participated_at,
+      lastParticipatedAt: row.last_participated_at,
+      source: "account",
+    }));
+  });
+
+  const combined = new Map();
+  [...local, ...(remote || [])].forEach((item) => {
+    const previous = combined.get(item.id);
+    const itemDate = new Date(item.lastParticipatedAt || 0).getTime();
+    const previousDate = new Date(previous?.lastParticipatedAt || 0).getTime();
+    if (!previous || itemDate >= previousDate) combined.set(item.id, item);
+  });
+  return [...combined.values()].sort((a, b) => new Date(b.lastParticipatedAt) - new Date(a.lastParticipatedAt));
+}
+
+export async function recordFormParticipation(formId, form) {
+  const now = new Date().toISOString();
+  const summary = {
+    id: formId,
+    title: form?.title?.trim() || "제목 없는 설문지",
+    questionCount: Array.isArray(form?.questions) ? form.questions.filter((q) => !["privacy_notice"].includes(q.type)).length : 0,
+    lastParticipatedAt: now,
+    source: "device",
+  };
+  const current = readParticipationsLocal();
+  const previous = current.find((item) => item.id === formId);
+  const next = [{ ...previous, ...summary, firstParticipatedAt: previous?.firstParticipatedAt || now }]
+    .concat(current.filter((item) => item.id !== formId));
+  writeParticipationsLocal(next);
+
+  await trySupabase("참여 이력 저장", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return undefined;
+    const { error } = await supabase.from(PARTICIPATION_TABLE).upsert({
+      form_id: formId,
+      participant_id: authData.user.id,
+      form_title: summary.title,
+      question_count: summary.questionCount,
+      last_participated_at: now,
+    }, { onConflict: "participant_id,form_id" });
+    return error ? undefined : true;
+  });
+  return summary;
+}
+
 export async function submitResponse(formId, answers, publicKey, settings = {}) {
   const encryptedAnswers = publicKey ? await encryptAnswers(publicKey, answers) : answers;
   const response = { id: uid(), submittedAt: new Date().toISOString(), answers };
@@ -366,6 +448,38 @@ export async function submitResponse(formId, answers, publicKey, settings = {}) 
   } catch (e) {
     console.error("응답 제출 실패", e);
     return { ok: false, response: null };
+  }
+}
+
+export async function recordFormAuditEvent(formId, eventType, metadata = {}) {
+  const safeMetadata = Object.fromEntries(
+    Object.entries(metadata || {}).flatMap(([key, value]) => {
+      if (typeof value === "string") return [[key, value.slice(0, 120)]];
+      if (typeof value === "number" || typeof value === "boolean") return [[key, value]];
+      return [];
+    })
+  );
+  const savedRemotely = await trySupabase("감사 기록", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return undefined;
+    const { error } = await supabase.from(AUDIT_TABLE).insert({
+      form_id: formId,
+      event_type: eventType,
+      metadata: safeMetadata,
+    });
+    return error ? undefined : true;
+  });
+  if (savedRemotely) return true;
+  if (getSupabaseClient()) return false;
+
+  try {
+    const key = `${AUDIT_PREFIX}:${formId}`;
+    const current = JSON.parse(localStorage.getItem(key) || "[]");
+    current.unshift({ id: uid(), eventType, metadata: safeMetadata, createdAt: new Date().toISOString() });
+    localStorage.setItem(key, JSON.stringify(current.slice(0, 100)));
+    return true;
+  } catch {
+    return false;
   }
 }
 

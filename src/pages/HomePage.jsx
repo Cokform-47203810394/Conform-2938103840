@@ -5,7 +5,7 @@ import { signInWithGoogle } from "../lib/auth";
 import FormThumbnail from "../components/FormThumbnail";
 import { Modal } from "../components/Overlay";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
-import { listForms, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
+import { listForms, listParticipatedForms, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
 import { BRAND, MD, TYPE_COLORS, ELEV1, ELEV1_HOVER } from "../theme";
 
 function formatRelative(iso) {
@@ -20,6 +20,7 @@ function formatRelative(iso) {
 
 export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }) {
   const [forms, setForms] = useState([]);
+  const [participatedForms, setParticipatedForms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("updated"); // 'updated' | 'title'
@@ -33,14 +34,19 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
 
   const refresh = async () => {
     setLoading(true);
-    const list = await listForms();
-    setForms(list);
+    const [created, participated] = await Promise.all([listForms(), listParticipatedForms()]);
+    setForms(created);
+    setParticipatedForms(participated);
     setLoading(false);
   };
 
   useEffect(() => {
     refresh();
-  }, []);
+  }, [user?.id]);
+
+  const openParticipatedForm = (id) => {
+    window.location.href = `${window.location.origin}/?respond=${encodeURIComponent(id)}`;
+  };
 
   const filtered = useMemo(() => {
     let list = forms;
@@ -301,6 +307,37 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             ))}
           </div>
         ) : null}
+
+        {!query.trim() && !loading && (
+          <section className="mt-12 border-t border-[#DDE1D9] pt-9">
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <div>
+                <div className="cok-eyebrow">PARTICIPATION HISTORY</div>
+                <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">내가 참여한 폼</h2>
+              </div>
+              <span className="hidden text-xs text-[#78837C] sm:block">응답 원문은 저장하지 않아요</span>
+            </div>
+            <p className="mb-4 max-w-2xl text-xs leading-5 text-[#59645E]">제출을 완료한 폼의 제목·문항 수·참여 시각만 이 기기에 기록됩니다. 로그인 상태에서는 같은 계정으로 이력만 동기화되며, 응답 내용과 암호화 키는 포함되지 않습니다.</p>
+            {participatedForms.length === 0 ? (
+              <div className="rounded-[20px] border border-dashed border-[#B8C5BA] bg-[#FFFDF8]/70 px-5 py-9 text-sm text-[#59645E]">아직 참여한 폼이 없어요. 공개 링크에서 응답을 제출하면 여기에 표시됩니다.</div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {participatedForms.map((form) => (
+                  <button key={form.id} type="button" onClick={() => openParticipatedForm(form.id)} className={`group rounded-[18px] border border-[#DDE1D9] bg-[#FFFDF8] p-4 text-left transition ${ELEV1_HOVER}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF6EF] text-[#17866D]"><CheckCircle2 size={18} /></div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold text-[#17251F]">{form.title}</div>
+                        <div className="mt-1 text-xs text-[#78837C]">문항 {form.questionCount || 0}개 · {formatRelative(form.lastParticipatedAt)} 참여</div>
+                        <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#0B4D3D]">공개 폼 다시 보기 <ChevronRight size={14} /></div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       {notice && (

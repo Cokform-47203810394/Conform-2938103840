@@ -21,10 +21,11 @@ import PreviewForm from "../components/PreviewForm";
 import ResponsesView from "../components/ResponsesView";
 import { IconButton, Toggle } from "../components/Primitives";
 import { Popover, Modal } from "../components/Overlay";
-import { clearResponses as clearStoredResponses, getFormDoc, getFormVersions, saveFormDoc, saveFormVersion, submitResponse } from "../lib/formsStore";
+import { clearResponses as clearStoredResponses, getFormDoc, getFormVersions, recordFormAuditEvent, saveFormDoc, saveFormVersion, submitResponse } from "../lib/formsStore";
 import { emptyForm, defaultQuestion, uid } from "../questionTypes";
 import { ensureFormKeyPair } from "../lib/secureResponses";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
+import { analyzePrivacyRisk, PRIVACY_AUDIT_LEVEL } from "../lib/privacyAudit";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
 import AuthControl from "../components/AuthControl";
 import QuickAddToolbar from "../components/QuickAddToolbar";
@@ -265,6 +266,8 @@ export default function FormEditorPage({ formId, user, onBack }) {
     }
     setResponses((r) => [...r, result.response]);
   }, [formId, form.publicKey]);
+  const recordAuditEvent = useCallback((eventType, metadata) => recordFormAuditEvent(formId, eventType, metadata), [formId]);
+
   const requestClearResponses = () => {
     setConfirmAction({ kind: "responses", title: "모든 응답 삭제", description: "이 폼의 암호화된 응답을 모두 삭제합니다. 이 작업은 되돌릴 수 없습니다." });
   };
@@ -305,6 +308,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
           setToast("응답을 삭제할 권한이 없거나 저장소에 연결되지 않았어요.");
           return;
         }
+        await recordAuditEvent("responses_deleted", { responseCount: responses.length, source: "owner" });
         setResponses([]);
         setConfirmAction(null);
       }
@@ -328,8 +332,23 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   const accent = form.accentColor || MD.primary;
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}?respond=${formId}` : "";
+  const privacyAudit = analyzePrivacyRisk(form);
+
+  const openShare = () => {
+    if (privacyAudit.blocking.length) {
+      setTab("settings");
+      setToast("고유식별정보 또는 민감정보로 보이는 질문이 있어 공개 공유를 중단했어요. 설정의 개인정보 점검을 먼저 확인하세요.");
+      return;
+    }
+    setShareOpen(true);
+  };
 
   const copyLink = async () => {
+    if (privacyAudit.blocking.length) {
+      setTab("settings");
+      setToast("고위험 개인정보 질문을 확인하기 전에는 공개 링크를 복사할 수 없어요.");
+      return;
+    }
     try {
       await navigator.clipboard.writeText(shareUrl);
       setToast("링크가 복사되었습니다");
@@ -475,7 +494,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
             </IconButton>
             <AuthControl user={user} showLogout={false} />
             <button
-              onClick={() => setShareOpen(true)}
+              onClick={openShare}
               className="ml-1 shrink-0 rounded-full bg-[#17866D] px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(23,37,31,0.12)] transition hover:bg-[#0F705B]"
               style={{ backgroundColor: accent }}
             >
@@ -490,7 +509,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
           <IconButton title="다시 실행" onClick={redo} disabled={future.length === 0}><Redo2 size={17} /></IconButton>
           <IconButton title="버전 기록" onClick={openVersionHistory}><History size={17} /></IconButton>
           <IconButton title="링크 복사" onClick={copyLink}><LinkIcon size={17} /></IconButton>
-          <button type="button" onClick={() => setShareOpen(true)} className="ml-1 flex-1 rounded-full px-3 py-2 text-xs font-semibold text-white" style={{ backgroundColor: accent }}>공유</button>
+          <button type="button" onClick={openShare} className="ml-1 flex-1 rounded-full px-3 py-2 text-xs font-semibold text-white" style={{ backgroundColor: accent }}>공유</button>
         </div>
         {paletteOpen && (
           <div className="absolute right-3 top-[6.5rem] z-30 w-[min(18rem,calc(100vw-1.5rem))] rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-3 shadow-[0_8px_24px_rgba(23,37,31,0.14)] sm:hidden">
@@ -597,7 +616,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
             {tab === "responses" && canViewResponses && (
               <div>
                 <div className="mb-3 text-xs font-medium text-[#59645E]">작성자 전용 · 이 폼의 소유자만 응답을 복호화하고 내보낼 수 있어요.</div>
-                <ResponsesView form={form} formId={formId} responses={responses} onClear={requestClearResponses} />
+                <ResponsesView form={form} formId={formId} responses={responses} onClear={requestClearResponses} onAudit={recordAuditEvent} />
               </div>
             )}
 
@@ -607,6 +626,16 @@ export default function FormEditorPage({ formId, user, onBack }) {
                   <h3 className="mb-4 text-sm font-medium text-[#17251F]">응답</h3>
                   {(form.settings?.collectEmail || form.questions.some((q) => q.type === "privacy_consent")) && !form.settings?.privacyNotice && (
                     <div className="rounded-lg border border-[#E4C77A] bg-[#FFF8DE] px-3 py-2.5 text-xs leading-5 text-[#65521A]">개인정보 항목을 수집하는 폼이에요. 응답자가 확인할 수 있도록 아래의 <strong>개인정보 수집 안내 표시</strong>를 켜고 목적·항목·보관기간을 작성하세요.</div>
+                  )}
+                  {privacyAudit.signals.length > 0 && (
+                    <div className="space-y-2 rounded-lg border border-[#E4C77A] bg-[#FFFDF2] p-3">
+                      <div className="text-xs font-semibold text-[#65521A]">개인정보 점검 · 질문 제목과 설정만 확인하며 응답 내용은 읽지 않아요.</div>
+                      {privacyAudit.signals.map((item, index) => (
+                        <div key={`${item.code}-${item.questionId || index}`} className="rounded-md px-2.5 py-2 text-[11px] leading-5" style={{ color: PRIVACY_AUDIT_LEVEL[item.level].color, backgroundColor: PRIVACY_AUDIT_LEVEL[item.level].background }}>
+                          <strong>{PRIVACY_AUDIT_LEVEL[item.level].label}</strong> · {item.message}
+                        </div>
+                      ))}
+                    </div>
                   )}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-4">
@@ -725,6 +754,18 @@ export default function FormEditorPage({ formId, user, onBack }) {
                               처리 위탁 있음
                             </label>
                           </div>
+                          {form.settings?.privacyThirdParty && (
+                            <label className="block text-xs font-medium text-[#355C45]">
+                              제3자 제공 상세
+                              <textarea value={form.settings?.privacyThirdPartyDetails || ""} onChange={(e) => updateForm((f) => ({ ...f, settings: { ...f.settings, privacyThirdPartyDetails: e.target.value } }))} rows={2} placeholder="예: 제공받는 자, 제공 목적, 제공 항목, 보유기간, 동의 거부권·불이익" className="mt-1 w-full rounded-lg border border-[#C9CEC6] bg-white px-3 py-2 text-sm text-[#17251F] outline-none focus:border-[#17866D]" />
+                            </label>
+                          )}
+                          {form.settings?.privacyOutsourcing && (
+                            <label className="block text-xs font-medium text-[#355C45]">
+                              처리 위탁 상세
+                              <textarea value={form.settings?.privacyOutsourcingDetails || ""} onChange={(e) => updateForm((f) => ({ ...f, settings: { ...f.settings, privacyOutsourcingDetails: e.target.value } }))} rows={2} placeholder="예: 수탁자와 위탁 업무 내용" className="mt-1 w-full rounded-lg border border-[#C9CEC6] bg-white px-3 py-2 text-sm text-[#17251F] outline-none focus:border-[#17866D]" />
+                            </label>
+                          )}
                           {!form.questions.some((q) => q.type === "privacy_consent") && (
                             <p className="rounded-md bg-[#FFF4E5] px-2.5 py-2 text-[11px] leading-5 text-[#8A4B08]">현재 폼에 동의 질문이 없어요. 개인정보를 수집한다면 `동의 질문 추가`를 함께 넣고, 목적·항목·보유기간을 실제 내용에 맞게 확인하세요.</p>
                           )}

@@ -13,10 +13,23 @@ function exportFileName(form, suffix) {
   return `${title}-${suffix}`;
 }
 
-export default function ResponsesView({ form, formId, responses, onClear }) {
+export default function ResponsesView({ form, formId, responses, onClear, onAudit }) {
   const [exporting, setExporting] = useState("");
   const [exportNotice, setExportNotice] = useState("");
   const [driveUrl, setDriveUrl] = useState("");
+
+  const recordExport = (format, destination = "device") => {
+    Promise.resolve(onAudit?.("export", { format, destination, responseCount: responses.length })).catch(() => {});
+  };
+
+  const exportLocal = async (format, action) => {
+    try {
+      await action();
+      recordExport(format);
+    } catch {
+      setExportNotice(`${format} 파일을 만들지 못했어요.`);
+    }
+  };
 
   const exportToDrive = async (target) => {
     setDriveUrl("");
@@ -52,6 +65,7 @@ export default function ResponsesView({ form, formId, responses, onClear }) {
       const uploaded = await uploadGoogleDriveFile(accessToken, { blob, name, mimeType, convertToMimeType });
       setExportNotice(target === "sheets" ? "Google Sheets에 새 응답 파일을 만들었습니다." : "내 Google Drive에 파일을 업로드했습니다.");
       setDriveUrl(uploaded.webViewLink || "");
+      recordExport(target === "sheets" ? "google_sheets" : `drive_${target}`, "google_drive");
     } catch (error) {
       if (error?.status === 401 || error?.status === 403) {
         setExportNotice("Google 권한이 만료됐거나 아직 설정되지 않았어요. 다시 연결한 뒤 시도해주세요.");
@@ -84,11 +98,11 @@ export default function ResponsesView({ form, formId, responses, onClear }) {
             <div className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-[min(22rem,calc(100vw-1.5rem))] rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-3 shadow-[0_12px_30px_rgba(23,37,31,0.16)]">
               <p className="px-1 pb-2 text-[11px] leading-5 text-[#78837C]">원문이 포함되는 파일은 이 기기에서 직접 생성됩니다. 요약 PNG·PPTX에는 자유 입력 원문을 넣지 않습니다.</p>
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => downloadCsv(form, responses)} className="export-button"><Download size={14} /> CSV</button>
-                <button type="button" onClick={() => downloadExcelCompatible(form, responses)} className="export-button"><FileSpreadsheet size={14} /> Excel</button>
-                <button type="button" onClick={() => downloadJson(form, responses)} className="export-button"><FileJson size={14} /> JSON</button>
-                <button type="button" onClick={() => downloadSummaryPng(form, responses).catch(() => setExportNotice("요약 이미지를 만들지 못했어요."))} className="export-button"><ImageDown size={14} /> 요약 PNG</button>
-                <button type="button" onClick={() => downloadPresentation(form, responses).catch(() => setExportNotice("프레젠테이션을 만들지 못했어요."))} className="export-button col-span-2"><Presentation size={14} /> 응답 요약 PPTX</button>
+                <button type="button" onClick={() => exportLocal("csv", () => downloadCsv(form, responses))} className="export-button"><Download size={14} /> CSV</button>
+                <button type="button" onClick={() => exportLocal("excel", () => downloadExcelCompatible(form, responses))} className="export-button"><FileSpreadsheet size={14} /> Excel</button>
+                <button type="button" onClick={() => exportLocal("json", () => downloadJson(form, responses))} className="export-button"><FileJson size={14} /> JSON</button>
+                <button type="button" onClick={() => exportLocal("summary_png", () => downloadSummaryPng(form, responses))} className="export-button"><ImageDown size={14} /> 요약 PNG</button>
+                <button type="button" onClick={() => exportLocal("summary_pptx", () => downloadPresentation(form, responses))} className="export-button col-span-2"><Presentation size={14} /> 응답 요약 PPTX</button>
               </div>
               <div className="my-3 border-t border-[#E7E5DC]" />
               <p className="px-1 pb-2 text-[11px] font-semibold text-[#59645E]">Google Workspace로 직접 보내기</p>

@@ -225,6 +225,16 @@ export default function QuestionEditor({
                 />
               </label>
             </div>
+            <label className="block text-xs text-[#59645E]">
+              동의 거부권 및 거부 시 안내
+              <textarea
+                value={q.refusalRights || ""}
+                onChange={(e) => update({ refusalRights: e.target.value })}
+                rows={2}
+                placeholder="예: 동의를 거부할 수 있으나, 동의하지 않으면 설문 제출이 제한됩니다."
+                className="mt-1 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm outline-none focus:border-[#17866D]"
+              />
+            </label>
             <div className="space-y-2">
               {q.options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">

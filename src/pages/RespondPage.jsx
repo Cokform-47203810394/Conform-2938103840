@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import PreviewForm from "../components/PreviewForm";
-import { getFormDoc, submitResponse, recordFormView } from "../lib/formsStore";
+import { getFormDoc, submitResponse, recordFormParticipation, recordFormView } from "../lib/formsStore";
 import { ELEV1, MD } from "../theme";
 
 export default function RespondPage({ formId }) {
@@ -43,6 +43,9 @@ export default function RespondPage({ formId }) {
       localStorage.setItem(`form-builder:responded:${formId}`, "1");
       setAlreadyResponded(true);
     }
+    // Participation history is convenience metadata only: form ID, public title,
+    // question count, and timestamp. It never contains answers or an encryption key.
+    await recordFormParticipation(formId, form);
     return true;
   };
 
