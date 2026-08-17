@@ -9,3 +9,9 @@ Google의 recrawl 가이드는 개별 소수 URL에는 Search Console URL Inspec
 Cokform은 운영 도메인 `https://cokform.pages.dev/`로 서비스 중인데, 기존 index.html canonical/OG와 robots/sitemap/manifest에는 GitHub Pages 경로가 남아 있었다. 이 불일치는 canonical 신호·사이트맵·PWA 시작 URL을 분산시키므로 Pages 운영 URL로 우선 정정해야 한다.
 
 GEO를 위한 공개 자산은 제품 설명·보안 모델·개인정보 처리 경계·지원 범위·FAQ를 사람과 기계가 읽기 쉬운 정적 문서로 제공하고, `llms.txt`에 핵심 사실과 canonical 문서를 안내하는 방식으로 시작한다. E2EE를 과장하지 않고 키가 작성자 브라우저에 남으며 키 백업 전에는 복구가 제한된다는 사실을 명시한다.
+
+## 운영 배포 검증
+
+2026-08-18 KST에 `https://cokform.pages.dev/security.html`와 `https://cokform.pages.dev/faq.html`의 운영 배포본을 브라우저로 확인했다. Cloudflare Pages는 `.html` URL을 확장자 없는 `/security`, `/faq` canonical 접근으로 제공했고, 두 페이지 모두 1열 카드 기반의 읽기 쉬운 모바일·데스크톱 레이아웃, 명확한 H1, 관련 공개 문서 내부 링크, 응답 암호화·키 관리·개인정보 고지의 제한 설명을 정상 노출했다.
+
+공개 콘텐츠는 검색 노출을 위한 이해 문맥을 제공하지만, 공개 응답 링크나 응답 데이터는 사이트맵에 넣지 않는다. 실제 색인은 Google·Bing·NAVER의 소유권 확인과 제출 후 크롤러 판단에 따르며 순위나 빠른 노출을 보장하지 않는다.
