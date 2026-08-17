@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ArrowLeft, ExternalLink, FileCheck2, ShieldCheck } from "lucide-react";
 
 const platformSections = [
@@ -16,6 +17,10 @@ const operatorSections = [
 ];
 
 export default function PrivacyPage({ onBack }) {
+  useEffect(() => {
+    document.title = "콕폼 개인정보처리방침 | Cokform";
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#F5F3EC] px-4 py-8 text-[#17251F] sm:px-6 sm:py-12">
       <div className="mx-auto max-w-3xl">

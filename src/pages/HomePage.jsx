@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronRight, X } from "lucide-react";
+import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronRight, X, Github, Mail, ShieldCheck, FileText, Map } from "lucide-react";
 import AuthControl from "../components/AuthControl";
 import { signInWithGoogle } from "../lib/auth";
 import FormThumbnail from "../components/FormThumbnail";
@@ -295,9 +295,49 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         </div>
       )}
 
-      <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#DDE1D9] pt-5 text-xs text-[#78837C]">
-        <span>Private Pilot · 응답은 브라우저에서 암호화됩니다.</span>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><a href="/security.html" className="font-medium text-[#59645E] underline underline-offset-2">보안</a><a href="/faq.html" className="font-medium text-[#59645E] underline underline-offset-2">FAQ</a><a href="?privacy=1" className="font-medium text-[#59645E] underline underline-offset-2">개인정보·법적 안내</a><a href="?terms=1" className="font-medium text-[#59645E] underline underline-offset-2">이용약관</a></div>
+      <footer className="mt-14 bg-[#101713] text-[#D6E1D8]">
+        <div className="mx-auto max-w-6xl px-5 py-10 sm:px-6 sm:py-12">
+          <div className="grid gap-10 border-t border-white/10 pt-8 lg:grid-cols-[1.45fr_0.8fr_0.9fr] lg:gap-12">
+            <div>
+              <a href="/" className="inline-flex items-center gap-2.5 text-white"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D8ED59] text-xs font-black tracking-[-0.06em] text-[#17251F]">C</span><span className="text-lg font-extrabold tracking-[-0.04em]">COKFORM</span></a>
+              <p className="mt-4 max-w-sm text-sm leading-6 text-[#9DAAA1]">한국 실무 흐름에 맞춘 개인정보 보호형 폼 빌더. 응답은 브라우저에서 암호화되어, 폼 작성자만 자신의 키로 읽도록 설계합니다.</p>
+              <div className="mt-5 flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-[0.08em]">
+                <a href="https://github.com/haroseo" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[#D6E1D8] transition hover:text-[#D8ED59]"><Github size={16} /> GitHub <ExternalLink size={12} /></a>
+                <span title="공개 문의 메일 등록 전" className="inline-flex cursor-not-allowed items-center gap-2 text-[#718077]"><Mail size={16} /> Contact 준비 중</span>
+              </div>
+            </div>
+
+            <nav aria-label="서비스 링크">
+              <h2 className="text-xs font-bold tracking-[0.12em] text-[#718077]">서비스</h2>
+              <div className="mt-4 flex flex-col items-start gap-3 text-sm">
+                <a href="/" className="transition hover:text-[#D8ED59]">폼 만들기</a>
+                <a href="/security" className="transition hover:text-[#D8ED59]">보안과 응답 암호화</a>
+                <a href="/faq" className="transition hover:text-[#D8ED59]">자주 묻는 질문</a>
+                <a href="/sitemap" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">사이트맵 <Map size={14} /></a>
+              </div>
+            </nav>
+
+            <nav aria-label="정책과 운영 링크">
+              <h2 className="text-xs font-bold tracking-[0.12em] text-[#718077]">정책 · 운영</h2>
+              <div className="mt-4 flex flex-col items-start gap-3 text-sm">
+                <a href="/privacy" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">개인정보처리방침 <ShieldCheck size={14} /></a>
+                <a href="/terms" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">이용약관 <FileText size={14} /></a>
+                <a href="/sitemap.xml" className="transition hover:text-[#D8ED59]">검색엔진용 XML 사이트맵</a>
+                <span className="text-xs leading-5 text-[#718077]">문의 이메일은 정식 공개 전 등록됩니다.</span>
+              </div>
+            </nav>
+          </div>
+
+          <details className="group mt-9 border-y border-white/10 py-4">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-[#D6E1D8] [&::-webkit-details-marker]:hidden"><span className="inline-flex items-center gap-2">오픈소스 라이선스와 고지 <ChevronRight size={15} className="transition group-open:rotate-90" /></span></summary>
+            <div className="mt-4 max-w-4xl text-xs leading-6 text-[#9DAAA1]">콕폼은 React, React DOM, Supabase JavaScript, Lucide, Vite, Tailwind CSS 등 오픈소스 소프트웨어를 사용합니다. 각 소프트웨어의 저작권 및 라이선스는 해당 프로젝트의 원본 저장소와 배포물에 따릅니다. <a href="https://github.com/facebook/react" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#D8ED59]">React</a> · <a href="https://github.com/supabase/supabase-js" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#D8ED59]">Supabase JS</a> · <a href="https://github.com/lucide-icons/lucide" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#D8ED59]">Lucide</a> · <a href="https://github.com/vitejs/vite" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#D8ED59]">Vite</a> · <a href="https://github.com/tailwindlabs/tailwindcss" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#D8ED59]">Tailwind CSS</a></div>
+          </details>
+
+          <div className="flex flex-col gap-3 pt-6 text-[11px] leading-5 text-[#718077] sm:flex-row sm:items-start sm:justify-between">
+            <div><p>© 2026 Cokform. All rights reserved.</p><p className="mt-1 max-w-3xl">응답 원문은 암호화되어 저장되도록 설계됩니다. 개인정보 수집의 목적·항목·보관기간과 응답자 권리 고지는 각 폼 운영자가 실제 운영 내용에 맞게 설정해야 합니다.</p></div>
+            <p className="shrink-0 font-medium text-[#9DAAA1]">ASK IT WELL.</p>
+          </div>
+        </div>
       </footer>
 
       {/* click-away layer for the open card menu */}

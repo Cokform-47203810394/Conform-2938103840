@@ -118,7 +118,7 @@ export default function PreviewForm({ form, onSubmit, accent }) {
             {form.settings.privacyThirdParty ? " 제3자 제공이 있을 수 있습니다." : " 제3자 제공은 별도 동의 없이 진행하지 않습니다."}
             {form.settings.privacyOutsourcing ? " 처리 위탁이 있을 수 있습니다." : " 처리 위탁 여부는 폼 작성자의 안내를 확인해 주세요."}
           </p>
-          <a href="?privacy=1" target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold text-[#0B4D3D] underline underline-offset-2">콕폼 개인정보·법적 안내 보기</a>
+          <a href="/privacy" target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold text-[#0B4D3D] underline underline-offset-2">콕폼 개인정보처리방침 보기</a>
         </div>
       )}
       {form.settings?.collectEmail && (

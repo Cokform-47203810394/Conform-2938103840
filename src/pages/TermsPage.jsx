@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ArrowLeft, FileText } from "lucide-react";
 
 const sections = [
@@ -11,6 +12,10 @@ const sections = [
 ];
 
 export default function TermsPage({ onBack }) {
+  useEffect(() => {
+    document.title = "콕폼 서비스 이용약관 | Cokform";
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#F5F3EC] px-4 py-8 text-[#17251F] sm:px-6 sm:py-12">
       <div className="mx-auto max-w-3xl">

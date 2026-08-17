@@ -5,24 +5,32 @@ import RespondPage from "./pages/RespondPage";
 import SettingsPage from "./pages/SettingsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
+import SitemapPage from "./pages/SitemapPage";
 import AuthControl from "./components/AuthControl";
 import { subscribeAuth } from "./lib/auth";
 import { ArrowLeft } from "lucide-react";
 import { ELEV1 } from "./theme";
 
 function getQueryMode() {
-  if (typeof window === "undefined") return { respond: null, privacy: false };
+  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false };
   const params = new URLSearchParams(window.location.search);
-  return { respond: params.get("respond"), privacy: params.get("privacy") === "1", terms: params.get("terms") === "1" };
+  const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+  return {
+    respond: params.get("respond"),
+    privacy: pathname === "/privacy" || params.get("privacy") === "1",
+    terms: pathname === "/terms" || params.get("terms") === "1",
+    sitemap: pathname === "/sitemap",
+  };
 }
 
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const { respond: respondFormId, privacy, terms } = getQueryMode();
+  const { respond: respondFormId, privacy, terms, sitemap } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
-  if (privacy) return <PrivacyPage onBack={() => { window.location.href = window.location.pathname; }} />;
-  if (terms) return <TermsPage onBack={() => { window.location.href = window.location.pathname; }} />;
+  if (privacy) return <PrivacyPage onBack={() => { window.location.href = "/"; }} />;
+  if (terms) return <TermsPage onBack={() => { window.location.href = "/"; }} />;
+  if (sitemap) return <SitemapPage onBack={() => { window.location.href = "/"; }} />;
   return <Builder />;
 }
 

@@ -1,0 +1,2 @@
+# Serve static assets first, then let the React app render clean public routes.
+/* /index.html 200
