@@ -64,7 +64,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const updateForm = useCallback((updater) => {
     setForm((prev) => {
       if (!applyingHistory.current && loadedRef.current) {
-        if (pendingSnapshot.current === null) pendingSnapshot.current = formRef.current?.id ? formRef.current : prev;
+        if (pendingSnapshot.current === null) pendingSnapshot.current = normalizeForm(form);
         if (historyTimer.current) clearTimeout(historyTimer.current);
         historyTimer.current = setTimeout(() => {
           setPast((p) => [...p.slice(-49), pendingSnapshot.current]);
@@ -74,7 +74,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
       }
       return typeof updater === "function" ? updater(prev) : updater;
     });
-  }, []);
+  }, [form]);
 
   const undo = () => {
     if (pendingSnapshot.current !== null) {
