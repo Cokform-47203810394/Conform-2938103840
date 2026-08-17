@@ -31,3 +31,5 @@ Google Search Console URL Inspection으로 `https://cokform.pages.dev/`를 검�
 `https://cokform.pages.dev/faq.html`은 Google URL Inspection에서 아직 미등록·미크롤링 상태로 확인됐다. 색인 생성 요청을 실행했으나 Search Console이 **일일 할당량 초과**를 반환해 이 요청은 처리되지 않았다. 내일 다시 요청해야 하며, 이번 세션에서는 같은 계정으로 FAQ·보안 페이지에 대한 재요청을 반복하지 않는다. 홈페이지는 이미 색인되어 있고 sitemap 제출도 완료되어 있으므로, 이 제한은 신규 URL의 즉시 수동 요청에만 영향을 준다.
 
 Bing Webmaster Tools는 `https://www.bing.com/webmasters/`에서 현재 로그인되지 않은 상태로 확인됐다. Bing 사이트 등록에는 Microsoft 계정 로그인이 필요하다. Google Search Console은 홈페이지가 이미 색인됨을 확인했고, FAQ 신규 URL은 미등록 상태였으나 수동 색인 생성 요청은 계정의 일일 할당량 초과로 처리되지 않았다. Bing/NAVER 등록을 위해서는 해당 계정 세션의 로그인 및 이후 소유권 확인 방식이 필요하다.
+
+운영 Cloudflare Pages에서 `https://cokform.pages.dev/sitemap`이 정상 로드되는 것을 확인했다. 운영 홈 푸터에는 브랜드 설명, GitHub, 서비스 링크, 개인정보처리방침·이용약관, XML 사이트맵, 접이식 오픈소스 고지와 저작권·운영 책임 문구가 표시된다. 공개 링크는 `/security`, `/faq`, `/privacy`, `/terms`, `/sitemap`의 확장자 없는 주소를 사용하도록 정비됐다.
