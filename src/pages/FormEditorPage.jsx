@@ -28,6 +28,18 @@ import QuickAddToolbar from "../components/QuickAddToolbar";
 const PALETTE_SWATCHES = [MD.primary, ...CHART_PALETTE.filter((c) => c !== MD.primary), NAVER_GREEN];
 const BACKGROUND_SWATCHES = ["#F5F3EC", "#FFFDF8", "#FFF2E8", "#EAF6EF", "#EAF1FB", "#FCEFEF"];
 
+function normalizeForm(value) {
+  const fallback = emptyForm();
+  const next = value || {};
+  return {
+    ...fallback,
+    ...next,
+    settings: { ...fallback.settings, ...(next.settings || {}) },
+    questions: Array.isArray(next.questions) ? next.questions : fallback.questions,
+    collaborators: Array.isArray(next.collaborators) ? next.collaborators : [],
+  };
+}
+
 export default function FormEditorPage({ formId, user, onBack }) {
   const [form, setForm] = useState(emptyForm());
   const [responses, setResponses] = useState([]);
@@ -64,7 +76,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setPast((p) => p.slice(0, -1));
     setFuture((f) => [form, ...f]);
     applyingHistory.current = true;
-    setForm(previous);
+    setForm(normalizeForm(previous));
     applyingHistory.current = false;
   };
   const redo = () => {
@@ -73,7 +85,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setFuture((f) => f.slice(1));
     setPast((p) => [...p, form]);
     applyingHistory.current = true;
-    setForm(next);
+    setForm(normalizeForm(next));
     applyingHistory.current = false;
   };
 
@@ -84,7 +96,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setFuture([]);
     (async () => {
       const doc = await getFormDoc(formId);
-      let nextForm = doc?.form || emptyForm();
+      let nextForm = normalizeForm(doc?.form);
       const keyPair = await ensureFormKeyPair(formId);
       if (!nextForm.publicKey) nextForm = { ...nextForm, publicKey: keyPair.publicJwk };
       setForm(nextForm);
