@@ -1,0 +1,41 @@
+name: Keep Cokform Supabase active
+
+on:
+  schedule:
+    # Every second day, 12:17 KST. The 7-day Free Plan inactivity window leaves
+    # multiple retry opportunities if GitHub delays one scheduled run.
+    - cron: "17 3 */2 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cokform-supabase-heartbeat
+  cancel-in-progress: false
+
+jobs:
+  heartbeat:
+    name: Read-only Supabase heartbeat
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request only public form metadata
+        env:
+          SUPABASE_URL: https://bnbdxcyarerrmijuvxdb.supabase.co
+          # Publishable browser key, limited by the project's RLS policies.
+          # Never use a service_role key in this workflow.
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_DmgHzJGiwMiEAK9HT-r1MA_X9BU3O8n
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --retry 2 --retry-all-errors --connect-timeout 10 --max-time 30 \
+            --header "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_PUBLISHABLE_KEY}" \
+            --header "Accept: application/json" \
+            --header "User-Agent: Cokform-Supabase-Heartbeat/1.0" \
+            "${SUPABASE_URL}/rest/v1/form_public?select=id&limit=1")"
+
+          test "$status" = "200" || { echo "Supabase heartbeat failed with HTTP $status"; exit 1; }
+          echo "Read-only Supabase heartbeat succeeded at $(date -u +%Y-%m-%dT%H:%M:%SZ)."
