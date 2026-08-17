@@ -9,13 +9,14 @@ export default function PreviewForm({ form, onSubmit, accent }) {
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (qid, value) => {
     setAnswers((a) => ({ ...a, [qid]: value }));
     setErrors((e) => ({ ...e, [qid]: false }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const nextErrors = {};
     let hasError = false;
 
@@ -56,8 +57,14 @@ export default function PreviewForm({ form, onSubmit, accent }) {
 
     setErrors(nextErrors);
     if (hasError) return;
-    onSubmit(answers);
-    setSubmitted(true);
+
+    setSubmitting(true);
+    try {
+      const completed = await onSubmit(answers);
+      if (completed !== false) setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const restart = () => {
@@ -122,16 +129,25 @@ export default function PreviewForm({ form, onSubmit, accent }) {
           {form.settings?.responseReceipt && <label className="mt-3 flex items-center gap-2 text-xs text-[#59645E]"><input type="checkbox" checked={Boolean(answers._cokform_receipt)} onChange={(e) => handleChange("_cokform_receipt", e.target.checked)} /> 제출 후 내 응답 사본 받기</label>}
         </div>
       )}
+      {Object.keys(errors).length > 0 && (
+        <div role="alert" className="rounded-xl border border-[#F2B8B5] bg-[#FFF6F5] px-4 py-3 text-sm text-[#8C1D18]">
+          필수 항목과 입력 형식을 다시 확인해주세요.
+        </div>
+      )}
       {form.questions.map((q) => (
         <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={handleChange} />
       ))}
-      <button
-        onClick={handleSubmit}
-        className={`w-full rounded-full px-6 py-3 text-base font-medium text-white transition-shadow active:shadow-none sm:w-auto sm:py-2.5 sm:text-sm ${ELEV1_HOVER}`}
-        style={{ backgroundColor: color }}
-      >
-        제출
-      </button>
+      <div className="sticky bottom-0 z-10 -mx-3 bg-gradient-to-t from-[#F5F3EC] via-[#F5F3EC]/95 to-transparent px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-5 sm:static sm:mx-0 sm:bg-none sm:p-0">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={submitting}
+          className={`min-h-[48px] w-full rounded-full px-6 py-3 text-base font-semibold text-white transition-shadow active:shadow-none disabled:cursor-wait disabled:opacity-60 sm:min-h-0 sm:w-auto sm:py-2.5 sm:text-sm ${ELEV1_HOVER}`}
+          style={{ backgroundColor: color }}
+        >
+          {submitting ? "저장하는 중…" : "제출"}
+        </button>
+      </div>
     </div>
   );
 }

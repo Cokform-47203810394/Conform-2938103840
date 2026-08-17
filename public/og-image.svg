@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
-  <title id="title">콕폼 — 개인정보를 먼저 생각하는 폼</title>
-  <desc id="desc">응답은 브라우저에서 암호화하고 운영은 한국 실무에 맞게 간단하게</desc>
+  <title id="title">Cokform — Private forms for Korea</title>
+  <desc id="desc">Privacy-first form builder with browser-side response encryption</desc>
   <rect width="1200" height="630" fill="#F5F3EC"/>
-  <circle cx="1020" cy="-20" r="310" fill="#D8ED59"/>
-  <circle cx="110" cy="600" r="210" fill="#E7F0D2"/>
-  <rect x="82" y="76" width="96" height="96" rx="28" fill="#17251F"/>
-  <path d="M111 103h39c18 0 29 10 29 26s-11 26-29 26h-39v-52Zm19 17v18h19c7 0 11-3 11-9s-4-9-11-9h-19Z" fill="#D8ED59"/>
-  <text x="82" y="258" font-family="Pretendard, Arial, sans-serif" font-size="34" font-weight="700" fill="#59645E" letter-spacing="2">ASK IT WELL</text>
-  <text x="78" y="380" font-family="Pretendard, Arial, sans-serif" font-size="78" font-weight="800" fill="#17251F">개인정보를 먼저 생각하는 폼</text>
-  <text x="82" y="454" font-family="Pretendard, Arial, sans-serif" font-size="32" font-weight="500" fill="#59645E">응답은 브라우저에서 암호화하고, 운영은 한국 실무에 맞게.</text>
-  <text x="82" y="548" font-family="Pretendard, Arial, sans-serif" font-size="30" font-weight="800" fill="#17251F">콕폼 / COKFORM</text>
+  <circle cx="1030" cy="-10" r="300" fill="#D8ED59"/>
+  <circle cx="110" cy="615" r="190" fill="#E7F0D2"/>
+  <rect x="80" y="72" width="98" height="98" rx="28" fill="#17251F"/>
+  <path d="M108 101h38c18 0 30 11 30 27s-12 27-30 27h-38v-54Zm19 17v20h19c7 0 11-3 11-10s-4-10-11-10h-19Z" fill="#D8ED59"/>
+  <text x="80" y="255" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#17866D" letter-spacing="5">COKFORM / ASK IT WELL</text>
+  <text x="76" y="370" font-family="Arial, sans-serif" font-size="80" font-weight="800" fill="#17251F">Private forms,</text>
+  <text x="76" y="464" font-family="Arial, sans-serif" font-size="80" font-weight="800" fill="#17251F">thoughtfully made.</text>
+  <text x="80" y="548" font-family="Arial, sans-serif" font-size="30" font-weight="600" fill="#59645E">Browser-side response encryption · Korean workflow</text>
 </svg>

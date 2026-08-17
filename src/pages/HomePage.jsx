@@ -112,8 +112,8 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
     <div className="min-h-screen bg-[#F5F3EC]">
       {/* top bar */}
       <div className="sticky top-0 z-10 border-b border-[#DDE1D9] bg-[#FFFDF8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-3 sm:px-6">
-          <div className="flex shrink-0 items-center gap-2">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-3 py-3 sm:flex-nowrap sm:gap-3 sm:px-6">
+          <div className="order-1 flex shrink-0 items-center gap-2">
             <img
               src={`${import.meta.env.BASE_URL}brand/cokform-logo.svg`}
               alt="콕폼 · ASK IT WELL"
@@ -121,14 +121,14 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             />
           </div>
 
-          <div className="relative mx-auto w-full max-w-xl">
+          <div className="order-3 relative w-full basis-full sm:order-2 sm:mx-auto sm:max-w-xl sm:flex-1 sm:basis-auto">
             <Search size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#17866D]" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               placeholder="폼 이름으로 바로 찾기"
-              className="w-full rounded-full border border-[#DDE1D9] bg-[#F5F3EC] py-2.5 pl-10 pr-10 text-base text-[#17251F] outline-none transition focus:border-[#17866D] focus:bg-white focus:ring-4 focus:ring-[#D8F5E8] sm:text-sm"
+              className="min-h-[44px] w-full rounded-full border border-[#DDE1D9] bg-[#F5F3EC] py-2.5 pl-10 pr-10 text-base text-[#17251F] outline-none transition focus:border-[#17866D] focus:bg-white focus:ring-4 focus:ring-[#D8F5E8] sm:min-h-[0] sm:text-sm"
             />
             {query && <button type="button" onClick={() => setQuery("")} aria-label="검색어 지우기" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#78837C]"><X size={16} /></button>}
             {searchFocused && query.trim() && (
@@ -144,7 +144,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             )}
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          <div className="order-2 ml-auto flex shrink-0 items-center gap-1.5 sm:order-3">
             <div className="relative">
               <button onClick={() => setNotificationsOpen((v) => !v)} title="응답 알림" className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition hover:bg-[#D8F5E8] hover:text-[#0B4D3D]">
                 <Bell size={19} />
@@ -164,7 +164,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-3 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-6xl px-3 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-7 sm:px-6 sm:py-10">
         {!authReady ? (
           <div className="mb-6 rounded-2xl border border-[#C9CEC6] bg-[#FFFDF8] px-4 py-3 text-sm text-[#59645E]">로그인 상태를 확인하는 중…</div>
         ) : !user ? (
@@ -178,7 +178,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         <div className="mb-2 cok-eyebrow">START WITH A SIGNAL</div>
         <h1 className="cok-display mb-2">무엇을 물어볼까요?</h1>
         <p className="mb-6 max-w-xl text-sm leading-6 text-[#59645E] sm:text-base">목적에 맞는 시작점을 고르고, 사람들의 답이 자연스럽게 모이는 폼을 만들어보세요.</p>
-        <div className="mb-12 flex gap-4 overflow-x-auto pb-2 sm:gap-5">
+        <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] sm:gap-5">
           {TEMPLATES.map((t) => (
             <TemplateCard key={t.key} template={t} onCreate={handleCreate} busy={creating !== null} creating={creating === t.key} />
           ))}
@@ -190,7 +190,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           <span className="rounded-full bg-[#D8ED59] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#17251F]">PRO</span>
         </div>
         <p className="mb-4 text-sm text-[#59645E]">신청·동의·피드백처럼 자주 쓰는 흐름을 바로 시작해요.</p>
-        <div className="mb-12 flex gap-4 overflow-x-auto pb-2 sm:gap-5">
+        <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] sm:gap-5">
           {PREMIUM_TEMPLATES.map((t) => (
             <TemplateCard key={t.key} template={t} onCreate={handleCreate} busy={creating !== null} creating={creating === t.key} premium />
           ))}
@@ -297,7 +297,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
 
       <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#DDE1D9] pt-5 text-xs text-[#78837C]">
         <span>Private Pilot · 응답은 브라우저에서 암호화됩니다.</span>
-        <div className="flex items-center gap-3"><a href="?privacy=1" className="font-medium text-[#59645E] underline underline-offset-2">개인정보·법적 안내</a><a href="?terms=1" className="font-medium text-[#59645E] underline underline-offset-2">이용약관</a></div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><a href="/security.html" className="font-medium text-[#59645E] underline underline-offset-2">보안</a><a href="/faq.html" className="font-medium text-[#59645E] underline underline-offset-2">FAQ</a><a href="?privacy=1" className="font-medium text-[#59645E] underline underline-offset-2">개인정보·법적 안내</a><a href="?terms=1" className="font-medium text-[#59645E] underline underline-offset-2">이용약관</a></div>
       </footer>
 
       {/* click-away layer for the open card menu */}
@@ -322,7 +322,7 @@ function TemplateCard({ template: t, onCreate, busy, creating, premium }) {
     <button
       onClick={() => onCreate(t)}
       disabled={busy}
-      className={`group relative w-[132px] shrink-0 overflow-hidden rounded-lg bg-white text-left transition-all sm:w-[148px] ${ELEV1_HOVER} ${
+      className={`group relative w-[min(40vw,148px)] shrink-0 snap-start overflow-hidden rounded-lg bg-white text-left transition-all sm:w-[148px] ${ELEV1_HOVER} ${
         creating ? "opacity-60" : ""
       }`}
     >

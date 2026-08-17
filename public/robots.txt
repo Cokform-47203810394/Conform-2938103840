@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
-Disallow: /?respond=
-Sitemap: https://cokform-47203810394.github.io/Conform-2938103840/sitemap.xml
+
+# Individual respondent pages can contain form-specific content and must not become public search results.
+Disallow: /*?respond=
+
+Sitemap: https://cokform.pages.dev/sitemap.xml

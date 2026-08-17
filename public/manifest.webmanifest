@@ -1,12 +1,14 @@
 {
-  "name": "콕폼",
+  "name": "콕폼 · 개인정보를 먼저 생각하는 폼",
   "short_name": "콕폼",
-  "description": "개인정보를 먼저 생각하는 한국형 폼 빌더",
+  "description": "개인정보를 먼저 생각하는 한국형 프라이버시 우선 폼 빌더",
   "lang": "ko-KR",
-  "start_url": "/Conform-2938103840/",
-  "scope": "/Conform-2938103840/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#F5F3EC",
   "theme_color": "#D8ED59",
-  "icons": []
+  "icons": [
+    { "src": "/brand/cokform-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
 }

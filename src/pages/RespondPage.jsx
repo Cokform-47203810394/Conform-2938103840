@@ -35,18 +35,19 @@ export default function RespondPage({ formId }) {
     const result = await submitResponse(formId, answers, form.publicKey, form.settings);
     if (!result.ok) {
       window.alert(result.reason === "duplicate" ? "이미 이 폼에 응답을 제출했어요." : "응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
-      return;
+      return false;
     }
     if (form.settings?.limitOneResponse) {
       localStorage.setItem(`form-builder:responded:${formId}`, "1");
       setAlreadyResponded(true);
     }
+    return true;
   };
 
   if (closed || blocked) {
     return (
-      <div className="min-h-screen px-4 py-10" style={{ backgroundColor: form.backgroundColor || "#F5F3EC" }}>
-        <div className={`mx-auto max-w-xl rounded-xl border-t-8 bg-white p-8 text-center ${ELEV1}`} style={{ borderTopColor: accent }}>
+      <div className="min-h-[100dvh] px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(2.5rem+env(safe-area-inset-top))]" style={{ backgroundColor: form.backgroundColor || "#F5F3EC" }}>
+        <div className={`mx-auto max-w-xl rounded-xl border-t-8 bg-white p-6 text-center sm:p-8 ${ELEV1}`} style={{ borderTopColor: accent }}>
           <h1 className="text-xl font-normal text-[#17251F]">{form.title}</h1>
           <p className="mt-3 text-sm text-[#59645E]">
             {closed ? "현재 응답을 받고 있지 않은 설문지예요." : "이미 응답을 제출하셨어요. 응답은 1인 1회로 제한되어 있어요."}
@@ -57,7 +58,7 @@ export default function RespondPage({ formId }) {
   }
 
   return (
-    <div className="min-h-screen px-3 py-6 sm:px-4" style={{ backgroundColor: form.backgroundColor || "#F5F3EC" }}>
+    <div className="min-h-[100dvh] px-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-4 sm:py-6" style={{ backgroundColor: form.backgroundColor || "#F5F3EC" }}>
       <div className="mx-auto max-w-2xl">
         <PreviewForm form={form} onSubmit={handleSubmit} accent={accent} />
       </div>
