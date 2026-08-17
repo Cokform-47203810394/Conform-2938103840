@@ -47,6 +47,12 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const [loaded, setLoaded] = useState(false);
   const [saveState, setSaveState] = useState("saved");
   const saveTimer = useRef(null);
+  const loadedRef = useRef(false);
+  const formRef = useRef(form);
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
 
   // ---- undo / redo (coalesces rapid edits into one checkpoint every 600ms) ----
   const [past, setPast] = useState([]);
@@ -57,8 +63,8 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   const updateForm = useCallback((updater) => {
     setForm((prev) => {
-      if (!applyingHistory.current) {
-        if (pendingSnapshot.current === null) pendingSnapshot.current = prev;
+      if (!applyingHistory.current && loadedRef.current) {
+        if (pendingSnapshot.current === null) pendingSnapshot.current = formRef.current?.id ? formRef.current : prev;
         if (historyTimer.current) clearTimeout(historyTimer.current);
         historyTimer.current = setTimeout(() => {
           setPast((p) => [...p.slice(-49), pendingSnapshot.current]);
@@ -103,6 +109,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   // ---- load / save ----
   useEffect(() => {
     setLoaded(false);
+    loadedRef.current = false;
     setPast([]);
     setFuture([]);
     pendingSnapshot.current = null;
@@ -113,8 +120,10 @@ export default function FormEditorPage({ formId, user, onBack }) {
       let nextForm = normalizeForm(doc?.form);
       const keyPair = await ensureFormKeyPair(formId);
       if (!nextForm.publicKey) nextForm = { ...nextForm, publicKey: keyPair.publicJwk };
+      formRef.current = nextForm;
       setForm(nextForm);
       setResponses(doc?.responses || []);
+      loadedRef.current = true;
       setLoaded(true);
     })();
   }, [formId]);
