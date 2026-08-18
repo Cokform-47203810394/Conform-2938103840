@@ -231,5 +231,19 @@ Deno.serve(async (request) => {
   if (submitOutcome === "response_limit_reached") return json(409, { ok: false, code: "response_limit_reached" });
   if (submitOutcome === "form_unavailable") return json(409, { ok: false, code: "form_unavailable" });
   if (submitOutcome !== "ok") return json(503, { ok: false, code: "save_failed" });
+
+  // Do not copy any answer, email, IP address, or key into notifications. This
+  // row is deliberately limited to owner/form/response identifiers and an event time.
+  if (publicForm.data?.settings?.ownerResponseNotification === true) {
+    const { data: ownerForm } = await admin.from("forms").select("owner").eq("id", payload.formId).maybeSingle();
+    if (ownerForm?.owner) {
+      await admin.from("form_notifications").upsert({
+        owner_id: ownerForm.owner,
+        form_id: payload.formId,
+        response_id: payload.id,
+        kind: "response_received",
+      }, { onConflict: "owner_id,response_id,kind", ignoreDuplicates: true });
+    }
+  }
   return json(201, { ok: true });
 });

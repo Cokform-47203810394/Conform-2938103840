@@ -16,6 +16,7 @@ const AUDIT_TABLE = "form_audit_events";
 const AUDIT_PREFIX = "form-builder:audit";
 const PARTICIPATION_PREFIX = "form-builder:participations";
 const PARTICIPATION_TABLE = "form_participations";
+const NOTIFICATION_TABLE = "form_notifications";
 const MAX_LOCAL_VERSIONS = 60;
 
 function readIndexLocal() {
@@ -119,6 +120,38 @@ async function trySupabase(label, fn) {
 }
 
 export const newFormId = uid;
+
+export async function listOwnerNotifications() {
+  const remote = await trySupabase("응답 알림 조회", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return [];
+    const { data, error } = await supabase
+      .from(NOTIFICATION_TABLE)
+      .select("id, form_id, response_id, kind, created_at, read_at")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) return [];
+    return (data || []).map((item) => ({
+      id: item.id,
+      formId: item.form_id,
+      responseId: item.response_id,
+      kind: item.kind,
+      createdAt: item.created_at,
+      readAt: item.read_at,
+    }));
+  });
+  return remote || [];
+}
+
+export async function markOwnerNotificationsRead(ids) {
+  const list = Array.isArray(ids) ? ids.filter(Boolean) : [ids].filter(Boolean);
+  if (!list.length) return true;
+  const saved = await trySupabase("응답 알림 읽음 처리", async (supabase) => {
+    const { error } = await supabase.from(NOTIFICATION_TABLE).update({ read_at: new Date().toISOString() }).in("id", list).is("read_at", null);
+    return error ? undefined : true;
+  });
+  return saved === true;
+}
 
 export async function listForms() {
   const remote = await trySupabase("목록 조회", async (supabase) => {

@@ -5,7 +5,7 @@ import { signInWithGoogle } from "../lib/auth";
 import FormThumbnail from "../components/FormThumbnail";
 import { Modal } from "../components/Overlay";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
-import { listForms, listParticipatedForms, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
+import { listForms, listParticipatedForms, listOwnerNotifications, markOwnerNotificationsRead, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
 import { MD, TYPE_COLORS, ELEV1, ELEV1_HOVER } from "../theme";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
 import { getResponseWindowState } from "../lib/responseWindow";
@@ -39,6 +39,7 @@ function formatRelative(iso) {
 export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }) {
   const [forms, setForms] = useState([]);
   const [participatedForms, setParticipatedForms] = useState([]);
+  const [responseNotifications, setResponseNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("updated"); // 'updated' | 'title'
@@ -52,9 +53,10 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
 
   const refresh = async () => {
     setLoading(true);
-    const [created, participated] = await Promise.all([listForms(), listParticipatedForms()]);
+    const [created, participated, notifications] = await Promise.all([listForms(), listParticipatedForms(), listOwnerNotifications()]);
     setForms(created);
     setParticipatedForms(participated);
+    setResponseNotifications(notifications);
     setLoading(false);
   };
 
@@ -98,10 +100,20 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
     active: forms.filter((f) => f.acceptingResponses !== false).length,
   }), [forms]);
 
-  const notifications = useMemo(() => forms
-    .filter((f) => f.ownerResponseNotification !== false && (f.responseCount || 0) > 0)
-    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-    .slice(0, 5), [forms]);
+  const notifications = useMemo(() => responseNotifications
+    .map((notification) => ({ ...notification, form: forms.find((form) => form.id === notification.formId) }))
+    .filter((notification) => notification.form)
+    .slice(0, 10), [responseNotifications, forms]);
+  const unreadNotificationCount = notifications.filter((notification) => !notification.readAt).length;
+
+  const openNotification = async (notification) => {
+    setNotificationsOpen(false);
+    if (!notification.readAt) {
+      await markOwnerNotificationsRead(notification.id);
+      setResponseNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, readAt: new Date().toISOString() } : item));
+    }
+    onOpenForm(notification.formId);
+  };
 
   const handleCreate = async (template) => {
     if (!user) {
@@ -186,9 +198,9 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             <div className="relative">
               <button onClick={() => setNotificationsOpen((v) => !v)} title="응답 알림" className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition hover:bg-[#D8F5E8] hover:text-[#0B4D3D]">
                 <Bell size={19} />
-                {notifications.length > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#D85B4A] ring-2 ring-[#FFFDF8]" />}
+                {unreadNotificationCount > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#D85B4A] ring-2 ring-[#FFFDF8]" />}
               </button>
-              {notificationsOpen && <div className="absolute right-0 top-12 z-30 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] shadow-[0_12px_30px_rgba(23,37,31,0.16)]"><div className="flex items-center justify-between border-b border-[#F0EEE6] px-4 py-3"><strong className="text-sm text-[#17251F]">응답 알림</strong><span className="text-xs text-[#78837C]">최근 업데이트 기준</span></div>{notifications.length ? notifications.map((f) => <button key={f.id} type="button" onClick={() => onOpenForm(f.id)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[#F0FAF6]"><span className="min-w-0"><span className="block truncate text-sm font-semibold text-[#17251F]">{f.title}</span><span className="mt-0.5 block text-xs text-[#78837C]">새 응답 {f.responseCount}건 · 조회 {f.viewCount || 0}명</span></span><ChevronRight size={15} className="shrink-0 text-[#A2AAA3]" /></button>) : <div className="px-4 py-5 text-sm text-[#78837C]">아직 도착한 응답이 없어요.</div>}</div>}
+              {notificationsOpen && <div className="absolute right-0 top-12 z-30 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] shadow-[0_12px_30px_rgba(23,37,31,0.16)]"><div className="flex items-center justify-between border-b border-[#F0EEE6] px-4 py-3"><strong className="text-sm text-[#17251F]">응답 알림</strong><span className="text-xs text-[#78837C]">답변 내용은 표시하지 않아요</span></div>{notifications.length ? notifications.map((notification) => <button key={notification.id} type="button" onClick={() => openNotification(notification)} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[#F0FAF6] ${notification.readAt ? "" : "bg-[#F1FAF4]"}`}><span className="min-w-0"><span className="block truncate text-sm font-semibold text-[#17251F]">{notification.form.title}</span><span className="mt-0.5 block text-xs text-[#78837C]">새 암호화 응답 도착 · {formatRelative(notification.createdAt)}</span></span><ChevronRight size={15} className="shrink-0 text-[#A2AAA3]" /></button>) : <div className="px-4 py-5 text-sm text-[#78837C]">아직 도착한 응답 알림이 없어요.</div>}</div>}
             </div>
             <button
               onClick={onOpenSettings}
