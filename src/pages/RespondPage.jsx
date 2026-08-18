@@ -3,11 +3,15 @@ import PreviewForm from "../components/PreviewForm";
 import { getFormDoc, submitResponse, recordFormParticipation, recordFormView } from "../lib/formsStore";
 import { ELEV1, MD } from "../theme";
 import { getResponseWindowMessage, getResponseWindowState } from "../lib/responseWindow";
+import { verifyResponsePassword } from "../lib/responseAccess";
 
 export default function RespondPage({ formId }) {
   const [doc, setDoc] = useState(undefined); // undefined = loading, null = not found
   const [alreadyResponded, setAlreadyResponded] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [responsePassword, setResponsePassword] = useState("");
+  const [passwordUnlocked, setPasswordUnlocked] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     getFormDoc(formId).then((d) => {
@@ -33,10 +37,21 @@ export default function RespondPage({ formId }) {
   const responseWindowState = getResponseWindowState(form.settings);
   const closed = responseWindowState !== "open";
   const blocked = form.settings?.limitOneResponse && alreadyResponded;
+  const passwordProtected = Boolean(form.settings?.responsePassword?.hash);
+
+  const unlockPasswordProtectedForm = async () => {
+    const valid = await verifyResponsePassword(form.settings?.responsePassword, responsePassword);
+    if (!valid) {
+      setPasswordError("비밀번호가 맞지 않아요. 다시 확인해 주세요.");
+      return;
+    }
+    setPasswordError("");
+    setPasswordUnlocked(true);
+  };
 
   const handleSubmit = async (answers, turnstileToken) => {
     setSubmitError("");
-    const result = await submitResponse(formId, answers, form.publicKey, form.settings, turnstileToken);
+    const result = await submitResponse(formId, answers, form.publicKey, form.settings, turnstileToken, responsePassword);
     if (!result.ok) {
       const windowMessage = result.reason && result.reason !== "duplicate" ? getResponseWindowMessage(result.reason, form.settings) : "";
       const securityMessage = {
@@ -46,6 +61,8 @@ export default function RespondPage({ formId }) {
         security_verification_unavailable: "보안 확인 서비스가 준비되지 않았어요. 잠시 후 다시 시도해 주세요.",
         rate_limited: "짧은 시간에 제출 요청이 많아요. 잠시 후 다시 시도해 주세요.",
         form_unavailable: "이 폼은 현재 응답을 받지 않아요.",
+        response_limit_reached: "이 양식은 정원에 도달해 더 이상 응답을 받을 수 없어요.",
+        form_password_invalid: "입력한 비밀번호가 맞지 않아요. 다시 확인해 주세요.",
       }[result.reason];
       setSubmitError(result.reason === "duplicate" ? "이미 이 폼에 응답을 제출했어요." : securityMessage || windowMessage || "응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
       return false;
@@ -59,6 +76,20 @@ export default function RespondPage({ formId }) {
     await recordFormParticipation(formId, form);
     return true;
   };
+
+  if (passwordProtected && !passwordUnlocked && !closed && !blocked) {
+    return (
+      <div className="min-h-[100dvh] px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(2.5rem+env(safe-area-inset-top))]" style={{ backgroundColor: form.backgroundColor || "#F5F3EC" }}>
+        <div className={`mx-auto max-w-md rounded-xl border-t-8 bg-white p-6 sm:p-8 ${ELEV1}`} style={{ borderTopColor: accent }}>
+          <h1 className="text-xl font-semibold text-[#17251F]">{form.title}</h1>
+          <p className="mt-2 text-sm leading-6 text-[#59645E]">이 양식은 비밀번호를 아는 사람만 작성할 수 있어요.</p>
+          <label className="mt-5 block text-sm font-medium text-[#17251F]">양식 비밀번호<input type="password" value={responsePassword} onChange={(event) => { setResponsePassword(event.target.value); setPasswordError(""); }} onKeyDown={(event) => { if (event.key === "Enter") unlockPasswordProtectedForm(); }} autoComplete="current-password" className="mt-2 w-full rounded-lg border border-[#C9CEC6] bg-[#FFFDF8] px-3 py-3 text-base outline-none focus:border-[#17866D]" /></label>
+          {passwordError && <p role="alert" className="mt-2 text-xs text-[#B3261E]">{passwordError}</p>}
+          <button type="button" onClick={unlockPasswordProtectedForm} className="mt-5 w-full rounded-lg px-4 py-3 text-sm font-semibold text-white" style={{ backgroundColor: accent }}>양식 열기</button>
+        </div>
+      </div>
+    );
+  }
 
   if (closed || blocked) {
     return (

@@ -40,6 +40,7 @@ import {
   unlockFormKeyVault,
 } from "../lib/secureResponses";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
+import { createResponsePasswordVerifier } from "../lib/responseAccess";
 import { fromDateTimeLocalValue, getResponseWindowMessage, getResponseWindowState, toDateTimeLocalValue } from "../lib/responseWindow";
 import { analyzePrivacyRisk, PRIVACY_AUDIT_LEVEL } from "../lib/privacyAudit";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
@@ -88,6 +89,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const [keyVaultOpen, setKeyVaultOpen] = useState(false);
   const [keyVaultBusy, setKeyVaultBusy] = useState(false);
   const [keyVaultError, setKeyVaultError] = useState("");
+  const [responsePasswordDraft, setResponsePasswordDraft] = useState("");
   const [recoveryPassphrase, setRecoveryPassphrase] = useState("");
   const [recoveryPassphraseConfirm, setRecoveryPassphraseConfirm] = useState("");
   const keyBackupInputRef = useRef(null);
@@ -961,6 +963,36 @@ export default function FormEditorPage({ formId, user, onBack }) {
                         onChange={(v) => updateForm((f) => ({ ...f, settings: { ...f.settings, limitOneResponse: v } }))}
                       />
                     </div>
+                    <div className="border-t border-[#F0EEE6] pt-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-medium text-[#17251F]">폼 비밀번호</div>
+                          <div className="text-xs leading-5 text-[#78837C]">비밀번호를 아는 사람만 양식을 열 수 있어요. 평문은 저장하지 않습니다.</div>
+                        </div>
+                        {form.settings?.responsePassword?.hash && <span className="shrink-0 rounded-full bg-[#EAF6EF] px-2.5 py-1 text-[11px] font-semibold text-[#0B4D3D]">보호 중</span>}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <input type="password" value={responsePasswordDraft} onChange={(event) => setResponsePasswordDraft(event.target.value)} placeholder={form.settings?.responsePassword?.hash ? "새 비밀번호 (변경 시 입력)" : "8자 이상 비밀번호"} autoComplete="new-password" className="min-w-[12rem] flex-1 rounded-lg border border-[#C9CEC6] bg-white px-3 py-2 text-sm outline-none focus:border-[#17866D]" />
+                        <button type="button" onClick={async () => { try { const verifier = await createResponsePasswordVerifier(responsePasswordDraft); updateForm((current) => ({ ...current, settings: { ...current.settings, responsePassword: verifier } })); setResponsePasswordDraft(""); setToast("폼 비밀번호를 안전하게 설정했어요."); } catch { setToast("비밀번호는 8자 이상으로 설정해주세요."); } }} className="rounded-lg bg-[#17866D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0F705B]">{form.settings?.responsePassword?.hash ? "변경" : "설정"}</button>
+                        {form.settings?.responsePassword?.hash && <button type="button" onClick={() => { updateForm((current) => ({ ...current, settings: { ...current.settings, responsePassword: null } })); setResponsePasswordDraft(""); setToast("폼 비밀번호를 해제했어요."); }} className="rounded-lg px-3 py-2 text-xs font-semibold text-[#B3261E] hover:bg-[#FBE4E0]">해제</button>}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 border-t border-[#F0EEE6] pt-4">
+                      <div>
+                        <div className="text-sm font-medium text-[#17251F]">응답 수 한도</div>
+                        <div className="text-xs leading-5 text-[#78837C]">선착순·정원형 신청에 사용해요. 한도에 도달하면 서버에서 자동 마감합니다.</div>
+                      </div>
+                      <Toggle
+                        checked={Boolean(form.settings?.maxResponses)}
+                        onChange={(enabled) => updateForm((current) => ({ ...current, settings: { ...current.settings, maxResponses: enabled ? Math.max(1, Number(current.settings?.maxResponses) || 100) : null } }))}
+                      />
+                    </div>
+                    {form.settings?.maxResponses && (
+                      <label className="ml-3 mt-3 flex items-center justify-between gap-3 rounded-lg border border-[#DDE1D9] bg-[#F8F9F4] px-3 py-2.5 text-sm text-[#17251F]">
+                        <span>최대 응답 수</span>
+                        <span className="flex items-center gap-2"><input type="number" min="1" max="100000" value={form.settings.maxResponses} onChange={(event) => updateForm((current) => ({ ...current, settings: { ...current.settings, maxResponses: Math.min(100000, Math.max(1, Number(event.target.value) || 1)) } }))} className="w-24 rounded-lg border border-[#C9CEC6] bg-white px-2 py-1.5 text-right outline-none focus:border-[#17866D]" />건</span>
+                      </label>
+                    )}
                     <section className="rounded-xl border border-[#DDE1D9] bg-[#F8F9F4] p-3.5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>

@@ -570,7 +570,7 @@ export async function recordFormParticipation(formId, form) {
   return summary;
 }
 
-export async function submitResponse(formId, answers, publicKey, settings = {}, turnstileToken = "") {
+export async function submitResponse(formId, answers, publicKey, settings = {}, turnstileToken = "", formPassword = "") {
   const windowState = getResponseWindowState(settings);
   if (windowState !== "open") return { ok: false, reason: windowState, response: null };
   if (!publicKey) return { ok: false, reason: "encryption_unavailable", response: null };
@@ -603,6 +603,7 @@ export async function submitResponse(formId, answers, publicKey, settings = {}, 
         answers: encryptedAnswers,
         respondentToken,
         turnstileToken,
+        formPassword,
       }),
     });
     const result = await gatewayResponse.json().catch(() => ({}));

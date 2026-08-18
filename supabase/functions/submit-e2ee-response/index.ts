@@ -25,6 +25,7 @@ type SubmitPayload = {
   };
   respondentToken?: string | null;
   turnstileToken?: string;
+  formPassword?: string;
 };
 
 function json(status: number, body: Record<string, unknown>) {
@@ -69,6 +70,35 @@ async function hmacFingerprint(secret: string, formId: string, address: string) 
     new TextEncoder().encode(`cokform:response-rate-limit:v1:${formId}:${address}`),
   );
   return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function base64ToBytes(value: string) {
+  const binary = atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+function constantTimeEqual(left: Uint8Array, right: Uint8Array) {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) difference |= left[index] ^ right[index];
+  return difference === 0;
+}
+
+async function verifyFormPassword(verifier: Record<string, unknown> | undefined, suppliedPassword: string | undefined) {
+  if (!verifier?.salt || !verifier?.hash || !Number.isInteger(verifier?.iterations)) return true;
+  if (typeof suppliedPassword !== "string" || suppliedPassword.length < 1) return false;
+  try {
+    const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(suppliedPassword), "PBKDF2", false, ["deriveBits"]);
+    const bits = await crypto.subtle.deriveBits({
+      name: "PBKDF2",
+      hash: "SHA-256",
+      salt: base64ToBytes(String(verifier.salt)),
+      iterations: Number(verifier.iterations),
+    }, material, 256);
+    return constantTimeEqual(new Uint8Array(bits), base64ToBytes(String(verifier.hash)));
+  } catch {
+    return false;
+  }
 }
 
 function isValidEnvelope(value: SubmitPayload["answers"]) {
@@ -142,6 +172,7 @@ Deno.serve(async (request) => {
     || (payload.respondentToken !== null && payload.respondentToken !== undefined && !UUID_V4_PATTERN.test(payload.respondentToken))
     || typeof payload.turnstileToken !== "string"
     || payload.turnstileToken.length < 20
+    || (payload.formPassword !== undefined && (typeof payload.formPassword !== "string" || payload.formPassword.length > 256))
   ) {
     return json(400, { ok: false, code: "invalid_submission" });
   }
@@ -175,6 +206,10 @@ Deno.serve(async (request) => {
   if (publicFormError || !publicForm || !isOpenForResponses(publicForm.data?.settings)) {
     return json(409, { ok: false, code: "form_unavailable" });
   }
+  const passwordVerifier = publicForm.data?.settings?.responsePassword;
+  if (!await verifyFormPassword(passwordVerifier, payload.formPassword)) {
+    return json(403, { ok: false, code: "form_password_invalid" });
+  }
 
   const fingerprint = await hmacFingerprint(serviceRole, payload.formId, remoteIp);
   const { data: permitted, error: rateLimitError } = await admin.rpc("claim_cokform_response_rate_limit", {
@@ -183,15 +218,18 @@ Deno.serve(async (request) => {
   });
   if (rateLimitError || permitted !== true) return json(429, { ok: false, code: "rate_limited" });
 
-  const { error: insertError } = await admin.from("responses").insert({
-    id: payload.id,
-    form_id: payload.formId,
-    submitted_at: new Date(submittedAt).toISOString(),
-    answers: payload.answers,
-    respondent_token: payload.respondentToken || null,
+  const { data: submitOutcome, error: submitError } = await admin.rpc("submit_cokform_encrypted_response", {
+    p_id: payload.id,
+    p_form_id: payload.formId,
+    p_submitted_at: new Date(submittedAt).toISOString(),
+    p_answers: payload.answers,
+    p_respondent_token: payload.respondentToken || null,
   });
 
-  if (insertError?.code === "23505") return json(409, { ok: false, code: "duplicate" });
-  if (insertError) return json(503, { ok: false, code: "save_failed" });
+  if (submitError) return json(503, { ok: false, code: "save_failed" });
+  if (submitOutcome === "duplicate") return json(409, { ok: false, code: "duplicate" });
+  if (submitOutcome === "response_limit_reached") return json(409, { ok: false, code: "response_limit_reached" });
+  if (submitOutcome === "form_unavailable") return json(409, { ok: false, code: "form_unavailable" });
+  if (submitOutcome !== "ok") return json(503, { ok: false, code: "save_failed" });
   return json(201, { ok: true });
 });
