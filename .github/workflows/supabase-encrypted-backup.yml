@@ -64,7 +64,10 @@ jobs:
           tar -C "$backup_dir" -czf "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz" roles.sql schema.sql data.sql
           age --recipient "$BACKUP_AGE_RECIPIENT" --output "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz.age" "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz"
           rm -f "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz"
-          sha256sum "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz.age" > "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz.age.sha256"
+          (
+            cd "$RUNNER_TEMP"
+            sha256sum "cokform-supabase-${backup_stamp}.tar.gz.age" > "cokform-supabase-${backup_stamp}.tar.gz.age.sha256"
+          )
 
       - name: Upload encrypted recovery artifact
         uses: actions/upload-artifact@v4
