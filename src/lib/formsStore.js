@@ -10,6 +10,7 @@ const VERSION_PREFIX = "form-builder:versions";
 const TABLE = "forms";
 const PUBLIC_TABLE = "form_public";
 const RESPONSE_TABLE = "responses";
+const WORKFLOW_TABLE = "form_response_workflow";
 const VERSION_TABLE = "form_versions";
 const AUDIT_TABLE = "form_audit_events";
 const AUDIT_PREFIX = "form-builder:audit";
@@ -200,15 +201,23 @@ export async function getFormDoc(id) {
       if (ownerData) {
         const stored = ownerData.data || {};
         let responses = [];
-        const result = await supabase
-          .from(RESPONSE_TABLE)
-          .select("id, submitted_at, answers")
-          .eq("form_id", id)
-          .order("submitted_at", { ascending: true });
+        const [result, workflowResult] = await Promise.all([
+          supabase
+            .from(RESPONSE_TABLE)
+            .select("id, submitted_at, answers")
+            .eq("form_id", id)
+            .order("submitted_at", { ascending: true }),
+          supabase
+            .from(WORKFLOW_TABLE)
+            .select("response_id, status")
+            .eq("form_id", id),
+        ]);
         if (!result.error) {
+          const workflowByResponseId = Object.fromEntries((workflowResult.data || []).map((row) => [row.response_id, row.status]));
           const decrypted = await Promise.all((result.data || []).map(async (row) => ({
             id: row.id,
             submittedAt: row.submitted_at,
+            status: workflowByResponseId[row.id] || "new",
             answers: isEncryptedEnvelope(row.answers)
               ? await decryptAnswers(id, row.answers).catch(() => null)
               : row.answers,
@@ -240,6 +249,7 @@ export async function getFormDoc(id) {
     if (!stored) return null;
     const localResponses = await Promise.all(readResponsesLocal(id).map(async (row) => ({
       ...row,
+      status: row.status || "new",
       answers: isEncryptedEnvelope(row.answers)
         ? await decryptAnswers(id, row.answers).catch(() => null)
         : row.answers,
@@ -663,6 +673,36 @@ export async function clearResponses(formId) {
 
   try {
     writeResponsesLocal(formId, []);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function updateResponseWorkflow(formId, responseId, status) {
+  if (!formId || !responseId || !["new", "reviewing", "in_progress", "done", "archived"].includes(status)) return false;
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData?.user) return false;
+      const { error } = await supabase.from(WORKFLOW_TABLE).upsert({
+        form_id: formId,
+        response_id: responseId,
+        status,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "form_id,response_id" });
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+
+  try {
+    const current = readResponsesLocal(formId);
+    const next = current.map((response) => response.id === responseId ? { ...response, status } : response);
+    if (next.every((response, index) => response === current[index])) return false;
+    writeResponsesLocal(formId, next);
     return true;
   } catch {
     return false;

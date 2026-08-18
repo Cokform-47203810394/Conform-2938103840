@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Download, FileJson, FileSpreadsheet, ImageDown, LoaderCircle, Mail, Presentation, Table2, Trash2, Upload } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Download, FileJson, FileSpreadsheet, ImageDown, LoaderCircle, Mail, Presentation, Search, Table2, Trash2, Upload } from "lucide-react";
 import { IconButton } from "./Primitives";
 import Bar from "./Bar";
 import { MD, TYPE_COLORS, CHART_PALETTE, ELEV1 } from "../theme";
@@ -28,26 +28,65 @@ function formatSubmittedAt(value) {
   return date.toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-export default function ResponsesView({ form, formId, responses, onClear, onDeleteResponse, onAudit }) {
+const WORKFLOW_OPTIONS = [
+  ["new", "확인 전"],
+  ["reviewing", "검토 중"],
+  ["in_progress", "처리 중"],
+  ["done", "처리 완료"],
+  ["archived", "보관"],
+];
+
+function workflowLabel(status) {
+  return WORKFLOW_OPTIONS.find(([value]) => value === status)?.[1] || "확인 전";
+}
+
+function workflowClass(status) {
+  return {
+    new: "bg-[#FFF4D8] text-[#765C05]",
+    reviewing: "bg-[#EAF1FB] text-[#275D9B]",
+    in_progress: "bg-[#F1EAFE] text-[#6447A7]",
+    done: "bg-[#EAF6EF] text-[#0B4D3D]",
+    archived: "bg-[#F1F2EF] text-[#59645E]",
+  }[status] || "bg-[#FFF4D8] text-[#765C05]";
+}
+
+export default function ResponsesView({ form, formId, responses, onClear, onDeleteResponse, onUpdateWorkflow, onAudit }) {
   const [view, setView] = useState("summary");
   const [selectedResponseId, setSelectedResponseId] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
   const [exporting, setExporting] = useState("");
   const [exportNotice, setExportNotice] = useState("");
   const [driveUrl, setDriveUrl] = useState("");
-
-  useEffect(() => {
-    if (responses.length && !responses.some((response) => response.id === selectedResponseId)) {
-      setSelectedResponseId(responses[0].id);
-    }
-  }, [responses, selectedResponseId]);
+  const [responseQuery, setResponseQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const responseQuestions = useMemo(
     () => form.questions.filter((question) => question.type !== "privacy_notice"),
     [form.questions],
   );
-  const selectedIndex = Math.max(0, responses.findIndex((response) => response.id === selectedResponseId));
-  const selectedResponse = responses[selectedIndex] || null;
+  const filteredResponses = useMemo(() => {
+    const query = responseQuery.trim().toLowerCase();
+    return responses.filter((response) => {
+      const matchesStatus = statusFilter === "all" || (response.status || "new") === statusFilter;
+      if (!matchesStatus) return false;
+      if (!query) return true;
+      const searchable = [
+        response.answers?._cokform_email,
+        response.submittedAt,
+        ...Object.values(response.answers || {}).flatMap((value) => Array.isArray(value) ? value : [value]),
+      ].join(" ").toLowerCase();
+      return searchable.includes(query);
+    });
+  }, [responses, responseQuery, statusFilter]);
+
+  useEffect(() => {
+    if (filteredResponses.length && !filteredResponses.some((response) => response.id === selectedResponseId)) {
+      setSelectedResponseId(filteredResponses[0].id);
+    }
+  }, [filteredResponses, selectedResponseId]);
+
+  const selectedIndex = Math.max(0, filteredResponses.findIndex((response) => response.id === selectedResponseId));
+  const selectedResponse = filteredResponses[selectedIndex] || null;
   const selectResponse = (responseId) => {
     setSelectedResponseId(responseId);
     setView("individual");
@@ -128,7 +167,7 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
     );
   }
 
-  const recentResponses = [...responses].slice(-3).reverse();
+  const recentResponses = [...filteredResponses].slice(-3).reverse();
   const recordedEmailCount = form.settings?.collectEmail
     ? responses.filter((response) => typeof response.answers?._cokform_email === "string" && response.answers._cokform_email.trim()).length
     : 0;
@@ -188,6 +227,18 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
         <button type="button" role="tab" aria-selected={view === "individual"} onClick={() => setView("individual")} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${view === "individual" ? "bg-[#EAF6EF] text-[#0B4D3D]" : "text-[#78837C] hover:bg-[#F5F3EC]"}`}>개별 응답</button>
       </div>
 
+      <div className="grid gap-2 rounded-xl border border-[#DDE1D9] bg-white p-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
+        <label className="relative block">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#78837C]" />
+          <input value={responseQuery} onChange={(event) => setResponseQuery(event.target.value)} placeholder="이름, 이메일, 답변 내용으로 검색" className="w-full rounded-lg border border-[#C9CEC6] bg-[#FFFDF8] py-2 pl-9 pr-3 text-sm text-[#17251F] outline-none focus:border-[#17866D]" />
+        </label>
+        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-[#C9CEC6] bg-[#FFFDF8] px-3 py-2 text-sm text-[#17251F] outline-none focus:border-[#17866D]">
+          <option value="all">전체 상태</option>
+          {WORKFLOW_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+        {(responseQuery || statusFilter !== "all") && <div className="sm:col-span-2 flex items-center justify-between gap-2 px-1 text-xs text-[#59645E]"><span>{filteredResponses.length}개 응답 표시 중</span><button type="button" onClick={() => { setResponseQuery(""); setStatusFilter("all"); }} className="font-semibold text-[#0B4D3D] underline underline-offset-2">필터 초기화</button></div>}
+      </div>
+
       {view === "summary" && (
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
@@ -198,7 +249,7 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
           <section className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`}>
             <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-[#17251F]">최근 응답</h3><p className="mt-1 text-xs text-[#78837C]">응답자를 선택하면 모든 답변을 바로 확인할 수 있어요.</p></div><button type="button" onClick={() => setView("individual")} className="text-xs font-semibold text-[#0B4D3D] underline underline-offset-2">전체 보기</button></div>
             <div className="divide-y divide-[#F0EEE6]">
-              {recentResponses.map((response) => <button key={response.id} type="button" onClick={() => selectResponse(response.id)} className="flex w-full items-center justify-between gap-3 px-1 py-3 text-left transition-colors hover:bg-[#F8F9F4]"><span className="min-w-0"><span className="block truncate text-sm font-medium text-[#17251F]">{response.answers?._cokform_email || "이메일을 기록하지 않은 응답"}</span><span className="mt-0.5 block text-xs text-[#78837C]">{formatSubmittedAt(response.submittedAt)}</span></span><ChevronRight size={16} className="shrink-0 text-[#78837C]" /></button>)}
+              {recentResponses.map((response) => <button key={response.id} type="button" onClick={() => selectResponse(response.id)} className="flex w-full items-center justify-between gap-3 px-1 py-3 text-left transition-colors hover:bg-[#F8F9F4]"><span className="min-w-0"><span className="block truncate text-sm font-medium text-[#17251F]">{response.answers?._cokform_email || "이메일을 기록하지 않은 응답"}</span><span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[#78837C]">{formatSubmittedAt(response.submittedAt)} <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${workflowClass(response.status || "new")}`}>{workflowLabel(response.status || "new")}</span></span></span><ChevronRight size={16} className="shrink-0 text-[#78837C]" /></button>)}
             </div>
           </section>
         </div>
@@ -226,17 +277,17 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
         <div className="space-y-4">
           <section className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`}>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div><h3 className="flex items-center gap-2 text-sm font-semibold text-[#17251F]"><ClipboardList size={16} className="text-[#17866D]" /> 개별 응답</h3><p className="mt-1 text-xs text-[#78837C]">응답자를 한 명씩 넘겨 보며 전체 답변을 확인하세요.</p></div>
-              <button type="button" onClick={() => onDeleteResponse?.(selectedResponse)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#B3261E] hover:bg-[#FBE4E0]"><Trash2 size={14} /> 이 응답 삭제</button>
+              <div><h3 className="flex items-center gap-2 text-sm font-semibold text-[#17251F]"><ClipboardList size={16} className="text-[#17866D]" /> 개별 응답 <span className={`rounded-full px-2 py-0.5 text-[11px] ${workflowClass(selectedResponse.status || "new")}`}>{workflowLabel(selectedResponse.status || "new")}</span></h3><p className="mt-1 text-xs text-[#78837C]">응답자를 한 명씩 넘겨 보며 전체 답변을 확인하세요.</p></div>
+              <div className="flex flex-wrap items-center gap-2"><label className="sr-only" htmlFor="response-workflow-status">처리 상태</label><select id="response-workflow-status" value={selectedResponse.status || "new"} onChange={(event) => onUpdateWorkflow?.(selectedResponse, event.target.value)} className="min-h-9 rounded-lg border border-[#C9CEC6] bg-[#FFFDF8] px-2.5 py-1.5 text-xs font-semibold text-[#17251F] outline-none focus:border-[#17866D]">{WORKFLOW_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><button type="button" onClick={() => onDeleteResponse?.(selectedResponse)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#B3261E] hover:bg-[#FBE4E0]"><Trash2 size={14} /> 이 응답 삭제</button></div>
             </div>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#E7E5DC] pt-4">
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#E7E5DC] pt-4">
               <div className="flex items-center gap-2">
-                <button type="button" aria-label="이전 응답" disabled={selectedIndex === 0} onClick={() => setSelectedResponseId(responses[selectedIndex - 1].id)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9CEC6] text-[#59645E] hover:bg-[#F5F3EC] disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={17} /></button>
-                <span className="min-w-[5rem] text-center text-sm font-semibold text-[#17251F]">응답 {selectedIndex + 1} / {responses.length}</span>
-                <button type="button" aria-label="다음 응답" disabled={selectedIndex >= responses.length - 1} onClick={() => setSelectedResponseId(responses[selectedIndex + 1].id)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9CEC6] text-[#59645E] hover:bg-[#F5F3EC] disabled:cursor-not-allowed disabled:opacity-40"><ChevronRight size={17} /></button>
+                <button type="button" aria-label="이전 응답" disabled={selectedIndex === 0} onClick={() => setSelectedResponseId(filteredResponses[selectedIndex - 1].id)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9CEC6] text-[#59645E] hover:bg-[#F5F3EC] disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={17} /></button>
+                <span className="min-w-[5rem] text-center text-sm font-semibold text-[#17251F]">응답 {selectedIndex + 1} / {filteredResponses.length}</span>
+                <button type="button" aria-label="다음 응답" disabled={selectedIndex >= filteredResponses.length - 1} onClick={() => setSelectedResponseId(filteredResponses[selectedIndex + 1].id)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9CEC6] text-[#59645E] hover:bg-[#F5F3EC] disabled:cursor-not-allowed disabled:opacity-40"><ChevronRight size={17} /></button>
               </div>
               <select aria-label="볼 응답 선택" value={selectedResponse.id} onChange={(event) => setSelectedResponseId(event.target.value)} className="min-w-[12rem] rounded-lg border border-[#C9CEC6] bg-[#FFFDF8] px-3 py-2 text-xs text-[#17251F] outline-none focus:border-[#17866D]">
-                {responses.map((response, index) => <option key={response.id} value={response.id}>응답 {index + 1} · {formatSubmittedAt(response.submittedAt)}</option>)}
+                {filteredResponses.map((response, index) => <option key={response.id} value={response.id}>응답 {index + 1} · {formatSubmittedAt(response.submittedAt)}</option>)}
               </select>
             </div>
           </section>

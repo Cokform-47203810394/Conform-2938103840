@@ -25,7 +25,7 @@ import PreviewForm from "../components/PreviewForm";
 import ResponsesView from "../components/ResponsesView";
 import { IconButton, Toggle } from "../components/Primitives";
 import { Popover, Modal } from "../components/Overlay";
-import { clearResponses as clearStoredResponses, deleteStoredResponse, exportFormRecoveryData, getFormDoc, getFormVersions, recordFormAuditEvent, restoreFormRecoveryData, saveFormDoc, saveFormVersion, submitResponse } from "../lib/formsStore";
+import { clearResponses as clearStoredResponses, deleteStoredResponse, exportFormRecoveryData, getFormDoc, getFormVersions, recordFormAuditEvent, restoreFormRecoveryData, saveFormDoc, saveFormVersion, submitResponse, updateResponseWorkflow } from "../lib/formsStore";
 import { emptyForm, defaultQuestion, uid } from "../questionTypes";
 import {
   createEncryptedFormRecoveryBundle,
@@ -475,6 +475,17 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setConfirmAction({ kind: "response", responseId: response.id, title: "이 응답 삭제", description: "선택한 암호화 응답만 삭제합니다. 이 작업은 되돌릴 수 없습니다." });
   };
 
+  const updateResponseStatus = async (response, status) => {
+    if (!response?.id || response.status === status) return;
+    const saved = await updateResponseWorkflow(formId, response.id, status);
+    if (!saved) {
+      setToast("처리 상태를 저장하지 못했어요. 네트워크와 권한을 확인해주세요.");
+      return;
+    }
+    setResponses((current) => current.map((item) => item.id === response.id ? { ...item, status } : item));
+    await recordAuditEvent("response_workflow_updated", { responseId: response.id, status });
+  };
+
   const performConfirmation = async () => {
     if (!confirmAction || confirming) return;
     setConfirming(true);
@@ -860,7 +871,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
             {tab === "responses" && canViewResponses && (
               <div>
                 <div className="mb-3 text-xs font-medium text-[#59645E]">작성자 전용 · 이 폼의 소유자만 응답을 복호화하고 내보낼 수 있어요.</div>
-                <ResponsesView form={form} formId={formId} responses={responses} onClear={requestClearResponses} onDeleteResponse={requestDeleteResponse} onAudit={recordAuditEvent} />
+                <ResponsesView form={form} formId={formId} responses={responses} onClear={requestClearResponses} onDeleteResponse={requestDeleteResponse} onUpdateWorkflow={updateResponseStatus} onAudit={recordAuditEvent} />
               </div>
             )}
 
