@@ -2,8 +2,15 @@ import { useRef, useState } from "react";
 import { Check, Mail } from "lucide-react";
 import QuestionField from "./QuestionField";
 import TurnstileChallenge from "./TurnstileChallenge";
+import { ELEV1_HOVER, MD } from "../theme";
 import { sanitizeImageSource, sanitizeRichText } from "../lib/sanitizeRichText";
-import { ELEV1, ELEV1_HOVER, MD } from "../theme";
+
+function isQuestionVisible(question, answers) {
+  const condition = question.visibilityCondition;
+  if (!condition?.questionId) return true;
+  const sourceValue = answers[condition.questionId];
+  return Array.isArray(sourceValue) ? sourceValue.includes(condition.value) : sourceValue === condition.value;
+}
 
 export default function PreviewForm({ form, onSubmit, accent }) {
   const color = accent || MD.primary;
@@ -39,7 +46,7 @@ export default function PreviewForm({ form, onSubmit, accent }) {
     }
 
     form.questions.forEach((q) => {
-      if (q.type === "privacy_notice") return; // 안내 전용, 응답값 없음
+      if (q.type === "privacy_notice" || q.type === "section" || !isQuestionVisible(q, answers)) return; // 안내 전용, 응답값 없음
 
       if (q.type === "privacy_consent") {
         const v = answers[q.id];
@@ -79,7 +86,9 @@ export default function PreviewForm({ form, onSubmit, accent }) {
 
     setSubmitting(true);
     try {
-      const completed = await onSubmit(answers, securityToken);
+      const visibleQuestionIds = new Set(form.questions.filter((question) => isQuestionVisible(question, answers)).map((question) => question.id));
+      const submittedAnswers = Object.fromEntries(Object.entries(answers).filter(([id]) => id.startsWith("_cokform_") || visibleQuestionIds.has(id)));
+      const completed = await onSubmit(submittedAnswers, securityToken);
       if (completed !== false) setSubmitted(true);
     } finally {
       // Turnstile tokens are single-use. Always request a new one after a
@@ -171,7 +180,7 @@ export default function PreviewForm({ form, onSubmit, accent }) {
           {!errors._security && <p className="mt-1 text-xs leading-5 text-[#9A3A32]">작성하지 않은 첫 항목으로 이동했어요. 빨간 테두리의 질문만 채우면 됩니다.</p>}
         </div>
       )}
-      {form.questions.map((q) => (
+      {form.questions.filter((q) => isQuestionVisible(q, answers)).map((q) => (
         <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={handleChange} />
       ))}
       <TurnstileChallenge onToken={setSecurityToken} resetSignal={securityReset} />

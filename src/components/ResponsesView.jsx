@@ -61,7 +61,7 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
   const [statusFilter, setStatusFilter] = useState("all");
 
   const responseQuestions = useMemo(
-    () => form.questions.filter((question) => question.type !== "privacy_notice"),
+    () => form.questions.filter((question) => question.type !== "privacy_notice" && question.type !== "section"),
     [form.questions],
   );
   const filteredResponses = useMemo(() => {

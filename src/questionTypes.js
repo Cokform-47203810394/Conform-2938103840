@@ -7,6 +7,7 @@ export const QUESTION_TYPES = [
   { value: "scale", label: "선형 배율" },
   { value: "date", label: "날짜" },
   { value: "time", label: "시간" },
+  { value: "section", label: "섹션 제목" },
 ];
 
 export const PRIVACY_TYPES = [
@@ -42,6 +43,9 @@ export function defaultQuestion(type = "short") {
   }
   if (type === "scale") {
     return { ...base, scaleMin: 1, scaleMax: 5, scaleMinLabel: "", scaleMaxLabel: "" };
+  }
+  if (type === "section") {
+    return { ...base, title: "새 섹션", description: "이 섹션에서 받을 내용을 안내하세요.", required: false };
   }
   if (type === "privacy_consent") {
     return {

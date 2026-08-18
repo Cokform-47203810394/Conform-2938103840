@@ -846,6 +846,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
                   <QuestionEditor
                     key={q.id}
                     q={q}
+                    questions={form.questions}
                     index={i}
                     onChange={(next) => updateQuestion(q.id, next)}
                     onDelete={() => requestQuestionDelete(q.id)}

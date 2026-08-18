@@ -30,7 +30,7 @@ function downloadBlob(blob, filename) {
 }
 
 export function responseRows(form, responses) {
-  const questions = form.questions.filter((q) => q.type !== "privacy_notice");
+  const questions = form.questions.filter((q) => q.type !== "privacy_notice" && q.type !== "section");
   return responses.map((response, index) => {
     const row = { "응답 번호": index + 1, "제출 시각": response.submittedAt || "" };
     if (form.settings?.collectEmail) row["이메일 주소"] = safeSpreadsheetCell(response.answers?._cokform_email);
@@ -74,7 +74,7 @@ export function downloadJson(form, responses) {
     exportedAt: new Date().toISOString(),
     form: {
       title: form.title,
-      questions: form.questions.filter((q) => q.type !== "privacy_notice").map((q) => ({ id: q.id, title: richTextToPlain(q.title), type: q.type })),
+      questions: form.questions.filter((q) => q.type !== "privacy_notice" && q.type !== "section").map((q) => ({ id: q.id, title: richTextToPlain(q.title), type: q.type })),
     },
     responses: responseRows(form, responses),
   };
@@ -133,7 +133,7 @@ export async function createSummaryPngBlob(form, responses) {
   ctx.font = "400 24px sans-serif";
   ctx.fillText(`응답 ${responses.length.toLocaleString("ko-KR")}건 · ${new Date().toLocaleDateString("ko-KR")}`, 120, 242);
 
-  const summaries = form.questions.filter((q) => q.type !== "privacy_notice").slice(0, 4).map((q) => answerSummary(q, responses));
+  const summaries = form.questions.filter((q) => q.type !== "privacy_notice" && q.type !== "section").slice(0, 4).map((q) => answerSummary(q, responses));
   const cardWidth = 700;
   const cardHeight = 240;
   summaries.forEach((summary, index) => {
@@ -208,7 +208,7 @@ export async function downloadPresentation(form, responses) {
   cover.addText(`응답 ${responses.length.toLocaleString("ko-KR")}건 · ${new Date().toLocaleDateString("ko-KR")}`, { x: 0.7, y: 2.45, w: 8, h: 0.4, fontFace: "Malgun Gothic", fontSize: 16, color: "D6E1D8" });
   cover.addText("개인정보 원문은 이 프레젠테이션에 포함되지 않습니다.", { x: 0.7, y: 6.7, w: 8, h: 0.3, fontFace: "Malgun Gothic", fontSize: 10, color: "9DAAA1" });
 
-  const summaries = form.questions.filter((q) => q.type !== "privacy_notice").map((q) => answerSummary(q, responses));
+  const summaries = form.questions.filter((q) => q.type !== "privacy_notice" && q.type !== "section").map((q) => answerSummary(q, responses));
   summaries.slice(0, 8).forEach((summary, index) => {
     const slide = pptx.addSlide();
     slide.background = { color: "F5F3EC" };

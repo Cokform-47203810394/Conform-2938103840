@@ -18,6 +18,7 @@ import { MD, NAVER_GREEN, TYPE_COLORS, ELEV1, FIELD } from "../theme";
 
 export default function QuestionEditor({
   q,
+  questions = [],
   index,
   onChange,
   onDelete,
@@ -42,6 +43,8 @@ export default function QuestionEditor({
   const removeOption = (i) => update({ options: q.options.filter((_, idx) => idx !== i) });
 
   const accent = TYPE_COLORS[q.type] || MD.primary;
+  const conditionSources = questions.slice(0, index).filter((question) => ["radio", "dropdown", "checkbox"].includes(question.type));
+  const selectedConditionSource = conditionSources.find((question) => question.id === q.visibilityCondition?.questionId);
 
   return (
     <div
@@ -182,6 +185,12 @@ export default function QuestionEditor({
           </div>
         )}
 
+        {q.type === "section" && (
+          <div className="rounded-lg border border-[#B7DCC8] bg-[#F1FAF4] p-3">
+            <div className="text-xs font-semibold text-[#0B4D3D]">섹션 안내</div>
+            <textarea value={q.description || ""} onChange={(event) => update({ description: event.target.value })} rows={2} placeholder="이 섹션에서 작성할 내용을 안내하세요." className="mt-2 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]" />
+          </div>
+        )}
         {q.type === "short" && (
           <div className="border-b border-dashed border-[#C9CEC6] pb-1 text-sm text-[#78837C]">단답형 텍스트</div>
         )}
@@ -190,6 +199,23 @@ export default function QuestionEditor({
         )}
         {q.type === "date" && <div className="text-sm text-[#78837C]">날짜 선택</div>}
         {q.type === "time" && <div className="text-sm text-[#78837C]">시간 선택</div>}
+
+        {conditionSources.length > 0 && q.type !== "privacy_notice" && q.type !== "privacy_consent" && (
+          <div className="mt-3 rounded-lg border border-[#DDE1D9] bg-[#F8F9F4] p-3">
+            <div className="text-xs font-semibold text-[#59645E]">조건부 표시</div>
+            <p className="mt-1 text-[11px] leading-5 text-[#78837C]">앞선 선택에 따라 이 질문을 보여줄 수 있어요.</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <select value={q.visibilityCondition?.questionId || ""} onChange={(event) => {
+                const source = conditionSources.find((question) => question.id === event.target.value);
+                update({ visibilityCondition: source ? { questionId: source.id, value: source.options?.[0] || "" } : null });
+              }} className="rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]">
+                <option value="">항상 표시</option>
+                {conditionSources.map((source) => <option key={source.id} value={source.id}>{String(source.title || "제목 없는 질문").replace(/<[^>]+>/g, "")}</option>)}
+              </select>
+              {selectedConditionSource && <select value={q.visibilityCondition?.value || ""} onChange={(event) => update({ visibilityCondition: { ...q.visibilityCondition, value: event.target.value } })} className="rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]">{(selectedConditionSource.options || []).map((option) => <option key={option} value={option}>{option}일 때 표시</option>)}</select>}
+            </div>
+          </div>
+        )}
 
         {q.type === "privacy_consent" && (
           <div
@@ -292,7 +318,7 @@ export default function QuestionEditor({
           </IconButton>
         </div>
         <div className="flex items-center gap-1">
-          {q.type !== "privacy_notice" && (
+          {q.type !== "privacy_notice" && q.type !== "section" && (
             <Toggle checked={q.required} onChange={(v) => update({ required: v })} label="필수 입력란입니다" />
           )}
           <div className="relative">
