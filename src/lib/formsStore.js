@@ -655,13 +655,18 @@ export async function deleteFormDoc(id) {
     return true;
   });
 
-  if (!deletedRemotely) {
-    if (hasSupabaseConfig()) return false;
-    localStorage.removeItem(`${DOC_PREFIX}:${id}`);
-    localStorage.removeItem(`${RESPONSE_PREFIX}:${id}`);
-    localStorage.removeItem(`${VERSION_PREFIX}:${id}`);
-    writeIndexLocal(readIndexLocal().filter((f) => f.id !== id));
+  if (deletedRemotely) {
+    // The database FK removes account-synced history. Clear this device's convenience metadata too.
+    writeParticipationsLocal(readParticipationsLocal().filter((item) => item.id !== id));
+    return true;
   }
+
+  if (hasSupabaseConfig()) return false;
+  localStorage.removeItem(`${DOC_PREFIX}:${id}`);
+  localStorage.removeItem(`${RESPONSE_PREFIX}:${id}`);
+  localStorage.removeItem(`${VERSION_PREFIX}:${id}`);
+  writeIndexLocal(readIndexLocal().filter((f) => f.id !== id));
+  writeParticipationsLocal(readParticipationsLocal().filter((item) => item.id !== id));
   return true;
 }
 
