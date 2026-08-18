@@ -216,7 +216,8 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         <div className="mb-2 cok-eyebrow">START WITH A SIGNAL</div>
         <h1 className="cok-display mb-2">무엇을 물어볼까요?</h1>
         <p className="mb-6 max-w-xl text-sm leading-6 text-[#59645E] sm:text-base">목적에 맞는 시작점을 고르고, 사람들의 답이 자연스럽게 모이는 폼을 만들어보세요.</p>
-        <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] sm:gap-5">
+        <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
+        <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
           {TEMPLATES.map((t) => (
             <TemplateCard key={t.key} template={t} onCreate={handleCreate} busy={creating !== null} creating={creating === t.key} />
           ))}
@@ -228,7 +229,8 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           <span className="rounded-full bg-[#D8ED59] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#17251F]">PRO · 무료 공개 중</span>
         </div>
         <p className="mb-4 text-sm leading-6 text-[#59645E]">신청·동의·피드백처럼 자주 쓰는 흐름을 바로 시작해요. <strong className="font-semibold text-[#0B4D3D]">파일럿 기간에는 PRO 템플릿을 몇 달간 무료로 공개합니다.</strong> 유료 전환 전에는 이 페이지에서 미리 안내해요.</p>
-        <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] sm:gap-5">
+        <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
+        <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
           {PREMIUM_TEMPLATES.map((t) => (
             <TemplateCard key={t.key} template={t} onCreate={handleCreate} busy={creating !== null} creating={creating === t.key} premium />
           ))}
