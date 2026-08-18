@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 
 const SCRIPT_ID = "cokform-turnstile-script";
 const SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+// A Turnstile site key is public by design. The paired secret stays only in
+// Supabase Vault and is verified by the server-side submission gateway.
+const TURNSTILE_SITE_KEY = "0x4AAAAAAET_-GA5VPoNOy37";
 
 function loadTurnstile() {
   if (window.turnstile) return Promise.resolve(window.turnstile);
@@ -32,35 +35,16 @@ function loadTurnstile() {
 export default function TurnstileChallenge({ onToken, resetSignal = 0 }) {
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
-  const [siteKey, setSiteKey] = useState("");
   const [status, setStatus] = useState("loading");
 
   useEffect(() => {
-    let cancelled = false;
-    fetch("/api/submission-config", { cache: "no-store", credentials: "same-origin" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("submission_config_unavailable");
-        const data = await response.json();
-        if (typeof data?.turnstileSiteKey !== "string" || !data.turnstileSiteKey) throw new Error("missing_turnstile_site_key");
-        return data.turnstileSiteKey;
-      })
-      .then((key) => {
-        if (!cancelled) setSiteKey(key);
-      })
-      .catch(() => {
-        if (!cancelled) setStatus("error");
-      });
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    if (!siteKey || !containerRef.current) return undefined;
+    if (!containerRef.current) return undefined;
     let cancelled = false;
     loadTurnstile()
       .then((turnstile) => {
         if (cancelled || !containerRef.current) return;
         widgetIdRef.current = turnstile.render(containerRef.current, {
-          sitekey: siteKey,
+          sitekey: TURNSTILE_SITE_KEY,
           theme: "light",
           size: "flexible",
           callback: (token) => {
@@ -84,7 +68,7 @@ export default function TurnstileChallenge({ onToken, resetSignal = 0 }) {
       if (widgetIdRef.current !== null && window.turnstile) window.turnstile.remove(widgetIdRef.current);
       widgetIdRef.current = null;
     };
-  }, [siteKey, onToken]);
+  }, [onToken]);
 
   useEffect(() => {
     if (resetSignal && widgetIdRef.current !== null && window.turnstile) {
