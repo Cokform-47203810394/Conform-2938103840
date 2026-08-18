@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronRight, X, Github, Mail, ShieldCheck, FileText, Map } from "lucide-react";
+import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronRight, X, Mail } from "lucide-react";
 import AuthControl from "../components/AuthControl";
 import { signInWithGoogle } from "../lib/auth";
 import FormThumbnail from "../components/FormThumbnail";
 import { Modal } from "../components/Overlay";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
 import { listForms, listParticipatedForms, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
-import { BRAND, MD, TYPE_COLORS, ELEV1, ELEV1_HOVER } from "../theme";
+import { MD, TYPE_COLORS, ELEV1, ELEV1_HOVER } from "../theme";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
 import { getResponseWindowState } from "../lib/responseWindow";
 
@@ -212,10 +212,10 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           </div>
         ) : null}
 
-        {/* templates */}
-        <div className="mb-2 cok-eyebrow">KOREAN WORK FLOWS</div>
-        <h1 className="cok-display mb-2">바로 쓰는 한국 실무 양식</h1>
-        <p className="mb-6 max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">상담·예약·참가 신청·출결·견적처럼 실제 업무에서 자주 쓰는 흐름을 골라 바로 시작하세요. 개인정보가 필요한 양식은 안내와 동의 문항을 함께 확인할 수 있습니다.</p>
+        {/* 업무 시작 양식 */}
+        <p className="mb-2 text-xs font-bold tracking-[0.08em] text-[#17866D]">자주 쓰는 업무 양식</p>
+        <h1 className="cok-display mb-2">지금 필요한 양식을 고르세요</h1>
+        <p className="mb-6 max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">상담, 예약, 참가 신청, 출결, 견적처럼 바로 시작할 수 있는 양식입니다. 개인정보가 필요하면 수집 안내와 동의 문항을 함께 확인하세요.</p>
         <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
         <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
           {TEMPLATES.map((t) => (
@@ -223,23 +223,23 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           ))}
         </div>
 
-        {/* premium / institutional templates */}
+        {/* 확장 업무 양식 */}
         <div className="mb-2 flex items-center gap-2">
-          <div className="cok-eyebrow">WORK-READY FLOWS</div>
-          <span className="rounded-full bg-[#D8ED59] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#17251F]">PRO · 무료 공개 중</span>
+          <p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">더 긴 업무 흐름</p>
+          <span className="rounded-full bg-[#EAF7EF] px-2 py-0.5 text-[10px] font-bold text-[#0B4D3D]">확장 양식</span>
         </div>
-        <p className="mb-4 text-sm leading-6 text-[#59645E]">채용·고객 만족도·개인정보 동의·교육 운영·사내 의견 수렴·단체 수요 조사처럼 더 긴 실무 흐름을 바로 시작해요. <strong className="font-semibold text-[#0B4D3D]">파일럿 기간에는 PRO 템플릿을 몇 달간 무료로 공개합니다.</strong> 유료 전환 전에는 이 페이지에서 미리 안내해요.</p>
+        <p className="mb-4 text-sm leading-6 text-[#59645E]">채용, 만족도 조사, 개인정보 동의, 교육 운영, 사내 의견 수렴처럼 질문이 더 필요한 업무에 맞춘 양식입니다.</p>
         <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
         <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
           {PREMIUM_TEMPLATES.map((t) => (
-            <TemplateCard key={t.key} template={t} onCreate={handleCreate} busy={creating !== null} creating={creating === t.key} premium />
+            <TemplateCard key={t.key} template={t} onCreate={handleCreate} busy={creating !== null} creating={creating === t.key} />
           ))}
         </div>
 
-        {!query.trim() && (
+        {!query.trim() && totals.forms > 0 && (
           <section className="mb-12">
             <div className="mb-3 flex items-end justify-between gap-3">
-              <div><div className="cok-eyebrow">LIVE OPERATIONS</div><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">폼 운영 현황</h2></div>
+              <div><div className="text-xs font-bold tracking-[0.08em] text-[#17866D]">운영 현황</div><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">폼 운영 현황</h2></div>
               <div className="hidden items-center gap-1 text-xs text-[#78837C] sm:flex"><BarChart3 size={14} /> 개인정보 없이 집계</div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -253,9 +253,9 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         )}
 
         {/* recent forms */}
-        {!query.trim() && <div className="mb-3 flex items-center justify-between">
+        {!query.trim() && filtered.length > 0 && <div className="mb-3 flex items-center justify-between">
           <div>
-            <div className="cok-eyebrow">YOUR WORKBENCH</div>
+            <div className="text-xs font-bold tracking-[0.08em] text-[#17866D]">내가 만든 양식</div>
             <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">내가 만든 폼</h2>
           </div>
           <button
@@ -272,9 +272,13 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         {!query.trim() && loading ? (
           <div className="py-16 text-center text-sm text-[#78837C]">불러오는 중…</div>
         ) : !query.trim() && filtered.length === 0 ? (
-          <div className="rounded-[24px] border border-dashed border-[#B8C5BA] bg-[#FFFDF8]/70 py-16 text-center text-sm text-[#59645E]">
-            {query ? "찾는 폼이 없어요." : "아직 만든 폼이 없어요. 위에서 하나를 골라 시작해보세요."}
-          </div>
+          <section className="mb-12 flex flex-col items-start gap-4 rounded-2xl border border-[#B7DCC8] bg-[#F0FAF6] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#17866D] text-white"><Plus size={20} /></div>
+              <div><h2 className="text-base font-semibold text-[#0B4D3D]">첫 양식을 만들어보세요</h2><p className="mt-1 text-sm leading-6 text-[#355C45]">위의 업무 양식을 고르거나 빈 양식에서 필요한 질문만 직접 추가할 수 있어요.</p></div>
+            </div>
+            <button type="button" onClick={() => handleCreate(TEMPLATES[0])} disabled={creating !== null} className="shrink-0 rounded-xl bg-[#0F5B46] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0B4D3D] disabled:cursor-wait disabled:opacity-60">빈 양식으로 시작</button>
+          </section>
         ) : !query.trim() ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
             {filtered.map((f) => (
@@ -330,11 +334,11 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           </div>
         ) : null}
 
-        {!query.trim() && !loading && (
+        {!query.trim() && !loading && participatedForms.length > 0 && (
           <section className="mt-12 border-t border-[#DDE1D9] pt-9">
             <div className="mb-3 flex items-end justify-between gap-3">
               <div>
-                <div className="cok-eyebrow">PARTICIPATION HISTORY</div>
+                <div className="text-xs font-bold tracking-[0.08em] text-[#17866D]">참여한 양식</div>
                 <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">내가 참여한 폼</h2>
               </div>
               <span className="hidden text-xs text-[#78837C] sm:block">응답 원문은 저장하지 않아요</span>
@@ -378,51 +382,41 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         </Modal>
       )}
 
-      <footer className="mt-14 bg-[#101713] text-[#D6E1D8]">
-        <div className="mx-auto max-w-6xl px-5 py-10 sm:px-6 sm:py-12">
-          <div className="grid gap-10 border-t border-white/10 pt-8 lg:grid-cols-[1.45fr_0.8fr_0.9fr] lg:gap-12">
+      <footer className="mt-14 border-t border-[#DDE1D9] bg-[#101713] text-[#D6E1D8]">
+        <div className="mx-auto max-w-6xl px-5 py-9 sm:px-6 sm:py-10">
+          <div className="grid gap-8 sm:grid-cols-[1.25fr_0.8fr_0.9fr]">
             <div>
-              <a href="/" className="inline-flex items-center gap-2.5 text-white"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D8ED59] text-xs font-black tracking-[-0.06em] text-[#17251F]">C</span><span className="text-lg font-extrabold tracking-[-0.04em]">COKFORM</span></a>
-              <p className="mt-4 max-w-sm text-sm leading-6 text-[#9DAAA1]">한국 실무 흐름에 맞춘 개인정보 보호형 폼 빌더. 응답은 브라우저에서 암호화되어, 폼 작성자만 자신의 키로 읽도록 설계합니다.</p>
-              <div className="mt-5 flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-[0.08em]">
-                <a href="https://github.com/haroseo" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-[#D6E1D8] transition hover:text-[#D8ED59]"><Github size={16} /> GitHub <ExternalLink size={12} /></a>
-                <a href="mailto:seoharo0111@gmail.com" className="inline-flex items-center gap-2 text-[#D6E1D8] transition hover:text-[#D8ED59]"><Mail size={16} /> 문의하기</a>
-              </div>
+              <a href="/" className="inline-flex items-center gap-2.5 text-white"><img src="/brand/cokform-mark.svg" alt="" className="h-9 w-9" /><span className="text-lg font-extrabold tracking-[-0.04em]">콕폼</span></a>
+              <p className="mt-3 max-w-sm text-sm leading-6 text-[#9DAAA1]">필요한 내용을 묻고, 내 방식으로 받아보세요. 응답 원문은 작성자만 읽도록 설계했습니다.</p>
+              <a href="mailto:seoharo0111@gmail.com" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#D6E1D8] transition hover:text-[#D8ED59]"><Mail size={15} /> 문의하기</a>
             </div>
 
             <nav aria-label="서비스 링크">
-              <h2 className="text-xs font-bold tracking-[0.12em] text-[#718077]">서비스</h2>
-              <div className="mt-4 flex flex-col items-start gap-3 text-sm">
+              <h2 className="text-xs font-bold tracking-[0.08em] text-[#718077]">서비스</h2>
+              <div className="mt-3 flex flex-col items-start gap-2.5 text-sm">
                 <a href="/" className="transition hover:text-[#D8ED59]">폼 만들기</a>
-                <a href="/security" className="transition hover:text-[#D8ED59]">보안과 응답 암호화</a>
-                <a href="/docs" className="transition hover:text-[#D8ED59]">Cokform 문서</a>
+                <a href="/docs" className="transition hover:text-[#D8ED59]">사용 가이드</a>
+                <a href="/security" className="transition hover:text-[#D8ED59]">응답 암호화</a>
                 <a href="/resources" className="transition hover:text-[#D8ED59]">브랜드 리소스</a>
                 <a href="/faq" className="transition hover:text-[#D8ED59]">자주 묻는 질문</a>
-                <a href="/sitemap" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">사이트맵 <Map size={14} /></a>
               </div>
             </nav>
 
-            <nav aria-label="정책과 운영 링크">
-              <h2 className="text-xs font-bold tracking-[0.12em] text-[#718077]">정책 · 운영</h2>
-              <div className="mt-4 flex flex-col items-start gap-3 text-sm">
-                <a href="/privacy" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">개인정보처리방침 <ShieldCheck size={14} /></a>
+            <nav aria-label="정책 링크">
+              <h2 className="text-xs font-bold tracking-[0.08em] text-[#718077]">정책</h2>
+              <div className="mt-3 flex flex-col items-start gap-2.5 text-sm">
+                <a href="/privacy" className="transition hover:text-[#D8ED59]">개인정보처리방침</a>
                 <a href="/international-transfer" className="transition hover:text-[#D8ED59]">개인정보 국외이전 안내</a>
                 <a href="/service-restrictions" className="transition hover:text-[#D8ED59]">서비스 이용제한 정책</a>
-                <a href="/terms" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">이용약관 <FileText size={14} /></a>
-                <a href="/sitemap.xml" className="transition hover:text-[#D8ED59]">검색엔진용 XML 사이트맵</a>
-                <a href="mailto:seoharo0111@gmail.com" className="text-xs leading-5 text-[#9DAAA1] transition hover:text-[#D8ED59]">문의: seoharo0111@gmail.com</a>
+                <a href="/terms" className="transition hover:text-[#D8ED59]">이용약관</a>
+                <a href="/sitemap" className="transition hover:text-[#D8ED59]">사이트맵</a>
               </div>
             </nav>
           </div>
 
-          <details className="group mt-9 border-y border-white/10 py-4">
-            <summary className="cursor-pointer list-none text-sm font-semibold text-[#D6E1D8] [&::-webkit-details-marker]:hidden"><span className="inline-flex items-center gap-2">오픈소스 라이선스와 고지 <ChevronRight size={15} className="transition group-open:rotate-90" /></span></summary>
-            <div className="mt-4 max-w-4xl text-xs leading-6 text-[#9DAAA1]">콕폼은 React, React DOM, Supabase JavaScript, Lucide, Vite, Tailwind CSS 등 오픈소스 소프트웨어를 사용합니다. 각 소프트웨어의 저작권 및 라이선스는 해당 프로젝트의 원본 저장소와 배포물에 따릅니다. <a href="https://github.com/facebook/react" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#D8ED59]">React</a> · <a href="https://github.com/supabase/supabase-js" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#D8ED59]">Supabase JS</a> · <a href="https://github.com/lucide-icons/lucide" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#D8ED59]">Lucide</a> · <a href="https://github.com/vitejs/vite" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#D8ED59]">Vite</a> · <a href="https://github.com/tailwindlabs/tailwindcss" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-[#D8ED59]">Tailwind CSS</a></div>
-          </details>
-
-          <div className="flex flex-col gap-3 pt-6 text-[11px] leading-5 text-[#718077] sm:flex-row sm:items-start sm:justify-between">
-            <div><p>© 2026 Cokform. All rights reserved.</p><p className="mt-1 max-w-3xl">응답 원문은 암호화되어 저장되도록 설계됩니다. 개인정보 수집의 목적·항목·보관기간과 응답자 권리 고지는 각 폼 운영자가 실제 운영 내용에 맞게 설정해야 합니다.</p></div>
-            <p className="shrink-0 font-medium text-[#9DAAA1]">원하는 대로, 콕 묻고 받아요.</p>
+          <div className="mt-8 flex flex-col gap-2 border-t border-white/10 pt-5 text-[11px] leading-5 text-[#718077] sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 Cokform. All rights reserved.</p>
+            <p>원하는 대로, 콕 묻고 받아요.</p>
           </div>
         </div>
       </footer>
@@ -444,7 +438,7 @@ function MetricCard({ label, value, suffix = "", icon }) {
   return <div className="rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-4 shadow-[0_2px_8px_rgba(23,37,31,0.06)]"><div className="mb-3 flex items-center justify-between text-[#17866D]"><span className="text-xs font-semibold text-[#78837C]">{label}</span>{icon}</div><div className="text-2xl font-semibold tracking-[-0.04em] text-[#17251F]">{value.toLocaleString("ko-KR")}<span className="ml-1 text-xs font-medium text-[#78837C]">{suffix}</span></div></div>;
 }
 
-function TemplateCard({ template: t, onCreate, busy, creating, premium }) {
+function TemplateCard({ template: t, onCreate, busy, creating }) {
   const previewQuestions = t.blank ? [] : t.build().questions;
   const primaryQuestion = previewQuestions.find((question) => !["privacy_notice", "privacy_consent"].includes(question.type));
   const accent = TYPE_COLORS[primaryQuestion?.type] || TYPE_COLORS.radio;
@@ -457,11 +451,6 @@ function TemplateCard({ template: t, onCreate, busy, creating, premium }) {
         creating ? "opacity-60" : ""
       }`}
     >
-      {premium && (
-        <span className="absolute right-1.5 top-1.5 z-10 rounded-full bg-[#D8ED59] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[#17251F]">
-          무료
-        </span>
-      )}
       <div className="flex h-[104px] items-center justify-center border-b border-[#DDE1D9] bg-[#F5F3EC] sm:h-[118px]">
         {t.blank ? (
           <span className="relative flex h-9 w-9 items-center justify-center">

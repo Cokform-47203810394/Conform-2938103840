@@ -68,8 +68,8 @@ export const TEMPLATES = [
         q("short", { title: "소속 또는 회사명" }),
         q("short", { title: "이메일", required: true }),
         q("short", { title: "연락처" }),
-        q("checkbox", { title: "참가를 원하는 프로그램", required: true, options: ["기본 세션", "심화 세션", "네트워킹", "자료만 수령"] }),
-        q("radio", { title: "참가 방식", required: true, options: ["현장 참가", "온라인 참가", "미정"] }),
+        q("short", { title: "참가 프로그램명", required: true }),
+        q("radio", { title: "참가 방식", required: true, options: ["현장 참가", "온라인 참가", "자료만 요청"] }),
         ...privacyQuestions(),
       ],
     }),
@@ -111,8 +111,8 @@ export const TEMPLATES = [
   },
 ];
 
-// PRO 템플릿은 파일럿 동안 무료 공개한다. 실제 개인정보 수집 흐름은 안내·동의 질문을
-// 포함하지만, 수집 목적·항목·보유기간은 각 운영자가 자신의 업무에 맞게 검토·수정해야 한다.
+// 확장 템플릿은 더 긴 업무 흐름을 제공합니다. 개인정보 수집 흐름에는 안내·동의 질문을
+// 포함하지만, 수집 목적·항목·보유기간은 각 운영자가 자신의 업무에 맞게 검토·수정해야 합니다.
 export const PREMIUM_TEMPLATES = [
   {
     key: "job_application",
@@ -202,9 +202,10 @@ export const PREMIUM_TEMPLATES = [
       questions: [
         q("short", { title: "이름", required: true }),
         q("short", { title: "연락처 또는 이메일", required: true }),
-        q("checkbox", { title: "희망 품목", required: true, options: ["품목 A", "품목 B", "품목 C", "기타"] }),
+        q("short", { title: "희망 품목명", required: true }),
         q("short", { title: "희망 수량", required: true }),
-        q("paragraph", { title: "색상·규격 등 요청 사항" }),
+        q("radio", { title: "신청 단위", options: ["개인", "팀·부서", "단체"] }),
+        q("paragraph", { title: "색상·규격·납품 등 요청 사항" }),
         ...privacyQuestions(),
       ],
     }),

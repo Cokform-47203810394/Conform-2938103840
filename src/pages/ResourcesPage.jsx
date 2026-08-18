@@ -15,12 +15,12 @@ import {
 import { AnchorNav, DocumentCard, PublicPageShell } from "../components/PublicPageShell";
 
 const colors = [
-  ["Deep Green", "#0F5B46", "핵심 브랜드 면·심볼 바탕"],
-  ["Cokform Green", "#17866D", "상태·링크·인터랙션"],
-  ["Leaf Green", "#73B99D", "보조 라인·그래픽"],
-  ["Soft Mint", "#EAF7EF", "밝은 보조 면"],
-  ["Ink Green", "#123D31", "타이포그래피·어두운 표현"],
-  ["Warm White", "#FFFDF8", "밝은 표면·배경"],
+  ["핵심 녹색", "#0F5B46", "로고와 핵심 브랜드 면"],
+  ["상태 녹색", "#17866D", "링크와 주요 상호작용"],
+  ["보조 녹색", "#73B99D", "보조 라인과 그래픽"],
+  ["밝은 민트", "#EAF7EF", "밝은 보조 면"],
+  ["짙은 글자색", "#123D31", "제목과 어두운 표현"],
+  ["따뜻한 흰색", "#FFFDF8", "밝은 표면과 배경"],
 ];
 
 const navItems = [
@@ -31,10 +31,10 @@ const navItems = [
 ];
 
 const formatMeta = {
-  png: { label: "PNG", icon: FileImage, description: "투명 배경 래스터" },
-  jpg: { label: "JPG", icon: FileImage, description: "밝은 배경 래스터" },
-  pdf: { label: "PDF", icon: FileText, description: "벡터 인쇄 파일" },
-  svg: { label: "SVG", icon: FileText, description: "무손실 벡터 원본" },
+  png: { label: "PNG", icon: FileImage, description: "투명 배경 이미지" },
+  jpg: { label: "JPG", icon: FileImage, description: "밝은 배경 이미지" },
+  pdf: { label: "PDF", icon: FileText, description: "인쇄용 벡터 파일" },
+  svg: { label: "SVG", icon: FileText, description: "편집용 벡터 원본" },
 };
 
 const brandAssets = [
@@ -131,9 +131,9 @@ export default function ResourcesPage({ onBack }) {
 
   return (
     <PublicPageShell
-      eyebrow="COKFORM / BRAND RESOURCES"
-      title="Cokform을 정확하게 소개할 수 있는 공식 리소스입니다."
-      description="로고, 마크, 색상, 서비스명 표기와 브랜드 사용 원칙을 확인하세요. Cokform은 고객의 자유도를 우선하고, 개인정보 보호를 그 자유를 가능하게 하는 기반으로 생각합니다."
+      eyebrow="브랜드 리소스"
+      title="공식 로고와 심볼을 받아보세요"
+      description="로고, 심볼, 색상, 서비스명 표기와 사용 기준을 이 페이지에서 확인할 수 있습니다."
       icon={Palette}
       onBack={onBack}
       aside={<AnchorNav items={navItems} />}
@@ -144,8 +144,7 @@ export default function ResourcesPage({ onBack }) {
           <div>
             <h2 className="font-semibold text-[#0B4D3D]">공식성 확인</h2>
             <p className="mt-1 text-sm leading-6">
-              공식 로고는 이 페이지와 Cokform 저장소의 <code>public/brand</code> 경로에서만 받으세요. Cokform의
-              파트너십·보증·승인이 있는 것처럼 보이게 하는 사용은 허용되지 않습니다.
+              이 페이지에서 내려받은 파일이 최신 공식 자산입니다. 콕폼의 파트너십·보증·승인이 있는 것처럼 보이게 하는 사용은 허용되지 않습니다.
             </p>
           </div>
         </div>
@@ -172,7 +171,7 @@ export default function ResourcesPage({ onBack }) {
             return (
               <article
                 key={asset.id}
-                className="overflow-hidden rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] shadow-[0_6px_20px_rgba(23,37,31,0.05)]"
+                className="overflow-hidden rounded-xl border border-[#DDE1D9] bg-[#FFFDF8]"
               >
                 <div className={`flex min-h-48 items-center justify-center p-8 ${asset.previewSurfaceClassName}`}>
                   <img src={asset.preview} alt={asset.previewAlt} className={asset.previewClassName} />
@@ -182,7 +181,7 @@ export default function ResourcesPage({ onBack }) {
                   <p className="mt-1 text-sm leading-6 text-[#59645E]">{asset.description}</p>
 
                   <div className="mt-5 rounded-2xl border border-[#DDE1D9] bg-[#F7F8F3] p-3">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#345247]">1. 파일 형식</p>
+                    <p className="text-[11px] font-bold tracking-[0.08em] text-[#345247]">1. 파일 형식</p>
                     <div className="mt-2 grid grid-cols-2 gap-2">
                       {Object.entries(formatMeta).map(([value, meta]) => {
                         const MetaIcon = meta.icon;
@@ -208,7 +207,7 @@ export default function ResourcesPage({ onBack }) {
                   </div>
 
                   <div className="mt-3 rounded-2xl border border-[#DDE1D9] bg-[#F7F8F3] p-3">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#345247]">2. 화질·해상도</p>
+                    <p className="text-[11px] font-bold tracking-[0.08em] text-[#345247]">2. 화질·해상도</p>
                     <div className="mt-2 grid gap-2">
                       {qualityOptions.map((option) => {
                         const selected = quality === option.value;
@@ -260,7 +259,7 @@ export default function ResourcesPage({ onBack }) {
           {colors.map(([name, hex, usage]) => (
             <article
               key={hex}
-              className="flex items-center gap-4 rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-4 shadow-[0_4px_14px_rgba(23,37,31,0.04)]"
+              className="flex items-center gap-4 rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-4"
             >
               <span className="h-12 w-12 shrink-0 rounded-xl border border-black/5" style={{ backgroundColor: hex }} />
               <div className="min-w-0">
@@ -308,18 +307,18 @@ export default function ResourcesPage({ onBack }) {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <a
             href="/docs/brand-guide"
-            className="group rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-5 shadow-[0_5px_18px_rgba(23,37,31,0.05)] transition hover:border-[#B7DCC8]"
+            className="group rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-5 transition hover:border-[#B7DCC8] hover:bg-[#F0FAF6]"
           >
             <Palette size={20} className="text-[#17866D]" />
             <h3 className="mt-3 font-semibold">브랜드 상세 가이드</h3>
-            <p className="mt-1 text-sm leading-6 text-[#59645E]">형식·해상도 선택, 색상, 표기 기준, 사용 원칙을 Cokform 안에서 확인합니다.</p>
+            <p className="mt-1 text-sm leading-6 text-[#59645E]">형식·해상도 선택, 색상, 표기 기준, 사용 원칙을 이 사이트에서 확인합니다.</p>
             <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0B4D3D]">
               가이드 열기 <ArrowUpRight size={13} />
             </span>
           </a>
           <a
             href="/docs"
-            className="group rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-5 shadow-[0_5px_18px_rgba(23,37,31,0.05)] transition hover:border-[#B7DCC8]"
+            className="group rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-5 transition hover:border-[#B7DCC8] hover:bg-[#F0FAF6]"
           >
             <BookOpen size={20} className="text-[#17866D]" />
             <h3 className="mt-3 font-semibold">제품 문서</h3>
@@ -330,7 +329,7 @@ export default function ResourcesPage({ onBack }) {
           </a>
           <a
             href="mailto:seoharo0111@gmail.com"
-            className="group rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-5 shadow-[0_5px_18px_rgba(23,37,31,0.05)] transition hover:border-[#B7DCC8]"
+            className="group rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-5 transition hover:border-[#B7DCC8] hover:bg-[#F0FAF6]"
           >
             <FileWarning size={20} className="text-[#17866D]" />
             <h3 className="mt-3 font-semibold">브랜드 사용 문의</h3>

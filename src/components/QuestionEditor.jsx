@@ -197,7 +197,7 @@ export default function QuestionEditor({
             style={{ borderColor: `${NAVER_GREEN}4D`, backgroundColor: `${NAVER_GREEN}0D` }}
           >
             <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: NAVER_GREEN }}>
-              <ShieldCheck size={14} /> 동의 문항 · 네이버폼 스타일
+              <ShieldCheck size={14} /> 개인정보 수집·이용 동의
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
               <label className="block text-xs text-[#59645E]">

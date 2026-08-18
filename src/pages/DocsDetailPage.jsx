@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { ArrowRight, BookOpen, CheckCircle2, FileOutput, KeyRound, LockKeyhole, Palette, ShieldCheck, Wrench } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, FileOutput, LockKeyhole, Palette, ShieldCheck, Wrench } from "lucide-react";
 import { AnchorNav, DocumentCard, PublicPageShell } from "../components/PublicPageShell";
 
 const guides = {
   "create-and-share": {
-    eyebrow: "COKFORM / START HERE",
+    eyebrow: "시작하기",
     title: "폼 만들기와 공유",
     description: "첫 질문을 구성하고 개인키 금고를 준비한 뒤, 응답자에게 공개 링크를 전달하기까지의 기본 흐름입니다.",
     icon: BookOpen,
@@ -49,7 +49,7 @@ const guides = {
     ],
   },
   "responses-and-exports": {
-    eyebrow: "COKFORM / RESPONSES",
+    eyebrow: "응답 운영",
     title: "응답 운영과 내보내기",
     description: "복호화된 응답을 확인하고, 응답 기간·내보내기·삭제를 목적에 맞게 운영하는 방법입니다.",
     icon: FileOutput,
@@ -94,7 +94,7 @@ const guides = {
     ],
   },
   "e2ee-and-key-management": {
-    eyebrow: "COKFORM / SECURITY",
+    eyebrow: "보안과 복구",
     title: "종단간 암호화와 키 관리",
     description: "응답 평문이 어디에서 처리되는지, 개인키 금고와 복구 수단을 어떻게 작성자가 관리하는지 설명합니다.",
     icon: ShieldCheck,
@@ -139,7 +139,7 @@ const guides = {
     ],
   },
   "privacy-operations": {
-    eyebrow: "COKFORM / PRIVACY OPERATIONS",
+    eyebrow: "개인정보 수집",
     title: "개인정보 수집 운영",
     description: "수집 목적·항목·보유기간을 실제 운영에 맞게 고지하고, 필요한 정보만 받는 실무 기준입니다.",
     icon: LockKeyhole,
@@ -183,7 +183,7 @@ const guides = {
     ],
   },
   troubleshooting: {
-    eyebrow: "COKFORM / TROUBLESHOOTING",
+    eyebrow: "문제 해결",
     title: "문제 해결",
     description: "금고 잠김, 응답 제출, 공유 링크, 내보내기 문제를 안전한 순서로 점검하는 방법입니다.",
     icon: Wrench,
@@ -226,9 +226,9 @@ const guides = {
     ],
   },
   "brand-guide": {
-    eyebrow: "COKFORM / BRAND GUIDE",
+    eyebrow: "브랜드 리소스",
     title: "브랜드 리소스 사용 가이드",
-    description: "Cokform의 로고·심볼·색상을 정확하고 일관되게 쓰기 위한 내부 상세 가이드입니다. 모든 자산은 Cokform 사이트에서 직접 내려받을 수 있습니다.",
+    description: "콕폼의 로고·심볼·색상을 정확하고 일관되게 쓰기 위한 사용 가이드입니다. 모든 자산은 콕폼 사이트에서 직접 내려받을 수 있습니다.",
     icon: Palette,
     sections: [
       {
@@ -315,14 +315,11 @@ export default function DocsDetailPage({ slug, onBack }) {
   const navItems = guide.sections.map((section) => ({ href: `#${section.id}`, label: section.title }));
 
   return (
-    <PublicPageShell eyebrow={guide.eyebrow} title={guide.title} description={guide.description} icon={guide.icon} onBack={onBack} backHref="/docs" backLabel="Cokform 문서로" aside={<AnchorNav items={navItems} />}>
-      <DocumentCard tone="success">
-        <p className="text-sm leading-6">이 안내는 Cokform 사이트 안에서 제공됩니다. 외부 저장소나 외부 문서로 이동하지 않아도 필요한 운영 기준과 내부 문서 링크를 확인할 수 있습니다.</p>
-      </DocumentCard>
+    <PublicPageShell eyebrow={guide.eyebrow} title={guide.title} description={guide.description} icon={guide.icon} onBack={onBack} backHref="/docs" backLabel="사용 가이드로" aside={<AnchorNav items={navItems} />}>
       {guide.sections.map((section) => <Section key={section.id} section={section} />)}
-      <section className="scroll-mt-8">
-        <div className="mb-3 flex items-center gap-2"><KeyRound size={18} className="text-[#17866D]" /><h2 className="text-xl font-bold tracking-[-0.04em]">관련 내부 문서</h2></div>
-        <div className="grid gap-3 sm:grid-cols-3">{guide.related.map(([label, href]) => <a key={href} href={href} className="group rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-4 text-sm font-semibold text-[#0B4D3D] shadow-[0_4px_14px_rgba(23,37,31,0.04)] transition hover:border-[#B7DCC8] hover:bg-[#F1FAF4]">{label}<span className="mt-2 flex items-center gap-1 text-xs text-[#59645E]">Cokform 내부 문서 <ArrowRight size={13} /></span></a>)}</div>
+      <section className="scroll-mt-8 border-t border-[#DDE1D9] pt-6">
+        <h2 className="text-xl font-bold tracking-[-0.04em]">함께 보면 좋은 안내</h2>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">{guide.related.map(([label, href]) => <a key={href} href={href} className="group rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-4 text-sm font-semibold text-[#0B4D3D] transition hover:border-[#B7DCC8] hover:bg-[#F1FAF4]">{label}<span className="mt-2 flex items-center gap-1 text-xs text-[#59645E]">내용 보기 <ArrowRight size={13} /></span></a>)}</div>
       </section>
     </PublicPageShell>
   );

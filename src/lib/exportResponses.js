@@ -125,7 +125,7 @@ export async function createSummaryPngBlob(form, responses) {
   ctx.fill();
   ctx.fillStyle = "#D8ED59";
   ctx.font = "700 20px sans-serif";
-  ctx.fillText("COKFORM / RESPONSE SUMMARY", 120, 126);
+  ctx.fillText("콕폼 · 응답 요약", 120, 126);
   ctx.fillStyle = "#FFFFFF";
   ctx.font = "700 54px sans-serif";
   ctx.fillText(form.title || "제목 없는 설문지", 120, 202);
@@ -144,7 +144,7 @@ export async function createSummaryPngBlob(form, responses) {
     ctx.fill();
     ctx.fillStyle = "#17866D";
     ctx.font = "700 18px sans-serif";
-    ctx.fillText(`QUESTION ${String(index + 1).padStart(2, "0")}`, x + 34, y + 48);
+    ctx.fillText(`질문 ${index + 1}`, x + 34, y + 48);
     ctx.fillStyle = "#17251F";
     ctx.font = "700 28px sans-serif";
     const title = summary.title.length > 28 ? `${summary.title.slice(0, 28)}…` : summary.title;
@@ -195,43 +195,43 @@ export async function downloadPresentation(form, responses) {
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE";
   pptx.author = "Cokform";
-  pptx.subject = "Cokform response summary";
-  pptx.title = `${form.title || "Cokform"} 응답 요약`;
+  pptx.subject = "콕폼 응답 요약";
+  pptx.title = `${form.title || "콕폼"} 응답 요약`;
   pptx.company = "Cokform";
   pptx.lang = "ko-KR";
-  pptx.theme = { headFontFace: "Arial", bodyFontFace: "Arial", lang: "ko-KR" };
+  pptx.theme = { headFontFace: "Malgun Gothic", bodyFontFace: "Malgun Gothic", lang: "ko-KR" };
 
   const cover = pptx.addSlide();
   cover.background = { color: "17251F" };
-  cover.addText("COKFORM / RESPONSE SUMMARY", { x: 0.7, y: 0.65, w: 7, h: 0.3, fontFace: "Arial", fontSize: 14, bold: true, color: "D8ED59", charSpace: 1.2 });
-  cover.addText(form.title || "제목 없는 설문지", { x: 0.7, y: 1.3, w: 11.5, h: 0.9, fontFace: "Arial", fontSize: 36, bold: true, color: "FFFFFF", breakLine: false, fit: "shrink" });
-  cover.addText(`응답 ${responses.length.toLocaleString("ko-KR")}건 · ${new Date().toLocaleDateString("ko-KR")}`, { x: 0.7, y: 2.45, w: 8, h: 0.4, fontFace: "Arial", fontSize: 16, color: "D6E1D8" });
-  cover.addText("개인정보 원문은 이 프레젠테이션에 포함되지 않습니다.", { x: 0.7, y: 6.7, w: 8, h: 0.3, fontFace: "Arial", fontSize: 10, color: "9DAAA1" });
+  cover.addText("콕폼 · 응답 요약", { x: 0.7, y: 0.65, w: 7, h: 0.3, fontFace: "Malgun Gothic", fontSize: 14, bold: true, color: "D8ED59" });
+  cover.addText(form.title || "제목 없는 설문지", { x: 0.7, y: 1.3, w: 11.5, h: 0.9, fontFace: "Malgun Gothic", fontSize: 36, bold: true, color: "FFFFFF", breakLine: false, fit: "shrink" });
+  cover.addText(`응답 ${responses.length.toLocaleString("ko-KR")}건 · ${new Date().toLocaleDateString("ko-KR")}`, { x: 0.7, y: 2.45, w: 8, h: 0.4, fontFace: "Malgun Gothic", fontSize: 16, color: "D6E1D8" });
+  cover.addText("개인정보 원문은 이 프레젠테이션에 포함되지 않습니다.", { x: 0.7, y: 6.7, w: 8, h: 0.3, fontFace: "Malgun Gothic", fontSize: 10, color: "9DAAA1" });
 
   const summaries = form.questions.filter((q) => q.type !== "privacy_notice").map((q) => answerSummary(q, responses));
   summaries.slice(0, 8).forEach((summary, index) => {
     const slide = pptx.addSlide();
     slide.background = { color: "F5F3EC" };
-    slide.addText(`QUESTION ${String(index + 1).padStart(2, "0")}`, { x: 0.7, y: 0.5, w: 3, h: 0.3, fontFace: "Arial", fontSize: 12, bold: true, color: "17866D", charSpace: 1 });
-    slide.addText(summary.title, { x: 0.7, y: 0.92, w: 11.4, h: 0.65, fontFace: "Arial", fontSize: 27, bold: true, color: "17251F", fit: "shrink" });
-    slide.addText(`응답 ${summary.count.toLocaleString("ko-KR")}건`, { x: 0.7, y: 1.72, w: 4, h: 0.35, fontFace: "Arial", fontSize: 15, color: "59645E" });
+    slide.addText(`질문 ${index + 1}`, { x: 0.7, y: 0.5, w: 3, h: 0.3, fontFace: "Malgun Gothic", fontSize: 12, bold: true, color: "17866D", charSpace: 1 });
+    slide.addText(summary.title, { x: 0.7, y: 0.92, w: 11.4, h: 0.65, fontFace: "Malgun Gothic", fontSize: 27, bold: true, color: "17251F", fit: "shrink" });
+    slide.addText(`응답 ${summary.count.toLocaleString("ko-KR")}건`, { x: 0.7, y: 1.72, w: 4, h: 0.35, fontFace: "Malgun Gothic", fontSize: 15, color: "59645E" });
     if (summary.type === "choice") {
       const top = [...summary.counts].sort((a, b) => b.count - a.count).slice(0, 6);
       const max = Math.max(...top.map((item) => item.count), 1);
       top.forEach((item, row) => {
         const y = 2.35 + row * 0.58;
-        slide.addText(item.label || "응답 없음", { x: 0.9, y, w: 3.2, h: 0.25, fontFace: "Arial", fontSize: 13, color: "17251F", fit: "shrink" });
+        slide.addText(item.label || "응답 없음", { x: 0.9, y, w: 3.2, h: 0.25, fontFace: "Malgun Gothic", fontSize: 13, color: "17251F", fit: "shrink" });
         slide.addShape(pptx.ShapeType.roundRect, { x: 4.25, y: y + 0.04, w: 5.4, h: 0.2, rectRadius: 0.04, fill: { color: "EAF6EF" }, line: { color: "EAF6EF" } });
         slide.addShape(pptx.ShapeType.roundRect, { x: 4.25, y: y + 0.04, w: 5.4 * (item.count / max), h: 0.2, rectRadius: 0.04, fill: { color: "17866D" }, line: { color: "17866D" } });
-        slide.addText(String(item.count), { x: 9.9, y: y - 0.02, w: 0.5, h: 0.3, fontFace: "Arial", fontSize: 13, bold: true, color: "17251F", align: "right" });
+        slide.addText(String(item.count), { x: 9.9, y: y - 0.02, w: 0.5, h: 0.3, fontFace: "Malgun Gothic", fontSize: 13, bold: true, color: "17251F", align: "right" });
       });
     } else {
       slide.addShape(pptx.ShapeType.roundRect, { x: 0.9, y: 2.45, w: 5.1, h: 1.25, rectRadius: 0.12, fill: { color: "FFFFFF" }, line: { color: "DDE1D9" } });
-      slide.addText("자유 입력 응답", { x: 1.25, y: 2.78, w: 2, h: 0.3, fontFace: "Arial", fontSize: 15, bold: true, color: "17251F" });
-      slide.addText(`${summary.count.toLocaleString("ko-KR")}건`, { x: 1.25, y: 3.14, w: 2, h: 0.35, fontFace: "Arial", fontSize: 22, bold: true, color: "17866D" });
-      slide.addText("개인정보 원문은 포함하지 않았습니다.", { x: 0.9, y: 4.1, w: 4.5, h: 0.3, fontFace: "Arial", fontSize: 12, color: "78837C" });
+      slide.addText("자유 입력 응답", { x: 1.25, y: 2.78, w: 2, h: 0.3, fontFace: "Malgun Gothic", fontSize: 15, bold: true, color: "17251F" });
+      slide.addText(`${summary.count.toLocaleString("ko-KR")}건`, { x: 1.25, y: 3.14, w: 2, h: 0.35, fontFace: "Malgun Gothic", fontSize: 22, bold: true, color: "17866D" });
+      slide.addText("개인정보 원문은 포함하지 않았습니다.", { x: 0.9, y: 4.1, w: 4.5, h: 0.3, fontFace: "Malgun Gothic", fontSize: 12, color: "78837C" });
     }
-    slide.addText("Cokform · 개인정보 원문 미포함 요약", { x: 0.7, y: 6.9, w: 5, h: 0.2, fontFace: "Arial", fontSize: 9, color: "78837C" });
+    slide.addText("Cokform · 개인정보 원문 미포함 요약", { x: 0.7, y: 6.9, w: 5, h: 0.2, fontFace: "Malgun Gothic", fontSize: 9, color: "78837C" });
   });
 
   await pptx.writeFile({ fileName: `${safeFileName(form.title)}-응답요약.pptx` });
