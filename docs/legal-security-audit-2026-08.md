@@ -59,6 +59,8 @@ Supabase 관리 API의 읽기 전용 프로젝트 조회 결과, Cokform 프로�
 
 > Cloudflare Pages 운영 도메인은 점검 환경에서 TLS 연결 시간이 초과되어 마지막 외부 헤더 재수집을 완료하지 못했습니다. Cloudflare Pages API의 최신 배포 상태와 정적 빌드는 성공이지만, 실제 사용자 네트워크에서 HSTS 헤더와 Turnstile 렌더링을 한 번 더 확인해야 합니다.
 
+사후 Supabase 보안 권고에는 두 항목만 남았습니다. `cokform_response_rate_limits`의 “RLS Enabled No Policy”는 브라우저 역할을 의도적으로 전부 차단하고 `service_role` 전용 보안 함수만 접근하도록 설계한 결과이므로 **정보성 정상 경고**입니다. 나머지 “Leaked Password Protection Disabled”는 현재 Google OAuth만 제공하는 구성에서는 비밀번호 로그인 표면이 없어 직접 영향이 없으며, 향후 이메일·비밀번호 로그인 도입 시 즉시 활성화해야 합니다.[^supabase-password-security]
+
 ## 잔여 위험과 출시 전 조치
 
 | 우선순위 | 잔여 위험 또는 미검증 항목 | 출시 전 조치 |
@@ -83,3 +85,4 @@ Supabase 관리 API의 읽기 전용 프로젝트 조회 결과, Cokform 프로�
 [^cloudflare-turnstile]: [Cloudflare Turnstile — 서버 측 검증](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/)
 [^supabase-edge-secrets]: [Supabase — Edge Functions 환경 변수와 비밀값](https://supabase.com/docs/guides/functions/secrets)
 [^supabase-api-keys]: [Supabase — API 키 이해하기](https://supabase.com/docs/guides/getting-started/api-keys)
+[^supabase-password-security]: [Supabase — 비밀번호 강도 및 유출 비밀번호 보호](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
