@@ -25,7 +25,7 @@ import PreviewForm from "../components/PreviewForm";
 import ResponsesView from "../components/ResponsesView";
 import { IconButton, Toggle } from "../components/Primitives";
 import { Popover, Modal } from "../components/Overlay";
-import { clearResponses as clearStoredResponses, exportFormRecoveryData, getFormDoc, getFormVersions, recordFormAuditEvent, restoreFormRecoveryData, saveFormDoc, saveFormVersion, submitResponse } from "../lib/formsStore";
+import { clearResponses as clearStoredResponses, deleteStoredResponse, exportFormRecoveryData, getFormDoc, getFormVersions, recordFormAuditEvent, restoreFormRecoveryData, saveFormDoc, saveFormVersion, submitResponse } from "../lib/formsStore";
 import { emptyForm, defaultQuestion, uid } from "../questionTypes";
 import {
   createEncryptedFormRecoveryBundle,
@@ -455,18 +455,24 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setDragIndex(null);
   };
 
-  const handleFormSubmit = useCallback(async (answers) => {
-    const result = await submitResponse(formId, answers, form.publicKey);
+  const handleFormSubmit = useCallback(async (answers, turnstileToken) => {
+    const result = await submitResponse(formId, answers, form.publicKey, form.settings, turnstileToken);
     if (!result.ok) {
-      setToast("응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
-      return;
+      setToast(result.reason === "security_verification_failed" ? "보안 확인에 실패했어요. 다시 확인한 뒤 제출해 주세요." : "응답 저장에 실패했어요. 네트워크와 보안 확인 상태를 다시 확인해주세요.");
+      return false;
     }
     setResponses((r) => [...r, result.response]);
-  }, [formId, form.publicKey]);
+    return true;
+  }, [formId, form.publicKey, form.settings]);
   const recordAuditEvent = useCallback((eventType, metadata) => recordFormAuditEvent(formId, eventType, metadata), [formId]);
 
   const requestClearResponses = () => {
     setConfirmAction({ kind: "responses", title: "모든 응답 삭제", description: "이 폼의 암호화된 응답을 모두 삭제합니다. 이 작업은 되돌릴 수 없습니다." });
+  };
+
+  const requestDeleteResponse = (response) => {
+    if (!response?.id) return;
+    setConfirmAction({ kind: "response", responseId: response.id, title: "이 응답 삭제", description: "선택한 암호화 응답만 삭제합니다. 이 작업은 되돌릴 수 없습니다." });
   };
 
   const performConfirmation = async () => {
@@ -509,6 +515,17 @@ export default function FormEditorPage({ formId, user, onBack }) {
         }
         await recordAuditEvent("responses_deleted", { responseCount: responses.length, source: "owner" });
         setResponses([]);
+        setConfirmAction(null);
+        return;
+      }
+      if (confirmAction.kind === "response") {
+        const deleted = await deleteStoredResponse(formId, confirmAction.responseId);
+        if (!deleted) {
+          setToast("이 응답을 삭제하지 못했어요. 저장소 연결과 권한을 확인해주세요.");
+          return;
+        }
+        await recordAuditEvent("response_deleted", { responseId: confirmAction.responseId, source: "owner" });
+        setResponses((current) => current.filter((response) => response.id !== confirmAction.responseId));
         setConfirmAction(null);
       }
     } finally {
@@ -646,7 +663,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
             <Star size={18} fill={form.starred ? accent : "none"} color={form.starred ? accent : "currentColor"} />
           </IconButton>
 
-          <div className="ml-auto hidden shrink-0 items-center gap-0.5 overflow-x-auto sm:flex">
+            <div className="ml-auto hidden shrink-0 items-center gap-0.5 overflow-visible sm:flex">
             <div className="relative">
               <IconButton title="테마 색상" onClick={() => setPaletteOpen((v) => !v)}>
                 <Palette size={18} />
@@ -843,7 +860,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
             {tab === "responses" && canViewResponses && (
               <div>
                 <div className="mb-3 text-xs font-medium text-[#59645E]">작성자 전용 · 이 폼의 소유자만 응답을 복호화하고 내보낼 수 있어요.</div>
-                <ResponsesView form={form} formId={formId} responses={responses} onClear={requestClearResponses} onAudit={recordAuditEvent} />
+                <ResponsesView form={form} formId={formId} responses={responses} onClear={requestClearResponses} onDeleteResponse={requestDeleteResponse} onAudit={recordAuditEvent} />
               </div>
             )}
 

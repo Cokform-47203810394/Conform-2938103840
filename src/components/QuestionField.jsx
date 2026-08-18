@@ -23,7 +23,7 @@ export default function QuestionField({ q, value, error, onChange }) {
 
   if (q.type === "privacy_consent") {
     return (
-      <div className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1} ${error ? "ring-2 ring-[#B3261E]" : ""}`}>
+      <div id={`cokform-question-${q.id}`} className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1} ${error ? "ring-2 ring-[#B3261E]" : ""}`}>
         <div className="mb-3 flex items-center gap-1.5 text-xs font-semibold" style={{ color: NAVER_GREEN }}>
           <ShieldCheck size={14} /> 개인정보 수집·이용 동의
         </div>
@@ -79,6 +79,7 @@ export default function QuestionField({ q, value, error, onChange }) {
 
   return (
     <div
+      id={`cokform-question-${q.id}`}
       className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1} ${error ? "ring-2 ring-[#B3261E]" : ""}`}
       style={{ borderLeft: `4px solid ${accent}` }}
     >

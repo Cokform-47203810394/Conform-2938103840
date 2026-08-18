@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, Mail } from "lucide-react";
 import QuestionField from "./QuestionField";
 import TurnstileChallenge from "./TurnstileChallenge";
@@ -14,6 +14,7 @@ export default function PreviewForm({ form, onSubmit, accent }) {
   const [submitting, setSubmitting] = useState(false);
   const [securityToken, setSecurityToken] = useState("");
   const [securityReset, setSecurityReset] = useState(0);
+  const errorSummaryRef = useRef(null);
 
   const handleChange = (qid, value) => {
     setAnswers((a) => ({ ...a, [qid]: value }));
@@ -23,12 +24,17 @@ export default function PreviewForm({ form, onSubmit, accent }) {
   const handleSubmit = async () => {
     const nextErrors = {};
     let hasError = false;
+    let firstErrorId = "";
+    const markError = (id, value = true) => {
+      nextErrors[id] = value;
+      if (!firstErrorId) firstErrorId = id;
+      hasError = true;
+    };
 
     if (form.settings?.collectEmail) {
       const email = String(answers._cokform_email || "").trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        nextErrors._cokform_email = true;
-        hasError = true;
+        markError("_cokform_email");
       }
     }
 
@@ -38,14 +44,12 @@ export default function PreviewForm({ form, onSubmit, accent }) {
       if (q.type === "privacy_consent") {
         const v = answers[q.id];
         if (!v) {
-          nextErrors[q.id] = true;
-          hasError = true;
+          markError(q.id);
           return;
         }
         const declineOption = q.options[1];
         if (q.blockOnDecline && v === declineOption) {
-          nextErrors[q.id] = "decline";
-          hasError = true;
+          markError(q.id, "decline");
         }
         return;
       }
@@ -54,18 +58,24 @@ export default function PreviewForm({ form, onSubmit, accent }) {
       const v = answers[q.id];
       const empty = v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
       if (empty) {
-        nextErrors[q.id] = true;
-        hasError = true;
+        markError(q.id);
       }
     });
 
     if (!securityToken) {
-      nextErrors._security = "보안 확인을 완료한 뒤 제출할 수 있어요.";
-      hasError = true;
+      markError("_security", "보안 확인을 완료한 뒤 제출할 수 있어요.");
     }
 
     setErrors(nextErrors);
-    if (hasError) return;
+    if (hasError) {
+      window.requestAnimationFrame(() => {
+        const target = document.getElementById(`cokform-question-${firstErrorId}`) || errorSummaryRef.current;
+        target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+        const field = target?.querySelector?.("input, textarea, select, button");
+        field?.focus?.({ preventScroll: true });
+      });
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -147,7 +157,7 @@ export default function PreviewForm({ form, onSubmit, accent }) {
               <p className="mt-1 text-xs leading-5 text-[#355C45]">제출한 이메일 주소는 응답과 함께 기록되며, 폼 작성자만 암호화된 응답에서 확인할 수 있어요.</p>
             </div>
           </div>
-          <div className="p-5 sm:p-6">
+          <div id="cokform-question-_cokform_email" className="p-5 sm:p-6">
             <label htmlFor="cokform-email" className="flex items-center gap-2 text-sm font-medium text-[#17251F]"><Mail size={16} className="text-[#17866D]" /> 이메일 주소</label>
             <input id="cokform-email" type="email" required autoComplete="email" value={answers._cokform_email || ""} onChange={(e) => handleChange("_cokform_email", e.target.value)} placeholder="you@example.com" className={`mt-3 w-full rounded-lg border bg-[#FFFDF8] px-3 py-3 text-base outline-none focus:border-[#17866D] focus:ring-4 focus:ring-[#D8F5E8] ${errors._cokform_email ? "border-[#B3261E]" : "border-[#C9CEC6]"}`} />
             {errors._cokform_email && <div className="mt-1 text-xs text-[#B3261E]">유효한 이메일 주소를 입력해주세요.</div>}
@@ -156,8 +166,9 @@ export default function PreviewForm({ form, onSubmit, accent }) {
         </section>
       )}
       {Object.keys(errors).length > 0 && (
-        <div role="alert" className="rounded-xl border border-[#F2B8B5] bg-[#FFF6F5] px-4 py-3 text-sm text-[#8C1D18]">
-          {errors._security || "필수 항목과 입력 형식을 다시 확인해주세요."}
+        <div ref={errorSummaryRef} role="alert" className="rounded-xl border border-[#F2B8B5] bg-[#FFF6F5] px-4 py-3 text-sm text-[#8C1D18]">
+          <strong>{errors._security || `필수 항목 ${Object.keys(errors).filter((key) => key !== "_security").length}개를 확인해 주세요.`}</strong>
+          {!errors._security && <p className="mt-1 text-xs leading-5 text-[#9A3A32]">작성하지 않은 첫 항목으로 이동했어요. 빨간 테두리의 질문만 채우면 됩니다.</p>}
         </div>
       )}
       {form.questions.map((q) => (

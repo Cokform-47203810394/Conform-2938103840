@@ -669,6 +669,36 @@ export async function clearResponses(formId) {
   }
 }
 
+export async function deleteStoredResponse(formId, responseId) {
+  if (!formId || !responseId) return false;
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData?.user) return false;
+      const { data: deletedRows, error } = await supabase
+        .from(RESPONSE_TABLE)
+        .delete()
+        .eq("form_id", formId)
+        .eq("id", responseId)
+        .select("id");
+      return !error && Array.isArray(deletedRows) && deletedRows.length === 1;
+    } catch {
+      return false;
+    }
+  }
+
+  try {
+    const current = readResponsesLocal(formId);
+    const next = current.filter((response) => response.id !== responseId);
+    if (next.length === current.length) return false;
+    writeResponsesLocal(formId, next);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function deleteFormDoc(id) {
   const deletedRemotely = await trySupabase("삭제", async (supabase) => {
     const { data: authData } = await supabase.auth.getUser();
