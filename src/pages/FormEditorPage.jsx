@@ -125,6 +125,19 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setLoaded(true);
   }, [formId]);
 
+  const loadFormStructure = useCallback(async () => {
+    const doc = await getFormDoc(formId);
+    const nextForm = normalizeForm(doc?.form);
+    formRef.current = nextForm;
+    setForm(nextForm);
+    // A locked vault must never expose decrypted responses or version contents.
+    setResponses([]);
+    setVersions([]);
+    lastVersionFingerprint.current = JSON.stringify(nextForm);
+    loadedRef.current = true;
+    setLoaded(true);
+  }, [formId]);
+
   const handleKeyVaultUnlock = useCallback(async () => {
     setKeyVaultBusy(true);
     setKeyVaultError("");
@@ -239,13 +252,13 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   const lockCurrentKeyVault = useCallback(() => {
     lockFormKeyVault(formId);
+    // Keep form configuration editable, while immediately removing response
+    // plaintext and decrypted versions from the current session.
     setResponses([]);
     setVersions([]);
     setTab("edit");
-    setLoaded(false);
-    loadedRef.current = false;
     setKeyVaultState("locked");
-    setKeyVaultOpen(true);
+    setKeyVaultOpen(false);
     setRecoveryPassphrase("");
     setRecoveryPassphraseConfirm("");
   }, [formId]);
@@ -320,7 +333,16 @@ export default function FormEditorPage({ formId, user, onBack }) {
       setKeyVaultState(state);
       setKeyVaultError("");
       if (state !== "unlocked") {
-        setKeyVaultOpen(true);
+        // Form structure is not response plaintext. Let owners keep editing
+        // while the vault remains locked; only response and history views
+        // require an explicit unlock.
+        try {
+          await loadFormStructure();
+          setKeyVaultOpen(false);
+        } catch (error) {
+          setKeyVaultError(error?.message || "폼을 불러오지 못했습니다.");
+          setKeyVaultOpen(true);
+        }
         return;
       }
       try {
@@ -332,7 +354,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
         setKeyVaultOpen(true);
       }
     })();
-  }, [finishSecureLoad, formId]);
+  }, [finishSecureLoad, formId, loadFormStructure]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -365,6 +387,11 @@ export default function FormEditorPage({ formId, user, onBack }) {
   }, [form, formId, loaded]);
 
   const openVersionHistory = async () => {
+    if (keyVaultState !== "unlocked") {
+      setToast("버전 기록을 보려면 개인키 금고를 먼저 열어주세요.");
+      setKeyVaultOpen(true);
+      return;
+    }
     setHistoryOpen(true);
     setVersionsLoading(true);
     try {
@@ -514,6 +541,11 @@ export default function FormEditorPage({ formId, user, onBack }) {
   );
 
   const openShare = () => {
+    if (!form.publicKey) {
+      setKeyVaultOpen(true);
+      setToast("공개하기 전 개인키 금고를 만들고 응답 암호화를 설정해주세요.");
+      return;
+    }
     if (privacyAudit.blocking.length) {
       setTab("settings");
       setToast("고유식별정보 또는 민감정보로 보이는 질문이 있어 공개 공유를 중단했어요. 설정의 개인정보 점검을 먼저 확인하세요.");
@@ -523,6 +555,11 @@ export default function FormEditorPage({ formId, user, onBack }) {
   };
 
   const copyLink = async () => {
+    if (!form.publicKey) {
+      setKeyVaultOpen(true);
+      setToast("암호화 키를 만든 뒤에만 공개 링크를 복사할 수 있어요.");
+      return;
+    }
     if (privacyAudit.blocking.length) {
       setTab("settings");
       setToast("고위험 개인정보 질문을 확인하기 전에는 공개 링크를 복사할 수 없어요.");
@@ -710,7 +747,14 @@ export default function FormEditorPage({ formId, user, onBack }) {
           {tabs.map((t) => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id)}
+              onClick={() => {
+                if (t.id === "responses" && keyVaultState !== "unlocked") {
+                  setToast("응답을 보려면 개인키 금고를 먼저 열어주세요.");
+                  setKeyVaultOpen(true);
+                  return;
+                }
+                setTab(t.id);
+              }}
               className={`flex min-w-0 flex-1 items-center justify-center gap-1 border-b-2 px-1 py-2.5 text-xs font-medium transition-colors sm:flex-none sm:gap-1.5 sm:text-sm ${
                 tab === t.id ? "text-[#0B4D3D]" : "border-transparent text-[#78837C] hover:text-[#17251F]"
               }`}
@@ -1048,7 +1092,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
       </div>
 
       {keyVaultOpen && (
-        <Modal title="개인키 금고" onClose={() => keyVaultState === "unlocked" && setKeyVaultOpen(false)}>
+        <Modal title="개인키 금고" onClose={() => setKeyVaultOpen(false)}>
           <div className="space-y-4">
             <div className="rounded-xl border border-[#B7DCC8] bg-[#F6FCF8] p-3 text-xs leading-5 text-[#355C45]">
               <div className="flex items-center gap-2 font-semibold text-[#0B4D3D]"><LockKeyhole size={15} /> 작성자만 아는 복구 비밀번호</div>
