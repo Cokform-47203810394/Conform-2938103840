@@ -12,7 +12,7 @@
     <path d="M66.5 76.2L71.1 80.8L80.7 70.8" stroke="#FFFDF8" stroke-width="4.7" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
   <g id="wordmark">
-    <text x="126" y="62" font-family="Pretendard, Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="42" font-weight="800" letter-spacing="-2.2" fill="#123D31">콕폼</text>
-    <text x="128" y="88" font-family="Pretendard, Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="20" font-weight="900" letter-spacing="-0.65" fill="#0F5B46">원하는 대로, 콕 묻고 받아요</text>
+    <text x="126" y="62" font-family="Pretendard, Noto Sans CJK KR, Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="42" font-weight="800" letter-spacing="-2.2" fill="#123D31">콕폼</text>
+    <text x="128" y="88" font-family="Pretendard, Noto Sans CJK KR, Noto Sans KR, Apple SD Gothic Neo, sans-serif" font-size="20" font-weight="900" letter-spacing="-0.65" fill="#0F5B46">원하는 대로, 콕 묻고 받아요</text>
   </g>
 </svg>

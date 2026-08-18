@@ -63,3 +63,13 @@ Cokform 공개 문서는 **확정된 사실**과 **조건부 외부 연동**을 
 [4] [개인정보보호위원회: 해외 기업의 개인정보 직접 수집 VS 국외 이전](https://www.pipc.go.kr/np/cop/bbs/selectBoardArticle.do;jsessionid=fp1f2YNkAzXDgWDaLkYIz2ig.pips_home_jboss21?bbsId=BS292&mCode=I040010000&nttId=10972)
 
 [5] [Cloudflare Data Localization Suite](https://developers.cloudflare.com/data-localization/)
+
+## 6. 운영 배포 검증
+
+- 2026-08-18에 `/resources` 페이지에서 기본 로고·심볼 마크의 SVG 다운로드, 색상 체계, 사용 원칙, 문서·문의 링크가 정상 표시되는 것을 확인했다.
+- 같은 날짜에 `/international-transfer` 페이지에서 서울 리전 저장 구조, Cloudflare·Google 선택 연동 표, 거부권·공식 참고자료 링크가 정상 표시되는 것을 확인했다.
+- 이 확인은 화면·링크·정적 고지의 배포 검증이며, 법률 자문 또는 외부 처리자 계약의 법적 적정성 판단을 의미하지 않는다.
+
+- 2026-08-18에 `/service-restrictions` 페이지에서 비례성 원칙, 제한 사유 표, 조치 유형, 통지·이의제기·선의의 보안 제보 기준이 정상 표시되는 것을 확인했다.
+
+390px 모바일 검증에서 브랜드 리소스와 국외이전 안내 모두 가로 넘침 없이 핵심 제목·고지·본문이 읽히는 것을 확인했다. 국외이전의 상세 표는 가로 스크롤 컨테이너로 제공되어 작은 화면에서 열을 압축하지 않고 확인할 수 있도록 구현했다.
