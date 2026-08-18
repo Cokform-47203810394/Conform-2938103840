@@ -7,6 +7,39 @@
   background: #f5f3ec;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  scrollbar-width: thin;
+  scrollbar-color: #73b99d #eef1ea;
+}
+
+/* Cokform의 크림 바탕과 초록 계열에 맞춘 전역 스크롤바. */
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-track {
+  background: #eef1ea;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  min-height: 44px;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: #73b99d;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #17866d;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: #0f5b46;
+}
+
+::-webkit-scrollbar-corner {
+  background: #f5f3ec;
 }
 
 * {
