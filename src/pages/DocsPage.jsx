@@ -97,7 +97,8 @@ export default function DocsPage({ onBack }) {
         <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
           <aside className="lg:sticky lg:top-24 lg:h-fit">
             <p className="mb-3 font-mono text-[11px] font-bold tracking-[0.16em] text-[#17866D]">DOCUMENTATION</p>
-            <nav aria-label="문서 목차" className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
+            <p className="mb-2 text-xs font-medium text-[#78837C] lg:hidden">옆으로 넘겨 섹션 보기</p>
+            <nav aria-label="문서 목차" className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-col lg:overflow-visible">
               {sections.map((section) => (
                 <a key={section.id} href={`#${section.id}`} className="shrink-0 rounded-lg px-3 py-2 text-sm font-medium text-[#59645E] transition hover:bg-[#EAF6EF] hover:text-[#0B4D3D] lg:shrink">{section.title}</a>
               ))}
