@@ -396,6 +396,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
                 <a href="/" className="transition hover:text-[#D8ED59]">폼 만들기</a>
                 <a href="/security" className="transition hover:text-[#D8ED59]">보안과 응답 암호화</a>
                 <a href="/docs" className="transition hover:text-[#D8ED59]">Cokform 문서</a>
+                <a href="/resources" className="transition hover:text-[#D8ED59]">브랜드 리소스</a>
                 <a href="/faq" className="transition hover:text-[#D8ED59]">자주 묻는 질문</a>
                 <a href="/sitemap" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">사이트맵 <Map size={14} /></a>
               </div>
@@ -405,6 +406,8 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
               <h2 className="text-xs font-bold tracking-[0.12em] text-[#718077]">정책 · 운영</h2>
               <div className="mt-4 flex flex-col items-start gap-3 text-sm">
                 <a href="/privacy" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">개인정보처리방침 <ShieldCheck size={14} /></a>
+                <a href="/international-transfer" className="transition hover:text-[#D8ED59]">개인정보 국외이전 안내</a>
+                <a href="/service-restrictions" className="transition hover:text-[#D8ED59]">서비스 이용제한 정책</a>
                 <a href="/terms" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">이용약관 <FileText size={14} /></a>
                 <a href="/sitemap.xml" className="transition hover:text-[#D8ED59]">검색엔진용 XML 사이트맵</a>
                 <a href="mailto:seoharo0111@gmail.com" className="text-xs leading-5 text-[#9DAAA1] transition hover:text-[#D8ED59]">문의: seoharo0111@gmail.com</a>

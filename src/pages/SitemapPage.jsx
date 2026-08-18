@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ArrowLeft, ArrowUpRight, BookOpen, FileText, LockKeyhole, MessageCircleQuestion, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, BookOpen, FileText, Globe2, LockKeyhole, MessageCircleQuestion, Palette, ShieldCheck, ShieldOff } from "lucide-react";
 
 const groups = [
   {
@@ -9,12 +9,15 @@ const groups = [
       { title: "보안과 응답 암호화", description: "응답이 암호화되어 저장되는 방식을 확인합니다.", href: "/security", icon: ShieldCheck },
       { title: "자주 묻는 질문", description: "키 관리, 응답 운영, 개인정보 고지의 기본을 확인합니다.", href: "/faq", icon: MessageCircleQuestion },
       { title: "Cokform 문서", description: "시작하기, 응답 운영, 암호화 키 관리, 개인정보 수집 운영을 한곳에서 확인합니다.", href: "/docs", icon: BookOpen },
+      { title: "브랜드 리소스", description: "공식 로고·마크·색상·사용 원칙과 브랜드 문의 경로를 확인합니다.", href: "/resources", icon: Palette },
     ],
   },
   {
     label: "정책과 신뢰",
     items: [
       { title: "개인정보처리방침", description: "콕폼 플랫폼 처리와 폼 운영자 책임을 확인합니다.", href: "/privacy", icon: LockKeyhole },
+      { title: "개인정보 국외이전 안내", description: "국내 저장 구조와 조건부 외부 연동의 해외 처리 가능성을 확인합니다.", href: "/international-transfer", icon: Globe2 },
+      { title: "서비스 이용제한 정책", description: "금지행위, 비례적 조치, 이의제기와 보안 제보 기준을 안내합니다.", href: "/service-restrictions", icon: ShieldOff },
       { title: "이용약관", description: "서비스 이용과 운영 기준을 안내합니다.", href: "/terms", icon: FileText },
     ],
   },

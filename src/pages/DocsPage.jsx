@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowUpRight, BookOpen, ChevronRight, ExternalLink, FileOutput, KeyRound, LockKeyhole, Search, ShieldCheck, Wrench } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, BookOpen, ChevronRight, ExternalLink, FileOutput, KeyRound, LockKeyhole, Palette, Scale, Search, ShieldCheck, Wrench } from "lucide-react";
 
 const GITHUB_DOCS = "https://github.com/Cokform-47203810394/Conform-2938103840/tree/main/docs";
 
@@ -46,6 +46,18 @@ const sections = [
     links: [
       { title: "개인정보 수집 운영", body: "최소 수집, 고지 표시, 동의 질문, 이메일 기록, 응답 보유·파기 전 점검 항목을 안내합니다.", repoPath: "guides/privacy-operations.md", href: "/privacy" },
       { title: "개인정보처리방침", body: "Cokform 플랫폼의 처리 기준과 폼 운영자의 책임 범위를 확인합니다.", href: "/privacy" },
+    ],
+  },
+  {
+    id: "trust",
+    eyebrow: "BRAND & POLICY",
+    title: "브랜드와 신뢰 정책",
+    description: "공식 로고·색상·사용 기준과 국외 처리, 서비스 이용제한의 공개 원칙을 확인합니다.",
+    icon: Scale,
+    links: [
+      { title: "브랜드 리소스 센터", body: "공식 로고·마크·색상·사용 원칙과 브랜드 문의 경로를 제공합니다.", repoPath: "brand-resources.md", href: "/resources" },
+      { title: "개인정보 국외이전 안내", body: "국내 저장 구조와 Cloudflare·Google 선택 연동의 해외 처리 가능성을 구분해 공개합니다.", repoPath: "legal/international-data-transfer.md", href: "/international-transfer" },
+      { title: "서비스 이용제한 정책", body: "금지행위, 비례적 조치, 통지·이의제기·보안 제보 기준을 안내합니다.", repoPath: "legal/service-restrictions.md", href: "/service-restrictions" },
     ],
   },
   {
@@ -116,7 +128,7 @@ export default function DocsPage({ onBack }) {
 
             <section className="mt-6 grid gap-3 sm:grid-cols-3">
               {[
-                ["5개", "핵심 문서 영역", BookOpen],
+                ["6개", "핵심 문서 영역", BookOpen],
                 ["E2EE", "개인키 금고·복구", ShieldCheck],
                 ["실무형", "고지·보관·내보내기", FileOutput],
               ].map(([value, label, Icon]) => <div key={label} className="rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-4 shadow-[0_4px_14px_rgba(23,37,31,0.05)]"><Icon size={18} className="text-[#17866D]" /><div className="mt-3 text-xl font-bold tracking-[-0.04em]">{value}</div><div className="mt-1 text-xs text-[#78837C]">{label}</div></div>)}

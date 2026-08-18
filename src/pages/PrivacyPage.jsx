@@ -12,7 +12,7 @@ const platformSections = [
 
 const operatorSections = [
   ["폼을 만들기 전에", "수집 목적을 먼저 정하고 목적에 필요한 항목만 질문하세요. 이름·연락처·주소·지원서 내용 등 개인정보가 포함되면 수집 항목, 목적, 보유기간, 동의 거부권과 거부에 따른 불이익을 응답 화면에서 구체적으로 안내해야 합니다."],
-  ["제3자 제공·처리위탁·국외 이전", "제3자 제공이나 처리위탁이 있으면 제공받는 자·수탁자, 목적, 항목, 보유기간을 별도로 고지하세요. Supabase, Cloudflare, Google OAuth, 메일 발송 서비스의 실제 처리지역과 계약 조건은 운영 환경 확정 후 처리방침에 반영해야 합니다. 암호화된다고 해서 국외 이전 고지가 자동으로 면제되는 것은 아닙니다."],
+  ["제3자 제공·처리위탁·국외 이전", "제3자 제공이나 처리위탁이 있으면 제공받는 자·수탁자, 목적, 항목, 보유기간을 별도로 고지하세요. Cokform의 현재 Supabase 프로젝트는 대한민국 서울 리전에 구성되어 있으며, Cloudflare 전송 경로와 사용자가 직접 선택하는 Google Drive·Sheets 내보내기에는 해외 처리 가능성이 있을 수 있습니다. 실제 처리자·국가·계약 조건·거부 효과는 개인정보 국외이전 안내에서 확인하고, 암호화된다고 해서 국외 이전 고지가 자동으로 면제되는 것은 아닙니다."],
   ["고위험 정보와 아동", "주민등록번호, 건강정보, 생체정보 등 민감하거나 고위험인 정보의 수집은 기본적으로 피하세요. 만 14세 미만 아동 대상 폼은 법정대리인 동의와 본인 확인 절차가 필요할 수 있으므로 별도 법률 검토 없이 운영하지 마세요."],
   ["응답자 권리 요청", "응답자는 우선 해당 폼 운영자에게 열람·정정·삭제·처리정지·동의 철회 등을 요청해야 합니다. 콕폼은 암호화된 응답을 복호화할 수 없으므로 응답 원문 처리는 폼 운영자의 브라우저에서 수행해야 합니다."],
 ];
@@ -52,7 +52,8 @@ export default function PrivacyPage({ onBack }) {
           {operatorSections.map(([title, body]) => <InfoSection key={title} title={title} body={body} />)}
 
           <section className="rounded-2xl border border-[#B7DCC8] bg-[#F1FAF4] p-5 text-sm leading-6 text-[#355C45] sm:p-6">
-            <h2 className="font-semibold text-[#0B4D3D]">권리 행사 및 문의</h2>
+            <h2 className="font-semibold text-[#0B4D3D]">국외 처리와 권리 행사</h2>
+            <p className="mt-2">국내 저장 구조와 Cloudflare·Google 선택 연동의 해외 처리 가능성은 <a href="/international-transfer" className="font-semibold underline underline-offset-2">개인정보 국외이전 안내</a>에서 확인하세요.</p>
             <p className="mt-2">콕폼 계정·서비스 운영 정보에 대한 문의: <a href="mailto:seoharo0111@gmail.com" className="font-semibold underline underline-offset-2">seoharo0111@gmail.com</a></p>
             <p className="mt-1">응답 원문에 대한 열람·정정·삭제 요청: 해당 폼의 운영자에게 문의하세요. 콕폼은 암호화된 응답 원문을 복호화할 수 없습니다.</p>
           </section>
