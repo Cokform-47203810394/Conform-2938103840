@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, Mail } from "lucide-react";
 import QuestionField from "./QuestionField";
+import TurnstileChallenge from "./TurnstileChallenge";
 import { sanitizeImageSource, sanitizeRichText } from "../lib/sanitizeRichText";
 import { ELEV1, ELEV1_HOVER, MD } from "../theme";
 
@@ -11,6 +12,8 @@ export default function PreviewForm({ form, onSubmit, accent }) {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [securityToken, setSecurityToken] = useState("");
+  const [securityReset, setSecurityReset] = useState(0);
 
   const handleChange = (qid, value) => {
     setAnswers((a) => ({ ...a, [qid]: value }));
@@ -56,14 +59,22 @@ export default function PreviewForm({ form, onSubmit, accent }) {
       }
     });
 
+    if (!securityToken) {
+      nextErrors._security = "보안 확인을 완료한 뒤 제출할 수 있어요.";
+      hasError = true;
+    }
+
     setErrors(nextErrors);
     if (hasError) return;
 
     setSubmitting(true);
     try {
-      const completed = await onSubmit(answers);
+      const completed = await onSubmit(answers, securityToken);
       if (completed !== false) setSubmitted(true);
     } finally {
+      // Turnstile tokens are single-use. Always request a new one after a
+      // submission attempt, including a transient network failure.
+      setSecurityReset((value) => value + 1);
       setSubmitting(false);
     }
   };
@@ -146,12 +157,13 @@ export default function PreviewForm({ form, onSubmit, accent }) {
       )}
       {Object.keys(errors).length > 0 && (
         <div role="alert" className="rounded-xl border border-[#F2B8B5] bg-[#FFF6F5] px-4 py-3 text-sm text-[#8C1D18]">
-          필수 항목과 입력 형식을 다시 확인해주세요.
+          {errors._security || "필수 항목과 입력 형식을 다시 확인해주세요."}
         </div>
       )}
       {form.questions.map((q) => (
         <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={handleChange} />
       ))}
+      <TurnstileChallenge onToken={setSecurityToken} resetSignal={securityReset} />
       <div className="sticky bottom-0 z-10 -mx-3 bg-gradient-to-t from-[#F5F3EC] via-[#F5F3EC]/95 to-transparent px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-5 sm:static sm:mx-0 sm:bg-none sm:p-0">
         <button
           type="button"

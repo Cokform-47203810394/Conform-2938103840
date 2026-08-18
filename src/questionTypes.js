@@ -18,13 +18,20 @@ export const ALL_TYPES = [...QUESTION_TYPES, ...PRIVACY_TYPES];
 
 export const TYPE_LABEL = Object.fromEntries(ALL_TYPES.map((t) => [t.value, t.label]));
 
-// Form IDs end up in the public share URL (?respond=<id>), exactly like Google/Naver's
-// long random form links — so this must be unguessable, not just "unique". Uses the
-// browser's cryptographically secure RNG; falls back to Math.random only on very old
-// browsers that lack crypto.randomUUID (their forms just won't be quite as hard to guess).
+// Form IDs end up in public URLs and respondent identifiers. They must be
+// unpredictable, never merely unique. Cokform already requires Web Crypto for E2EE,
+// so an insecure Math.random fallback would only weaken otherwise protected forms.
 export function uid() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  if (typeof crypto === "undefined" || typeof crypto.getRandomValues !== "function") {
+    throw new Error("이 브라우저는 안전한 난수 생성을 지원하지 않습니다.");
+  }
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 export function defaultQuestion(type = "short") {

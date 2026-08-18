@@ -1,4 +1,4 @@
-import { getSupabaseClient, hasSupabaseConfig } from "./supabaseClient";
+import { getSupabaseClient, getSupabaseConfig, hasSupabaseConfig } from "./supabaseClient";
 import { uid } from "../questionTypes";
 import { decryptAnswers, encryptAnswers, isEncryptedEnvelope } from "./secureResponses";
 import { getResponseWindowState } from "./responseWindow";
@@ -185,32 +185,49 @@ export async function recordFormView(formId) {
 export async function getFormDoc(id) {
   const remote = await trySupabase("로드", async (supabase) => {
     const { data: authData } = await supabase.auth.getUser();
-    const isOwnerSession = Boolean(authData?.user);
-    const table = isOwnerSession ? TABLE : PUBLIC_TABLE;
-    const { data, error } = await supabase.from(table).select("data").eq("id", id).maybeSingle();
-    if (error) return undefined;
-    if (!data) return null;
 
-    const stored = data.data || {};
-    if (!isOwnerSession) return { form: stored.form || stored, responses: [] };
+    // A signed-in person is not necessarily this form's owner. Try the private
+    // owner row first; when RLS intentionally returns no row, fall back to the
+    // sanitized public row so logged-in participants can still submit a response.
+    if (authData?.user) {
+      const { data: ownerData, error: ownerError } = await supabase
+        .from(TABLE)
+        .select("data")
+        .eq("id", id)
+        .maybeSingle();
+      if (ownerError) return undefined;
 
-    let responses = [];
-    const result = await supabase
-      .from(RESPONSE_TABLE)
-      .select("id, submitted_at, answers")
-      .eq("form_id", id)
-      .order("submitted_at", { ascending: true });
-    if (!result.error) {
-      const decrypted = await Promise.all((result.data || []).map(async (row) => ({
-        id: row.id,
-        submittedAt: row.submitted_at,
-        answers: isEncryptedEnvelope(row.answers)
-          ? await decryptAnswers(id, row.answers).catch(() => null)
-          : row.answers,
-      })));
-      responses = decrypted.filter((row) => row.answers !== null);
+      if (ownerData) {
+        const stored = ownerData.data || {};
+        let responses = [];
+        const result = await supabase
+          .from(RESPONSE_TABLE)
+          .select("id, submitted_at, answers")
+          .eq("form_id", id)
+          .order("submitted_at", { ascending: true });
+        if (!result.error) {
+          const decrypted = await Promise.all((result.data || []).map(async (row) => ({
+            id: row.id,
+            submittedAt: row.submitted_at,
+            answers: isEncryptedEnvelope(row.answers)
+              ? await decryptAnswers(id, row.answers).catch(() => null)
+              : row.answers,
+          })));
+          responses = decrypted.filter((row) => row.answers !== null);
+        }
+        return { form: stored.form || stored, responses };
+      }
     }
-    return { form: stored.form || stored, responses };
+
+    const { data: publicData, error: publicError } = await supabase
+      .from(PUBLIC_TABLE)
+      .select("data")
+      .eq("id", id)
+      .maybeSingle();
+    if (publicError) return undefined;
+    if (!publicData) return null;
+    const stored = publicData.data || {};
+    return { form: stored.form || stored, responses: [] };
   });
   if (remote !== undefined) return remote;
   // Production must never open an old browser-local editor snapshot when
@@ -543,10 +560,13 @@ export async function recordFormParticipation(formId, form) {
   return summary;
 }
 
-export async function submitResponse(formId, answers, publicKey, settings = {}) {
+export async function submitResponse(formId, answers, publicKey, settings = {}, turnstileToken = "") {
   const windowState = getResponseWindowState(settings);
   if (windowState !== "open") return { ok: false, reason: windowState, response: null };
-  const encryptedAnswers = publicKey ? await encryptAnswers(publicKey, answers, { formId, purpose: "response" }) : answers;
+  if (!publicKey) return { ok: false, reason: "encryption_unavailable", response: null };
+  if (!turnstileToken) return { ok: false, reason: "security_verification_required", response: null };
+
+  const encryptedAnswers = await encryptAnswers(publicKey, answers, { formId, purpose: "response" });
   const response = { id: uid(), submittedAt: new Date().toISOString(), answers };
   const respondentToken = settings.limitOneResponse ? (() => {
     try {
@@ -558,22 +578,32 @@ export async function submitResponse(formId, answers, publicKey, settings = {}) 
       return next;
     } catch { return uid(); }
   })() : null;
+
   let duplicate = false;
-  const savedRemotely = await trySupabase("응답 제출", async (supabase) => {
-    if (!publicKey) return undefined;
-    const { error } = await supabase.from(RESPONSE_TABLE).insert({
-      id: response.id,
-      form_id: formId,
-      submitted_at: response.submittedAt,
-      answers: encryptedAnswers,
-      respondent_token: respondentToken,
+  let failureReason = "";
+  const savedRemotely = await trySupabase("보안 응답 제출", async () => {
+    const { url, key } = getSupabaseConfig();
+    const gatewayResponse = await fetch(`${url}/functions/v1/submit-e2ee-response`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: key },
+      body: JSON.stringify({
+        id: response.id,
+        formId,
+        submittedAt: response.submittedAt,
+        answers: encryptedAnswers,
+        respondentToken,
+        turnstileToken,
+      }),
     });
-    if (error?.code === "23505") duplicate = true;
-    return error ? undefined : true;
+    const result = await gatewayResponse.json().catch(() => ({}));
+    if (result?.code === "duplicate") duplicate = true;
+    if (!gatewayResponse.ok) failureReason = result?.code || "save_failed";
+    return gatewayResponse.ok && result?.ok === true;
   });
+
   if (duplicate) return { ok: false, reason: "duplicate", response: null };
   if (savedRemotely) return { ok: true, response };
-  if (getSupabaseClient()) return { ok: false, response: null };
+  if (getSupabaseClient()) return { ok: false, reason: failureReason || "save_failed", response: null };
 
   try {
     const localResponse = { ...response, answers: encryptedAnswers };

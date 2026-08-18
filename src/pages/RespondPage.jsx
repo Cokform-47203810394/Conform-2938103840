@@ -34,12 +34,20 @@ export default function RespondPage({ formId }) {
   const closed = responseWindowState !== "open";
   const blocked = form.settings?.limitOneResponse && alreadyResponded;
 
-  const handleSubmit = async (answers) => {
+  const handleSubmit = async (answers, turnstileToken) => {
     setSubmitError("");
-    const result = await submitResponse(formId, answers, form.publicKey, form.settings);
+    const result = await submitResponse(formId, answers, form.publicKey, form.settings, turnstileToken);
     if (!result.ok) {
       const windowMessage = result.reason && result.reason !== "duplicate" ? getResponseWindowMessage(result.reason, form.settings) : "";
-      setSubmitError(result.reason === "duplicate" ? "이미 이 폼에 응답을 제출했어요." : windowMessage || "응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
+      const securityMessage = {
+        encryption_unavailable: "이 폼의 암호화 키가 준비되지 않았어요. 폼 작성자에게 문의해 주세요.",
+        security_verification_required: "보안 확인을 완료한 뒤 다시 제출해 주세요.",
+        security_verification_failed: "보안 확인에 실패했어요. 확인을 새로고침한 뒤 다시 시도해 주세요.",
+        security_verification_unavailable: "보안 확인 서비스가 준비되지 않았어요. 잠시 후 다시 시도해 주세요.",
+        rate_limited: "짧은 시간에 제출 요청이 많아요. 잠시 후 다시 시도해 주세요.",
+        form_unavailable: "이 폼은 현재 응답을 받지 않아요.",
+      }[result.reason];
+      setSubmitError(result.reason === "duplicate" ? "이미 이 폼에 응답을 제출했어요." : securityMessage || windowMessage || "응답 저장에 실패했어요. 네트워크를 확인한 뒤 다시 시도해주세요.");
       return false;
     }
     if (form.settings?.limitOneResponse) {
