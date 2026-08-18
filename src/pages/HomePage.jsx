@@ -213,9 +213,9 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         ) : null}
 
         {/* templates */}
-        <div className="mb-2 cok-eyebrow">START WITH A SIGNAL</div>
-        <h1 className="cok-display mb-2">무엇을 물어볼까요?</h1>
-        <p className="mb-6 max-w-xl text-sm leading-6 text-[#59645E] sm:text-base">목적에 맞는 시작점을 고르고, 사람들의 답이 자연스럽게 모이는 폼을 만들어보세요.</p>
+        <div className="mb-2 cok-eyebrow">KOREAN WORK FLOWS</div>
+        <h1 className="cok-display mb-2">바로 쓰는 한국 실무 양식</h1>
+        <p className="mb-6 max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">상담·예약·참가 신청·출결·견적처럼 실제 업무에서 자주 쓰는 흐름을 골라 바로 시작하세요. 개인정보가 필요한 양식은 안내와 동의 문항을 함께 확인할 수 있습니다.</p>
         <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
         <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
           {TEMPLATES.map((t) => (
@@ -225,10 +225,10 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
 
         {/* premium / institutional templates */}
         <div className="mb-2 flex items-center gap-2">
-          <div className="cok-eyebrow">READY-MADE FLOWS</div>
+          <div className="cok-eyebrow">WORK-READY FLOWS</div>
           <span className="rounded-full bg-[#D8ED59] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#17251F]">PRO · 무료 공개 중</span>
         </div>
-        <p className="mb-4 text-sm leading-6 text-[#59645E]">신청·동의·피드백처럼 자주 쓰는 흐름을 바로 시작해요. <strong className="font-semibold text-[#0B4D3D]">파일럿 기간에는 PRO 템플릿을 몇 달간 무료로 공개합니다.</strong> 유료 전환 전에는 이 페이지에서 미리 안내해요.</p>
+        <p className="mb-4 text-sm leading-6 text-[#59645E]">채용·고객 만족도·개인정보 동의·교육 운영·사내 의견 수렴·단체 수요 조사처럼 더 긴 실무 흐름을 바로 시작해요. <strong className="font-semibold text-[#0B4D3D]">파일럿 기간에는 PRO 템플릿을 몇 달간 무료로 공개합니다.</strong> 유료 전환 전에는 이 페이지에서 미리 안내해요.</p>
         <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
         <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
           {PREMIUM_TEMPLATES.map((t) => (
@@ -445,6 +445,10 @@ function MetricCard({ label, value, suffix = "", icon }) {
 }
 
 function TemplateCard({ template: t, onCreate, busy, creating, premium }) {
+  const previewQuestions = t.blank ? [] : t.build().questions;
+  const primaryQuestion = previewQuestions.find((question) => !["privacy_notice", "privacy_consent"].includes(question.type));
+  const accent = TYPE_COLORS[primaryQuestion?.type] || TYPE_COLORS.radio;
+
   return (
     <button
       onClick={() => onCreate(t)}
@@ -464,10 +468,10 @@ function TemplateCard({ template: t, onCreate, busy, creating, premium }) {
             <Plus size={34} strokeWidth={2.5} style={{ color: MD.primary }} />
           </span>
         ) : (
-          <FormThumbnail questions={t.build().questions} accent={TYPE_COLORS[t.key === "contact" ? "short" : "radio"]} />
+          <FormThumbnail questions={previewQuestions} accent={accent} />
         )}
       </div>
-      <div className="px-3 py-3 text-sm font-semibold text-[#17251F]">{t.label}</div>
+      <div className="px-3 py-3"><div className="text-sm font-semibold text-[#17251F]">{t.label}</div>{t.segment && <div className="mt-1 text-[11px] font-medium text-[#78837C]">{t.segment}</div>}</div>
     </button>
   );
 }
