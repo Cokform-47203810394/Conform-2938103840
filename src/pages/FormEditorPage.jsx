@@ -1172,7 +1172,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
           <p className="text-sm leading-6 text-[#59645E]">{confirmAction.description}</p>
           <div className="mt-5 flex justify-end gap-2">
             <button type="button" onClick={() => setConfirmAction(null)} disabled={confirming} className="rounded-full border border-[#C9CEC6] bg-white px-4 py-2 text-sm font-semibold text-[#59645E] transition-colors hover:bg-[#F5F3EC] disabled:opacity-50">취소</button>
-            <button type="button" onClick={performConfirmation} disabled={confirming} className="rounded-full bg-[#B3261E] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#8C1D18] disabled:cursor-wait disabled:opacity-60">{confirming ? "처리 중…" : "삭제"}</button>
+            <button type="button" onClick={performConfirmation} disabled={confirming} className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-wait disabled:opacity-60 ${confirmAction.kind === "version" ? "bg-[#0B4D3D] hover:bg-[#083A2E]" : "bg-[#B3261E] hover:bg-[#8C1D18]"}`}>{confirming ? "처리 중…" : confirmAction.kind === "version" ? "복원" : "삭제"}</button>
           </div>
         </Modal>
       )}
