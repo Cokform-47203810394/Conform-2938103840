@@ -157,8 +157,7 @@ export default function ResourcesPage({ onBack }) {
           <h2 className="text-xl font-bold tracking-[-0.04em]">공식 자산</h2>
         </div>
         <p className="mb-4 text-sm leading-6 text-[#59645E]">
-          파일 형식과 해상도를 고른 뒤 내려받으세요. SVG·PDF는 크기를 키워도 깨지지 않는 벡터 원본이며, PNG는 투명
-          배경, JPG는 밝은 배경으로 제공됩니다.
+          <strong className="font-semibold text-[#123D31]">1. 파일 형식</strong>과 <strong className="font-semibold text-[#123D31]">2. 화질·해상도</strong>를 순서대로 고른 뒤 내려받으세요. SVG·PDF는 크기를 키워도 깨지지 않는 벡터 원본이며, PNG는 투명 배경, JPG는 밝은 배경으로 제공됩니다.
         </p>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -182,50 +181,68 @@ export default function ResourcesPage({ onBack }) {
                   <h3 className="font-semibold">{asset.title}</h3>
                   <p className="mt-1 text-sm leading-6 text-[#59645E]">{asset.description}</p>
 
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                    <label className="block text-xs font-semibold text-[#345247]">
-                      파일 형식
-                      <select
-                        value={format}
-                        onChange={(event) => setFormat(asset, event.target.value)}
-                        className="mt-1.5 w-full rounded-xl border border-[#C9D8CF] bg-white px-3 py-2.5 text-sm font-medium text-[#123D31] outline-none transition focus:border-[#17866D] focus:ring-2 focus:ring-[#17866D]/20"
-                      >
-                        {Object.entries(formatMeta).map(([value, meta]) => (
-                          <option key={value} value={value}>
-                            {meta.label} · {meta.description}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="block text-xs font-semibold text-[#345247]">
-                      해상도·품질
-                      <select
-                        value={quality}
-                        onChange={(event) => setQuality(asset.id, event.target.value)}
-                        className="mt-1.5 w-full rounded-xl border border-[#C9D8CF] bg-white px-3 py-2.5 text-sm font-medium text-[#123D31] outline-none transition focus:border-[#17866D] focus:ring-2 focus:ring-[#17866D]/20"
-                      >
-                        {qualityOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                  <div className="mt-5 rounded-2xl border border-[#DDE1D9] bg-[#F7F8F3] p-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#345247]">1. 파일 형식</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {Object.entries(formatMeta).map(([value, meta]) => {
+                        const MetaIcon = meta.icon;
+                        const selected = format === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => setFormat(asset, value)}
+                            className={`flex min-h-14 items-center gap-2 rounded-xl border px-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/40 ${
+                              selected
+                                ? "border-[#17866D] bg-[#EAF7EF] text-[#0B4D3D] shadow-[0_2px_7px_rgba(23,37,31,0.08)]"
+                                : "border-[#DDE1D9] bg-white text-[#59645E] hover:border-[#B7DCC8] hover:bg-[#F0FAF6]"
+                            }`}
+                          >
+                            <MetaIcon size={17} className={selected ? "text-[#17866D]" : "text-[#78837C]"} />
+                            <span className="min-w-0"><span className="block text-xs font-bold">{meta.label}</span><span className="mt-0.5 block text-[10px] leading-4">{meta.description}</span></span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  <div className="mt-3 flex items-center gap-2 text-xs leading-5 text-[#59645E]">
-                    <FormatIcon size={14} className="shrink-0 text-[#17866D]" />
-                    <span>
-                      선택됨: {formatMeta[format].label} · {selectedQuality?.label}
-                    </span>
+                  <div className="mt-3 rounded-2xl border border-[#DDE1D9] bg-[#F7F8F3] p-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#345247]">2. 화질·해상도</p>
+                    <div className="mt-2 grid gap-2">
+                      {qualityOptions.map((option) => {
+                        const selected = quality === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => setQuality(asset.id, option.value)}
+                            className={`flex min-h-11 items-center justify-between gap-3 rounded-xl border px-3 text-left text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/40 ${
+                              selected
+                                ? "border-[#17866D] bg-[#0F5B46] text-white shadow-[0_2px_7px_rgba(23,37,31,0.12)]"
+                                : "border-[#DDE1D9] bg-white text-[#345247] hover:border-[#B7DCC8] hover:bg-[#F0FAF6]"
+                            }`}
+                          >
+                            <span>{option.label}</span>
+                            {selected && <Check size={15} strokeWidth={2.5} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 rounded-xl bg-[#EAF7EF] px-3 py-2.5 text-xs leading-5 text-[#345247]">
+                    <FormatIcon size={15} className="shrink-0 text-[#17866D]" />
+                    <span><strong className="font-semibold text-[#0B4D3D]">선택됨</strong> · {formatMeta[format].label} · {selectedQuality?.label}</span>
                   </div>
 
                   <a
                     href={downloadPath}
                     download={downloadName}
-                    className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#0F5B46] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#0B4D3D] active:scale-[0.97]"
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0F5B46] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0B4D3D] active:scale-[0.97]"
                   >
-                    <Download size={14} /> 선택 파일 다운로드
+                    <Download size={16} /> {downloadName} 다운로드
                   </a>
                 </div>
               </article>

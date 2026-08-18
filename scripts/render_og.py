@@ -1,8 +1,26 @@
 from pathlib import Path
-import cairosvg
+import shutil
+import subprocess
 
 project = Path(__file__).resolve().parents[1]
 source = project / "public" / "og-image.svg"
 target = project / "public" / "og-image.png"
-cairosvg.svg2png(url=str(source), write_to=str(target), output_width=1200, output_height=630)
+chromium = shutil.which("chromium")
+
+if not chromium:
+    raise RuntimeError("Chromium is required to render the Korean OG image.")
+
+subprocess.run(
+    [
+        chromium,
+        "--headless",
+        "--no-sandbox",
+        "--disable-gpu",
+        "--hide-scrollbars",
+        "--window-size=1200,630",
+        f"--screenshot={target}",
+        source.as_uri(),
+    ],
+    check=True,
+)
 print(target)
