@@ -24,7 +24,9 @@ function downloadBlob(blob, filename) {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  // Some browsers resolve a programmatic download after the current event loop.
+  // Keep the object URL alive long enough so a fast revoke cannot cancel it.
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export function responseRows(form, responses) {
