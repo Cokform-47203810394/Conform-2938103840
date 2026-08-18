@@ -288,7 +288,18 @@ export default function ResourcesPage({ onBack }) {
           <ShieldCheck size={18} className="text-[#17866D]" />
           <h2 className="text-xl font-bold tracking-[-0.04em]">정책과 문의</h2>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <a
+            href="/docs/brand-guide"
+            className="group rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-5 shadow-[0_5px_18px_rgba(23,37,31,0.05)] transition hover:border-[#B7DCC8]"
+          >
+            <Palette size={20} className="text-[#17866D]" />
+            <h3 className="mt-3 font-semibold">브랜드 상세 가이드</h3>
+            <p className="mt-1 text-sm leading-6 text-[#59645E]">형식·해상도 선택, 색상, 표기 기준, 사용 원칙을 Cokform 안에서 확인합니다.</p>
+            <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#0B4D3D]">
+              가이드 열기 <ArrowUpRight size={13} />
+            </span>
+          </a>
           <a
             href="/docs"
             className="group rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-5 shadow-[0_5px_18px_rgba(23,37,31,0.05)] transition hover:border-[#B7DCC8]"

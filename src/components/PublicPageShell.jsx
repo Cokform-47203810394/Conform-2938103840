@@ -1,10 +1,10 @@
 import { ArrowLeft } from "lucide-react";
 
-export function PublicPageShell({ eyebrow, title, description, icon: Icon, onBack, children, aside }) {
+export function PublicPageShell({ eyebrow, title, description, icon: Icon, onBack, children, aside, backHref = "/", backLabel = "콕폼 홈으로" }) {
   return (
     <main className="min-h-screen bg-[#F5F3EC] px-4 py-8 text-[#17251F] sm:px-6 sm:py-12">
       <div className="mx-auto max-w-6xl">
-        <a href="/" onClick={(event) => { event.preventDefault(); onBack?.(); }} className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-[#59645E] transition hover:text-[#0B4D3D] hover:underline"><ArrowLeft size={16} /> 콕폼 홈으로</a>
+        <a href={backHref} onClick={(event) => { if (onBack) { event.preventDefault(); onBack(); } }} className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-[#59645E] transition hover:text-[#0B4D3D] hover:underline"><ArrowLeft size={16} /> {backLabel}</a>
         <header className="rounded-[28px] bg-[#17251F] p-6 text-white shadow-[0_16px_40px_rgba(23,37,31,0.16)] sm:p-9">
           {Icon && <span className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D8ED59] text-[#17251F]"><Icon size={24} /></span>}
           <p className="font-mono text-xs font-bold tracking-[0.18em] text-[#D8ED59]">{eyebrow}</p>

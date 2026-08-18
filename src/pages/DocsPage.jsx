@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowUpRight, BookOpen, ChevronRight, ExternalLink, FileOutput, KeyRound, LockKeyhole, Palette, Scale, Search, ShieldCheck, Wrench } from "lucide-react";
-
-const GITHUB_DOCS = "https://github.com/Cokform-47203810394/Conform-2938103840/tree/main/docs";
+import { ArrowLeft, ArrowUpRight, BookOpen, ChevronRight, FileOutput, KeyRound, LockKeyhole, Palette, Scale, Search, ShieldCheck, Wrench } from "lucide-react";
 
 const sections = [
   {
@@ -11,7 +9,7 @@ const sections = [
     description: "템플릿 선택부터 공개 링크 공유까지, 첫 폼을 안전하게 시작하는 순서입니다.",
     icon: BookOpen,
     links: [
-      { title: "폼 만들기와 공유", body: "질문 구성, 개인키 금고 생성, 운영 설정, 공개 링크 점검을 순서대로 안내합니다.", repoPath: "guides/create-and-share.md", href: "/" },
+      { title: "폼 만들기와 공유", body: "질문 구성, 개인키 금고 생성, 운영 설정, 공개 링크 점검을 순서대로 안내합니다.", href: "/docs/create-and-share" },
       { title: "응답자에게 보이는 화면", body: "공개 링크는 로그인 없이 열립니다. 공유 전 미리보기에서 질문·고지·마감 상태를 확인하세요.", href: "/faq" },
     ],
   },
@@ -22,7 +20,7 @@ const sections = [
     description: "응답 기간, 이메일 기록, 복호화, CSV·Excel·JSON·요약 자료 내보내기를 관리합니다.",
     icon: FileOutput,
     links: [
-      { title: "응답 운영과 내보내기", body: "응답 확인, 수동 마감·재개, 내보내기 파일의 용도와 전체 삭제 전 점검을 다룹니다.", repoPath: "guides/responses-and-exports.md" },
+      { title: "응답 운영과 내보내기", body: "응답 확인, 수동 마감·재개, 내보내기 파일의 용도와 전체 삭제 전 점검을 다룹니다.", href: "/docs/responses-and-exports" },
       { title: "응답 기간과 마감", body: "시작·마감 시각을 설정하거나 즉시 마감·재개해 공개 제출 상태를 제어합니다.", href: "/faq" },
     ],
   },
@@ -33,7 +31,7 @@ const sections = [
     description: "응답 평문이 어디에서 처리되는지, 개인키 금고와 복구 수단을 어떻게 관리하는지 설명합니다.",
     icon: ShieldCheck,
     links: [
-      { title: "종단간 암호화와 키 관리", body: "보안 경계, 복구 비밀번호, 암호화 키 백업, 전체 복구 번들, 기기 교체 절차를 정리했습니다.", repoPath: "security/e2ee-and-key-management.md", href: "/security" },
+      { title: "종단간 암호화와 키 관리", body: "보안 경계, 복구 비밀번호, 암호화 키 백업, 전체 복구 번들, 기기 교체 절차를 정리했습니다.", href: "/docs/e2ee-and-key-management" },
       { title: "복구 비밀번호를 잊었을 때", body: "Cokform은 복구 비밀번호를 재설정하거나 개인키를 대신 보관하지 않습니다. 키 백업·전체 복구 번들을 확인하세요.", href: "/faq" },
     ],
   },
@@ -44,7 +42,7 @@ const sections = [
     description: "수집 목적·항목·보유기간을 고지하고, 동의와 보관기간을 실제 운영 내용에 맞추는 실무 가이드입니다.",
     icon: LockKeyhole,
     links: [
-      { title: "개인정보 수집 운영", body: "최소 수집, 고지 표시, 동의 질문, 이메일 기록, 응답 보유·파기 전 점검 항목을 안내합니다.", repoPath: "guides/privacy-operations.md", href: "/privacy" },
+      { title: "개인정보 수집 운영", body: "최소 수집, 고지 표시, 동의 질문, 이메일 기록, 응답 보유·파기 전 점검 항목을 안내합니다.", href: "/docs/privacy-operations" },
       { title: "개인정보처리방침", body: "Cokform 플랫폼의 처리 기준과 폼 운영자의 책임 범위를 확인합니다.", href: "/privacy" },
     ],
   },
@@ -55,9 +53,9 @@ const sections = [
     description: "공식 로고·색상·사용 기준과 국외 처리, 서비스 이용제한의 공개 원칙을 확인합니다.",
     icon: Scale,
     links: [
-      { title: "브랜드 리소스 센터", body: "공식 로고·마크·색상·사용 원칙과 브랜드 문의 경로를 제공합니다.", repoPath: "brand-resources.md", href: "/resources" },
-      { title: "개인정보 국외이전 안내", body: "국내 저장 구조와 Cloudflare·Google 선택 연동의 해외 처리 가능성을 구분해 공개합니다.", repoPath: "legal/international-data-transfer.md", href: "/international-transfer" },
-      { title: "서비스 이용제한 정책", body: "금지행위, 비례적 조치, 통지·이의제기·보안 제보 기준을 안내합니다.", repoPath: "legal/service-restrictions.md", href: "/service-restrictions" },
+      { title: "브랜드 리소스와 사용 가이드", body: "공식 로고·마크·색상·사용 원칙과 형식·해상도 선택 기준을 Cokform 안에서 확인합니다.", href: "/docs/brand-guide" },
+      { title: "개인정보 국외이전 안내", body: "국내 저장 구조와 Cloudflare·Google 선택 연동의 해외 처리 가능성을 구분해 공개합니다.", href: "/international-transfer" },
+      { title: "서비스 이용제한 정책", body: "금지행위, 비례적 조치, 통지·이의제기·보안 제보 기준을 안내합니다.", href: "/service-restrictions" },
     ],
   },
   {
@@ -67,15 +65,11 @@ const sections = [
     description: "금고 잠김, 응답 미수신, 공유 링크, 마감, 내보내기 문제를 스스로 점검합니다.",
     icon: Wrench,
     links: [
-      { title: "문제 해결", body: "문제가 발생했을 때 확인할 순서와 지원 요청에 필요한 안전한 정보 범위를 정리했습니다.", repoPath: "guides/troubleshooting.md", href: "/faq" },
+      { title: "문제 해결", body: "문제가 발생했을 때 확인할 순서와 지원 요청에 필요한 안전한 정보 범위를 정리했습니다.", href: "/docs/troubleshooting" },
       { title: "자주 묻는 질문", body: "키 관리·응답 운영·개인정보 고지의 핵심 질문을 빠르게 확인합니다.", href: "/faq" },
     ],
   },
 ];
-
-function repoHref(path) {
-  return `${GITHUB_DOCS}/${path}`;
-}
 
 export default function DocsPage({ onBack }) {
   const [query, setQuery] = useState("");
@@ -101,7 +95,6 @@ export default function DocsPage({ onBack }) {
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
           <a href="/" onClick={(event) => { event.preventDefault(); onBack?.(); }} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition hover:bg-[#EAF6EF] hover:text-[#0B4D3D]" aria-label="콕폼 홈으로"><ArrowLeft size={18} /></a>
           <a href="/" className="flex min-w-0 items-center gap-2.5"><img src={`${import.meta.env.BASE_URL}brand/cokform-mark.svg`} alt="콕폼" className="h-8 w-8" /><span className="truncate text-sm font-bold tracking-[-0.03em]">Cokform 문서</span></a>
-          <a href={GITHUB_DOCS} target="_blank" rel="noreferrer" className="ml-auto hidden items-center gap-1.5 rounded-full border border-[#DDE1D9] bg-white px-3 py-2 text-xs font-semibold text-[#59645E] transition hover:border-[#17866D] hover:text-[#0B4D3D] sm:inline-flex">GitHub 원본 <ExternalLink size={13} /></a>
         </div>
       </header>
 
@@ -145,8 +138,7 @@ export default function DocsPage({ onBack }) {
                         <article key={link.title} className="group rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-5 shadow-[0_5px_18px_rgba(23,37,31,0.05)] transition hover:-translate-y-0.5 hover:border-[#B7DCC8] hover:shadow-[0_10px_25px_rgba(23,37,31,0.09)]">
                           <h3 className="text-base font-semibold tracking-[-0.02em] text-[#17251F]">{link.title}</h3><p className="mt-2 text-sm leading-6 text-[#59645E]">{link.body}</p>
                           <div className="mt-4 flex flex-wrap gap-2">
-                            {link.href && <a href={link.href} className="inline-flex items-center gap-1 rounded-full bg-[#EAF6EF] px-3 py-1.5 text-xs font-semibold text-[#0B4D3D] transition hover:bg-[#D8F5E8]">공개 안내 <ChevronRight size={13} /></a>}
-                            {link.repoPath && <a href={repoHref(link.repoPath)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-[#DDE1D9] bg-white px-3 py-1.5 text-xs font-semibold text-[#59645E] transition hover:border-[#17866D] hover:text-[#0B4D3D]">상세 문서 <ArrowUpRight size={13} /></a>}
+                            {link.href && <a href={link.href} className="inline-flex items-center gap-1 rounded-full bg-[#EAF6EF] px-3 py-1.5 text-xs font-semibold text-[#0B4D3D] transition hover:bg-[#D8F5E8]">Cokform 내부 문서 <ChevronRight size={13} /></a>}
                           </div>
                         </article>
                       ))}

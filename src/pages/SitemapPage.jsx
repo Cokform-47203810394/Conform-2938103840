@@ -10,6 +10,7 @@ const groups = [
       { title: "자주 묻는 질문", description: "키 관리, 응답 운영, 개인정보 고지의 기본을 확인합니다.", href: "/faq", icon: MessageCircleQuestion },
       { title: "Cokform 문서", description: "시작하기, 응답 운영, 암호화 키 관리, 개인정보 수집 운영을 한곳에서 확인합니다.", href: "/docs", icon: BookOpen },
       { title: "브랜드 리소스", description: "공식 로고·마크·색상·사용 원칙과 브랜드 문의 경로를 확인합니다.", href: "/resources", icon: Palette },
+      { title: "브랜드 상세 가이드", description: "파일 형식·해상도 선택과 공식 표기·사용 원칙을 Cokform 사이트 안에서 확인합니다.", href: "/docs/brand-guide", icon: Palette },
     ],
   },
   {

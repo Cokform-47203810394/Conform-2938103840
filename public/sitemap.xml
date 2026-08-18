@@ -13,6 +13,42 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://cokform.pages.dev/docs/create-and-share</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cokform.pages.dev/docs/responses-and-exports</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cokform.pages.dev/docs/e2ee-and-key-management</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cokform.pages.dev/docs/privacy-operations</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cokform.pages.dev/docs/troubleshooting</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cokform.pages.dev/docs/brand-guide</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://cokform.pages.dev/resources</loc>
     <lastmod>2026-08-18</lastmod>
     <changefreq>monthly</changefreq>

@@ -7,6 +7,7 @@ const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const SitemapPage = lazy(() => import("./pages/SitemapPage"));
 const DocsPage = lazy(() => import("./pages/DocsPage"));
+const DocsDetailPage = lazy(() => import("./pages/DocsDetailPage"));
 const ResourcesPage = lazy(() => import("./pages/ResourcesPage"));
 const InternationalTransferPage = lazy(() => import("./pages/InternationalTransferPage"));
 const ServiceRestrictionsPage = lazy(() => import("./pages/ServiceRestrictionsPage"));
@@ -20,7 +21,7 @@ function PageLoading() {
 }
 
 function getQueryMode() {
-  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, resources: false, internationalTransfer: false, serviceRestrictions: false };
+  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false };
   const params = new URLSearchParams(window.location.search);
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
   return {
@@ -29,6 +30,7 @@ function getQueryMode() {
     terms: pathname === "/terms" || params.get("terms") === "1",
     sitemap: pathname === "/sitemap",
     docs: pathname === "/docs",
+    docsSlug: pathname.startsWith("/docs/") ? pathname.slice("/docs/".length) : null,
     resources: pathname === "/resources",
     internationalTransfer: pathname === "/international-transfer",
     serviceRestrictions: pathname === "/service-restrictions",
@@ -38,11 +40,12 @@ function getQueryMode() {
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const { respond: respondFormId, privacy, terms, sitemap, docs, resources, internationalTransfer, serviceRestrictions } = getQueryMode();
+  const { respond: respondFormId, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
   if (privacy) return <Suspense fallback={<PageLoading />}><PrivacyPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (terms) return <Suspense fallback={<PageLoading />}><TermsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (sitemap) return <Suspense fallback={<PageLoading />}><SitemapPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
+  if (docsSlug) return <Suspense fallback={<PageLoading />}><DocsDetailPage slug={docsSlug} onBack={() => { window.location.href = "/docs"; }} /></Suspense>;
   if (docs) return <Suspense fallback={<PageLoading />}><DocsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (resources) return <Suspense fallback={<PageLoading />}><ResourcesPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (internationalTransfer) return <Suspense fallback={<PageLoading />}><InternationalTransferPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
