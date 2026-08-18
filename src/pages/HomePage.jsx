@@ -395,6 +395,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
               <div className="mt-4 flex flex-col items-start gap-3 text-sm">
                 <a href="/" className="transition hover:text-[#D8ED59]">폼 만들기</a>
                 <a href="/security" className="transition hover:text-[#D8ED59]">보안과 응답 암호화</a>
+                <a href="/docs" className="transition hover:text-[#D8ED59]">Cokform 문서</a>
                 <a href="/faq" className="transition hover:text-[#D8ED59]">자주 묻는 질문</a>
                 <a href="/sitemap" className="inline-flex items-center gap-1 transition hover:text-[#D8ED59]">사이트맵 <Map size={14} /></a>
               </div>

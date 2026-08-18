@@ -6,6 +6,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const SitemapPage = lazy(() => import("./pages/SitemapPage"));
+const DocsPage = lazy(() => import("./pages/DocsPage"));
 import AuthControl from "./components/AuthControl";
 import { subscribeAuth } from "./lib/auth";
 import { ArrowLeft } from "lucide-react";
@@ -16,7 +17,7 @@ function PageLoading() {
 }
 
 function getQueryMode() {
-  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false };
+  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false };
   const params = new URLSearchParams(window.location.search);
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
   return {
@@ -24,17 +25,19 @@ function getQueryMode() {
     privacy: pathname === "/privacy" || params.get("privacy") === "1",
     terms: pathname === "/terms" || params.get("terms") === "1",
     sitemap: pathname === "/sitemap",
+    docs: pathname === "/docs",
   };
 }
 
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const { respond: respondFormId, privacy, terms, sitemap } = getQueryMode();
+  const { respond: respondFormId, privacy, terms, sitemap, docs } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
   if (privacy) return <Suspense fallback={<PageLoading />}><PrivacyPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (terms) return <Suspense fallback={<PageLoading />}><TermsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (sitemap) return <Suspense fallback={<PageLoading />}><SitemapPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
+  if (docs) return <Suspense fallback={<PageLoading />}><DocsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   return <Builder />;
 }
 

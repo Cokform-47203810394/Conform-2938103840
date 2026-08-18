@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ArrowLeft, ArrowUpRight, FileText, LockKeyhole, MessageCircleQuestion, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, BookOpen, FileText, LockKeyhole, MessageCircleQuestion, ShieldCheck } from "lucide-react";
 
 const groups = [
   {
@@ -8,6 +8,7 @@ const groups = [
       { title: "콕폼 시작하기", description: "개인정보 보호형 폼을 만들고 공유합니다.", href: "/" },
       { title: "보안과 응답 암호화", description: "응답이 암호화되어 저장되는 방식을 확인합니다.", href: "/security", icon: ShieldCheck },
       { title: "자주 묻는 질문", description: "키 관리, 응답 운영, 개인정보 고지의 기본을 확인합니다.", href: "/faq", icon: MessageCircleQuestion },
+      { title: "Cokform 문서", description: "시작하기, 응답 운영, 암호화 키 관리, 개인정보 수집 운영을 한곳에서 확인합니다.", href: "/docs", icon: BookOpen },
     ],
   },
   {
