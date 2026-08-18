@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ClipboardList, Download, FileJson, FileSpreadsheet, ImageDown, LoaderCircle, Mail, Presentation, Table2, Trash2, Upload } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Download, FileJson, FileSpreadsheet, ImageDown, LoaderCircle, Mail, Presentation, Table2, Trash2, Upload } from "lucide-react";
 import { IconButton } from "./Primitives";
 import Bar from "./Bar";
 import { MD, TYPE_COLORS, CHART_PALETTE, ELEV1 } from "../theme";
@@ -37,14 +37,21 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
   const [driveUrl, setDriveUrl] = useState("");
 
   useEffect(() => {
-    if (selectedResponseId && !responses.some((response) => response.id === selectedResponseId)) setSelectedResponseId("");
+    if (responses.length && !responses.some((response) => response.id === selectedResponseId)) {
+      setSelectedResponseId(responses[0].id);
+    }
   }, [responses, selectedResponseId]);
 
   const responseQuestions = useMemo(
     () => form.questions.filter((question) => question.type !== "privacy_notice"),
     [form.questions],
   );
-  const selectedResponse = responses.find((response) => response.id === selectedResponseId) || responses[responses.length - 1] || null;
+  const selectedIndex = Math.max(0, responses.findIndex((response) => response.id === selectedResponseId));
+  const selectedResponse = responses[selectedIndex] || null;
+  const selectResponse = (responseId) => {
+    setSelectedResponseId(responseId);
+    setView("individual");
+  };
 
   const recordExport = (format, destination = "device") => {
     Promise.resolve(onAudit?.("export", { format, destination, responseCount: responses.length })).catch(() => {});
@@ -116,10 +123,15 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
   if (responses.length === 0) {
     return (
       <div className="rounded-xl border-2 border-dashed border-[#C9CEC6] bg-white p-12 text-center text-sm text-[#78837C]">
-        아직 응답이 없습니다. 공유 링크를 통해 제출된 응답은 이곳에서 요약과 개별 답변으로 확인할 수 있어요.
+        아직 응답이 없습니다. 공유 링크를 통해 제출된 응답은 이곳에서 요약·질문별·개별 답변으로 확인할 수 있어요.
       </div>
     );
   }
+
+  const recentResponses = [...responses].slice(-3).reverse();
+  const recordedEmailCount = form.settings?.collectEmail
+    ? responses.filter((response) => typeof response.answers?._cokform_email === "string" && response.answers._cokform_email.trim()).length
+    : 0;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -170,54 +182,31 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
 
       {exportNotice && <div role="status" className="rounded-xl border border-[#B7DCC8] bg-[#EAF6EF] px-3 py-2.5 text-xs leading-5 text-[#355C45]">{exportNotice}{driveUrl && <> <a href={driveUrl} target="_blank" rel="noreferrer" className="font-semibold underline underline-offset-2">Drive에서 열기</a></>}</div>}
 
-      <div className="inline-flex rounded-xl border border-[#DDE1D9] bg-white p-1" role="tablist" aria-label="응답 보기 방식">
-        <button type="button" role="tab" aria-selected={view === "summary"} onClick={() => setView("summary")} className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${view === "summary" ? "bg-[#EAF6EF] text-[#0B4D3D]" : "text-[#78837C] hover:bg-[#F5F3EC]"}`}>요약</button>
-        <button type="button" role="tab" aria-selected={view === "individual"} onClick={() => setView("individual")} className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${view === "individual" ? "bg-[#EAF6EF] text-[#0B4D3D]" : "text-[#78837C] hover:bg-[#F5F3EC]"}`}>응답별 보기</button>
+      <div className="inline-flex max-w-full overflow-x-auto rounded-xl border border-[#DDE1D9] bg-white p-1" role="tablist" aria-label="응답 보기 방식">
+        <button type="button" role="tab" aria-selected={view === "summary"} onClick={() => setView("summary")} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${view === "summary" ? "bg-[#EAF6EF] text-[#0B4D3D]" : "text-[#78837C] hover:bg-[#F5F3EC]"}`}>요약</button>
+        <button type="button" role="tab" aria-selected={view === "question"} onClick={() => setView("question")} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${view === "question" ? "bg-[#EAF6EF] text-[#0B4D3D]" : "text-[#78837C] hover:bg-[#F5F3EC]"}`}>질문별</button>
+        <button type="button" role="tab" aria-selected={view === "individual"} onClick={() => setView("individual")} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${view === "individual" ? "bg-[#EAF6EF] text-[#0B4D3D]" : "text-[#78837C] hover:bg-[#F5F3EC]"}`}>개별 응답</button>
       </div>
 
-      {view === "individual" ? (
-        <div className="grid gap-4 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,1.4fr)]">
-          <div className={`overflow-hidden rounded-xl bg-white ${ELEV1}`}>
-            <div className="border-b border-[#E7E5DC] px-4 py-3 text-xs font-semibold text-[#59645E]">응답을 누르면 전체 답변을 확인할 수 있어요.</div>
-            <div className="max-h-[32rem] overflow-y-auto p-2">
-              {[...responses].reverse().map((response, index) => {
-                const sequence = responses.length - index;
-                const active = selectedResponse?.id === response.id;
-                const email = response.answers?._cokform_email;
-                return <button key={response.id} type="button" onClick={() => setSelectedResponseId(response.id)} className={`mb-1 w-full rounded-lg px-3 py-3 text-left transition-colors last:mb-0 ${active ? "bg-[#EAF6EF] text-[#0B4D3D]" : "hover:bg-[#F8F9F4]"}`}>
-                  <div className="flex items-center justify-between gap-2"><span className="text-sm font-semibold">응답 {sequence}</span><span className="text-[11px] text-[#78837C]">{formatSubmittedAt(response.submittedAt)}</span></div>
-                  <div className="mt-1 truncate text-xs text-[#78837C]">{email || "이메일 미기록"}</div>
-                </button>;
-              })}
-            </div>
+      {view === "summary" && (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className={`rounded-xl bg-white p-4 ${ELEV1}`}><div className="text-xs font-medium text-[#78837C]">전체 응답</div><div className="mt-1 font-mono text-2xl font-bold text-[#17251F]">{responses.length}</div></div>
+            <div className={`rounded-xl bg-white p-4 ${ELEV1}`}><div className="text-xs font-medium text-[#78837C]">기록된 이메일</div><div className="mt-1 font-mono text-2xl font-bold text-[#17251F]">{recordedEmailCount}</div></div>
+            <button type="button" onClick={() => setView("individual")} className={`rounded-xl bg-[#EAF6EF] p-4 text-left transition-colors hover:bg-[#DDF1E5] ${ELEV1}`}><div className="text-xs font-medium text-[#355C45]">응답 원문 확인</div><div className="mt-1 text-sm font-semibold text-[#0B4D3D]">개별 응답 보기 →</div></button>
           </div>
-
-          {selectedResponse && <article className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`}>
-            <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-[#E7E5DC] pb-4">
-              <div>
-                <div className="flex items-center gap-2 text-sm font-semibold text-[#17251F]"><ClipboardList size={16} className="text-[#17866D]" /> 개별 응답</div>
-                <div className="mt-1 text-xs text-[#78837C]">{formatSubmittedAt(selectedResponse.submittedAt)}</div>
-              </div>
-              <button type="button" onClick={() => onDeleteResponse?.(selectedResponse)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#B3261E] hover:bg-[#FBE4E0]"><Trash2 size={14} /> 이 응답 삭제</button>
+          <section className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`}>
+            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-[#17251F]">최근 응답</h3><p className="mt-1 text-xs text-[#78837C]">응답자를 선택하면 모든 답변을 바로 확인할 수 있어요.</p></div><button type="button" onClick={() => setView("individual")} className="text-xs font-semibold text-[#0B4D3D] underline underline-offset-2">전체 보기</button></div>
+            <div className="divide-y divide-[#F0EEE6]">
+              {recentResponses.map((response) => <button key={response.id} type="button" onClick={() => selectResponse(response.id)} className="flex w-full items-center justify-between gap-3 px-1 py-3 text-left transition-colors hover:bg-[#F8F9F4]"><span className="min-w-0"><span className="block truncate text-sm font-medium text-[#17251F]">{response.answers?._cokform_email || "이메일을 기록하지 않은 응답"}</span><span className="mt-0.5 block text-xs text-[#78837C]">{formatSubmittedAt(response.submittedAt)}</span></span><ChevronRight size={16} className="shrink-0 text-[#78837C]" /></button>)}
             </div>
-            <dl className="space-y-3">
-              {form.settings?.collectEmail && <div className="rounded-lg bg-[#F1FAF4] px-3 py-2.5"><dt className="text-[11px] font-semibold text-[#0B4D3D]">기록된 이메일</dt><dd className="mt-1 break-words text-sm text-[#17251F]">{formatAnswer(selectedResponse.answers?._cokform_email)}</dd></div>}
-              {responseQuestions.map((question) => <div key={question.id} className="rounded-lg border border-[#E7E5DC] px-3 py-3"><dt className="text-[11px] font-semibold text-[#59645E]">{richTextToPlain(question.title) || "제목 없는 질문"}</dt><dd className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-6 text-[#17251F]">{formatAnswer(selectedResponse.answers?.[question.id])}</dd></div>)}
-            </dl>
-          </article>}
+          </section>
         </div>
-      ) : (
-        <>
-          {form.settings?.collectEmail && (() => {
-            const emails = responses.map((response) => response.answers._cokform_email).filter((value) => typeof value === "string" && value.trim());
-            return (
-              <div className={`rounded-xl border border-[#B7DCC8] bg-[#F6FCF8] p-4 sm:p-5 ${ELEV1}`}>
-                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#0B4D3D]"><Mail size={16} /> 기록된 이메일 주소 <span className="rounded-full bg-white px-2 py-0.5 text-[11px] ring-1 ring-[#B7DCC8]">{emails.length}개</span></div>
-                {emails.length ? <ul className="space-y-1.5 text-sm text-[#355C45]">{emails.map((email, index) => <li key={`${email}-${index}`} className="border-b border-[#DCEFE3] pb-1.5 last:border-0">{email}</li>)}</ul> : <p className="text-sm text-[#78837C]">이전 응답에는 이메일 기록이 없어요.</p>}
-              </div>
-            );
-          })()}
+      )}
 
+      {view === "question" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-[#DDE1D9] bg-[#F8F9F4] px-4 py-3 text-xs leading-5 text-[#59645E]">선택형 질문은 분포를 확인하고, 자유 입력 답변은 <button type="button" onClick={() => setView("individual")} className="font-semibold text-[#0B4D3D] underline underline-offset-2">개별 응답</button>에서 원문을 확인하세요.</div>
           {responseQuestions.map((question) => {
             const values = responses.map((response) => response.answers[question.id]).filter((value) => value !== undefined && value !== "");
             return (
@@ -226,11 +215,40 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
                 {["radio", "dropdown", "privacy_consent"].includes(question.type) && <div>{question.options.map((option, index) => <Bar key={option} label={option} count={values.filter((value) => value === option).length} max={responses.length} color={CHART_PALETTE[index % CHART_PALETTE.length]} />)}</div>}
                 {question.type === "checkbox" && <div>{question.options.map((option, index) => <Bar key={option} label={option} count={values.filter((value) => Array.isArray(value) && value.includes(option)).length} max={responses.length} color={CHART_PALETTE[index % CHART_PALETTE.length]} />)}</div>}
                 {question.type === "scale" && <div>{Array.from({ length: question.scaleMax - question.scaleMin + 1 }, (_, index) => question.scaleMin + index).map((number, index) => <Bar key={number} label={String(number)} count={values.filter((value) => value === number).length} max={responses.length} color={CHART_PALETTE[index % CHART_PALETTE.length]} />)}</div>}
-                {["short", "paragraph", "date", "time"].includes(question.type) && <div className="flex items-center justify-between gap-3 rounded-lg bg-[#F8F9F4] px-3 py-2.5 text-sm text-[#59645E]"><span>자유 입력 답변 {values.length}건</span><button type="button" onClick={() => setView("individual")} className="shrink-0 text-xs font-semibold text-[#0B4D3D] underline underline-offset-2">응답별로 보기</button></div>}
+                {["short", "paragraph", "date", "time"].includes(question.type) && <div className="flex items-center justify-between gap-3 rounded-lg bg-[#F8F9F4] px-3 py-2.5 text-sm text-[#59645E]"><span>자유 입력 답변 {values.length}건</span><button type="button" onClick={() => setView("individual")} className="shrink-0 text-xs font-semibold text-[#0B4D3D] underline underline-offset-2">원문 보기</button></div>}
               </div>
             );
           })}
-        </>
+        </div>
+      )}
+
+      {view === "individual" && selectedResponse && (
+        <div className="space-y-4">
+          <section className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div><h3 className="flex items-center gap-2 text-sm font-semibold text-[#17251F]"><ClipboardList size={16} className="text-[#17866D]" /> 개별 응답</h3><p className="mt-1 text-xs text-[#78837C]">응답자를 한 명씩 넘겨 보며 전체 답변을 확인하세요.</p></div>
+              <button type="button" onClick={() => onDeleteResponse?.(selectedResponse)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#B3261E] hover:bg-[#FBE4E0]"><Trash2 size={14} /> 이 응답 삭제</button>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#E7E5DC] pt-4">
+              <div className="flex items-center gap-2">
+                <button type="button" aria-label="이전 응답" disabled={selectedIndex === 0} onClick={() => setSelectedResponseId(responses[selectedIndex - 1].id)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9CEC6] text-[#59645E] hover:bg-[#F5F3EC] disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={17} /></button>
+                <span className="min-w-[5rem] text-center text-sm font-semibold text-[#17251F]">응답 {selectedIndex + 1} / {responses.length}</span>
+                <button type="button" aria-label="다음 응답" disabled={selectedIndex >= responses.length - 1} onClick={() => setSelectedResponseId(responses[selectedIndex + 1].id)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9CEC6] text-[#59645E] hover:bg-[#F5F3EC] disabled:cursor-not-allowed disabled:opacity-40"><ChevronRight size={17} /></button>
+              </div>
+              <select aria-label="볼 응답 선택" value={selectedResponse.id} onChange={(event) => setSelectedResponseId(event.target.value)} className="min-w-[12rem] rounded-lg border border-[#C9CEC6] bg-[#FFFDF8] px-3 py-2 text-xs text-[#17251F] outline-none focus:border-[#17866D]">
+                {responses.map((response, index) => <option key={response.id} value={response.id}>응답 {index + 1} · {formatSubmittedAt(response.submittedAt)}</option>)}
+              </select>
+            </div>
+          </section>
+
+          <article className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`}>
+            <div className="mb-4 border-b border-[#E7E5DC] pb-4"><div className="text-sm font-semibold text-[#17251F]">제출 정보</div><div className="mt-1 text-xs text-[#78837C]">{formatSubmittedAt(selectedResponse.submittedAt)}</div></div>
+            <dl className="space-y-3">
+              {form.settings?.collectEmail && <div className="rounded-lg bg-[#F1FAF4] px-3 py-2.5"><dt className="text-[11px] font-semibold text-[#0B4D3D]">기록된 이메일</dt><dd className="mt-1 break-words text-sm text-[#17251F]">{formatAnswer(selectedResponse.answers?._cokform_email)}</dd></div>}
+              {responseQuestions.map((question) => <div key={question.id} className="rounded-lg border border-[#E7E5DC] px-3 py-3"><dt className="text-[11px] font-semibold text-[#59645E]">{richTextToPlain(question.title) || "제목 없는 질문"}</dt><dd className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-6 text-[#17251F]">{formatAnswer(selectedResponse.answers?.[question.id])}</dd></div>)}
+            </dl>
+          </article>
+        </div>
       )}
     </div>
   );
