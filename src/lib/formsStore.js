@@ -603,11 +603,10 @@ export async function recordFormParticipation(formId, form) {
   return summary;
 }
 
-export async function submitResponse(formId, answers, publicKey, settings = {}, turnstileToken = "", formPassword = "") {
+export async function submitResponse(formId, answers, publicKey, settings = {}, botCheck = {}, formPassword = "") {
   const windowState = getResponseWindowState(settings);
   if (windowState !== "open") return { ok: false, reason: windowState, response: null };
   if (!publicKey) return { ok: false, reason: "encryption_unavailable", response: null };
-  if (!turnstileToken) return { ok: false, reason: "security_verification_required", response: null };
 
   const encryptedAnswers = await encryptAnswers(publicKey, answers, { formId, purpose: "response" });
   const response = { id: uid(), submittedAt: new Date().toISOString(), answers };
@@ -635,7 +634,10 @@ export async function submitResponse(formId, answers, publicKey, settings = {}, 
         submittedAt: response.submittedAt,
         answers: encryptedAnswers,
         respondentToken,
-        turnstileToken,
+        botCheck: {
+          startedAt: Number(botCheck?.startedAt) || 0,
+          website: typeof botCheck?.website === "string" ? botCheck.website : "",
+        },
         formPassword,
       }),
     });

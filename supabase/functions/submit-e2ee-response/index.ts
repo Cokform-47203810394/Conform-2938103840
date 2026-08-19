@@ -24,7 +24,7 @@ type SubmitPayload = {
     ciphertext?: string;
   };
   respondentToken?: string | null;
-  turnstileToken?: string;
+  botCheck?: { startedAt?: number; website?: string };
   formPassword?: string;
 };
 
@@ -42,7 +42,7 @@ function json(status: number, body: Record<string, unknown>) {
 
 function requestOriginAllowed(request: Request) {
   // Browser POST requests carry Origin. Rejecting absent or foreign origins blocks
-  // normal cross-site form posts; Turnstile remains the primary bot defense.
+  // normal cross-site form posts; the server-side rate limiter handles abuse.
   return request.headers.get("origin") === CANONICAL_ORIGIN;
 }
 
@@ -125,21 +125,18 @@ function isOpenForResponses(settings: Record<string, unknown> | undefined) {
   return (Number.isNaN(start) || start <= now) && (Number.isNaN(end) || end > now);
 }
 
-async function verifyTurnstile(secret: string, token: string, idempotencyKey: string, remoteIp: string) {
-  if (!secret || !token) return false;
-  const form = new FormData();
-  form.set("secret", secret);
-  form.set("response", token);
-  form.set("idempotency_key", idempotencyKey);
-  if (remoteIp !== "unknown") form.set("remoteip", remoteIp);
-
-  const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    body: form,
-  });
-  if (!response.ok) return false;
-  const result = await response.json().catch(() => null);
-  return result?.success === true && result?.hostname === "cokform.pages.dev";
+function passesBotCheck(value: SubmitPayload["botCheck"]) {
+  const startedAt = Number(value?.startedAt);
+  const website = value?.website;
+  const elapsed = Date.now() - startedAt;
+  // Hidden honeypot plus a short, non-disruptive dwell time blocks basic form
+  // fill bots. This signal contains no personal data and is paired with the
+  // server-only per-IP HMAC rate limit below.
+  return typeof website === "string"
+    && website.length === 0
+    && Number.isFinite(startedAt)
+    && elapsed >= 1500
+    && elapsed <= 2 * 60 * 60 * 1000;
 }
 
 Deno.serve(async (request) => {
@@ -170,8 +167,7 @@ Deno.serve(async (request) => {
     || !UUID_V4_PATTERN.test(payload.formId || "")
     || !isValidEnvelope(payload.answers)
     || (payload.respondentToken !== null && payload.respondentToken !== undefined && !UUID_V4_PATTERN.test(payload.respondentToken))
-    || typeof payload.turnstileToken !== "string"
-    || payload.turnstileToken.length < 20
+    || !passesBotCheck(payload.botCheck)
     || (payload.formPassword !== undefined && (typeof payload.formPassword !== "string" || payload.formPassword.length > 256))
   ) {
     return json(400, { ok: false, code: "invalid_submission" });
@@ -189,14 +185,13 @@ Deno.serve(async (request) => {
   const admin = createClient(supabaseUrl, serviceRole, {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   });
-  const { data: turnstileSecret, error: turnstileSecretError } = await admin.rpc("read_cokform_turnstile_secret");
-  if (turnstileSecretError || typeof turnstileSecret !== "string" || !turnstileSecret) {
-    return json(503, { ok: false, code: "security_verification_unavailable" });
-  }
-
   const remoteIp = safeClientAddress(request);
-  const turnstileVerified = await verifyTurnstile(turnstileSecret, payload.turnstileToken, payload.id, remoteIp);
-  if (!turnstileVerified) return json(403, { ok: false, code: "security_verification_failed" });
+  const fingerprint = await hmacFingerprint(serviceRole, payload.formId, remoteIp);
+  const { data: permitted, error: rateLimitError } = await admin.rpc("claim_cokform_response_rate_limit", {
+    p_form_id: payload.formId,
+    p_fingerprint: fingerprint,
+  });
+  if (rateLimitError || permitted !== true) return json(429, { ok: false, code: "rate_limited" });
 
   const { data: publicForm, error: publicFormError } = await admin
     .from("form_public")
@@ -210,13 +205,6 @@ Deno.serve(async (request) => {
   if (!await verifyFormPassword(passwordVerifier, payload.formPassword)) {
     return json(403, { ok: false, code: "form_password_invalid" });
   }
-
-  const fingerprint = await hmacFingerprint(serviceRole, payload.formId, remoteIp);
-  const { data: permitted, error: rateLimitError } = await admin.rpc("claim_cokform_response_rate_limit", {
-    p_form_id: payload.formId,
-    p_fingerprint: fingerprint,
-  });
-  if (rateLimitError || permitted !== true) return json(429, { ok: false, code: "rate_limited" });
 
   const { data: submitOutcome, error: submitError } = await admin.rpc("submit_cokform_encrypted_response", {
     p_id: payload.id,

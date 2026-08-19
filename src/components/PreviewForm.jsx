@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { Check, Mail } from "lucide-react";
 import QuestionField from "./QuestionField";
-import TurnstileChallenge from "./TurnstileChallenge";
 import { ELEV1, ELEV1_HOVER, MD } from "../theme";
 import { sanitizeImageSource, sanitizeRichText } from "../lib/sanitizeRichText";
 
@@ -19,8 +18,8 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [securityToken, setSecurityToken] = useState("");
-  const [securityReset, setSecurityReset] = useState(0);
+  const [website, setWebsite] = useState("");
+  const startedAtRef = useRef(Date.now());
   const errorSummaryRef = useRef(null);
 
   const handleChange = (qid, value) => {
@@ -78,9 +77,6 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
       }
     });
 
-    if (!previewMode && !securityToken) {
-      markError("_security", "보안 확인을 완료한 뒤 제출할 수 있어요.");
-    }
 
     setErrors(nextErrors);
     if (hasError) {
@@ -92,11 +88,9 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
     try {
       const visibleQuestionIds = new Set(form.questions.filter((question) => isQuestionVisible(question, answers)).map((question) => question.id));
       const submittedAnswers = Object.fromEntries(Object.entries(answers).filter(([id]) => id.startsWith("_cokform_") || visibleQuestionIds.has(id)));
-      const completed = await onSubmit(submittedAnswers, previewMode ? "" : securityToken);
+      const completed = await onSubmit(submittedAnswers, previewMode ? {} : { startedAt: startedAtRef.current, website });
       if (completed !== false) setSubmitted(true);
     } finally {
-      // Turnstile tokens are single-use. Refresh only in the real respondent flow.
-      if (!previewMode) setSecurityReset((value) => value + 1);
       setSubmitting(false);
     }
   };
@@ -104,6 +98,8 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
   const restart = () => {
     setAnswers({});
     setErrors({});
+    setWebsite("");
+    startedAtRef.current = Date.now();
     setSubmitted(false);
   };
 
@@ -221,9 +217,14 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
       ))}
       {previewMode ? (
         <div role="note" className="rounded-xl border border-[#B7DCC8] bg-[#F1FAF4] px-4 py-3 text-sm leading-6 text-[#355C45]">
-          <strong className="text-[#0B4D3D]">작성자 미리보기</strong> · 이 화면에서 작성한 내용은 저장·전송되지 않으며, 보안 확인도 생략됩니다.
+          <strong className="text-[#0B4D3D]">작성자 미리보기</strong> · 이 화면에서 작성한 내용은 저장·전송되지 않습니다.
         </div>
-      ) : <div id="cokform-question-_security"><TurnstileChallenge onToken={setSecurityToken} resetSignal={securityReset} /></div>}
+      ) : (
+        <div className="absolute -left-[10000px] h-px w-px overflow-hidden" aria-hidden="true">
+          <label htmlFor="cokform-website">웹사이트</label>
+          <input id="cokform-website" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} />
+        </div>
+      )}
       <div className="sticky bottom-0 z-10 -mx-3 bg-gradient-to-t from-[#F5F3EC] via-[#F5F3EC]/95 to-transparent px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-5 sm:static sm:mx-0 sm:bg-none sm:p-0">
         <button
           type="button"

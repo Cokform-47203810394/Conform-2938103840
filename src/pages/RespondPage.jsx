@@ -80,16 +80,14 @@ function RespondPageContent({ formId }) {
     setPasswordUnlocked(true);
   };
 
-  const handleSubmit = async (answers, turnstileToken) => {
+  const handleSubmit = async (answers, botCheck) => {
     setSubmitError("");
-    const result = await submitResponse(formId, answers, form.publicKey, form.settings, turnstileToken, responsePassword);
+    const result = await submitResponse(formId, answers, form.publicKey, form.settings, botCheck, responsePassword);
     if (!result.ok) {
       const windowMessage = result.reason && result.reason !== "duplicate" ? getResponseWindowMessage(result.reason, form.settings) : "";
       const securityMessage = {
         encryption_unavailable: "이 폼의 암호화 키가 준비되지 않았어요. 폼 작성자에게 문의해 주세요.",
-        security_verification_required: "보안 확인을 완료한 뒤 다시 제출해 주세요.",
-        security_verification_failed: "보안 확인에 실패했어요. 확인을 새로고침한 뒤 다시 시도해 주세요.",
-        security_verification_unavailable: "보안 확인 서비스가 준비되지 않았어요. 잠시 후 다시 시도해 주세요.",
+        bot_check_failed: "응답 환경을 확인하지 못했어요. 잠시 후 다시 시도해 주세요.",
         rate_limited: "짧은 시간에 제출 요청이 많아요. 잠시 후 다시 시도해 주세요.",
         form_unavailable: "이 폼은 현재 응답을 받지 않아요.",
         response_limit_reached: "이 양식은 정원에 도달해 더 이상 응답을 받을 수 없어요.",
