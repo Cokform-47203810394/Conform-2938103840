@@ -28,6 +28,15 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
     setErrors((e) => ({ ...e, [qid]: false }));
   };
 
+  const moveToError = (id) => {
+    const target = document.getElementById(`cokform-question-${id}`) || errorSummaryRef.current;
+    target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => {
+      const field = target?.querySelector?.("input, textarea, select, button, iframe");
+      field?.focus?.({ preventScroll: true });
+    }, 280);
+  };
+
   const handleSubmit = async () => {
     const nextErrors = {};
     let hasError = false;
@@ -75,12 +84,7 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
 
     setErrors(nextErrors);
     if (hasError) {
-      window.requestAnimationFrame(() => {
-        const target = document.getElementById(`cokform-question-${firstErrorId}`) || errorSummaryRef.current;
-        target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
-        const field = target?.querySelector?.("input, textarea, select, button");
-        field?.focus?.({ preventScroll: true });
-      });
+      window.requestAnimationFrame(() => moveToError(firstErrorId));
       return;
     }
 
@@ -102,6 +106,20 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
     setErrors({});
     setSubmitted(false);
   };
+
+  const errorItems = Object.entries(errors).filter(([, value]) => Boolean(value)).map(([id, value]) => {
+    if (id === "_cokform_email") return { id, label: "이메일 주소", detail: "유효한 이메일 주소를 입력해 주세요." };
+    if (id === "_security") return { id, label: "보안 확인", detail: String(value) };
+    const question = form.questions.find((item) => item.id === id);
+    const fallbackIndex = form.questions.findIndex((item) => item.id === id) + 1;
+    return {
+      id,
+      label: question?.title?.trim() || `질문 ${fallbackIndex > 0 ? fallbackIndex : ""}`.trim(),
+      detail: value === "decline" ? "동의하지 않음을 선택하면 제출할 수 없어요." : "필수 항목입니다.",
+    };
+  });
+  const requiredErrorCount = errorItems.filter((item) => item.id !== "_security").length;
+  const securityError = errorItems.find((item) => item.id === "_security");
 
   if (submitted) {
     return (
@@ -174,10 +192,28 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
           </div>
         </section>
       )}
-      {Object.keys(errors).length > 0 && (
-        <div ref={errorSummaryRef} role="alert" className="rounded-xl border border-[#F2B8B5] bg-[#FFF6F5] px-4 py-3 text-sm text-[#8C1D18]">
-          <strong>{errors._security || `필수 항목 ${Object.keys(errors).filter((key) => key !== "_security").length}개를 확인해 주세요.`}</strong>
-          {!errors._security && <p className="mt-1 text-xs leading-5 text-[#9A3A32]">작성하지 않은 첫 항목으로 이동했어요. 빨간 테두리의 질문만 채우면 됩니다.</p>}
+      {errorItems.length > 0 && (
+        <div ref={errorSummaryRef} role="alert" aria-live="assertive" className="rounded-xl border border-[#F2B8B5] bg-[#FFF6F5] px-4 py-3.5 text-sm text-[#8C1D18]">
+          <strong>
+            {requiredErrorCount > 0 ? `필수 항목 ${requiredErrorCount}개를 확인해 주세요.` : "제출 전 보안 확인이 필요해요."}
+          </strong>
+          <p className="mt-1 text-xs leading-5 text-[#9A3A32]">
+            {requiredErrorCount > 0 ? "작성하지 않은 첫 항목으로 이동했어요. 아래 항목을 누르면 해당 질문으로 바로 갈 수 있어요." : securityError?.detail}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2" aria-label="오류 항목 바로가기">
+            {errorItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => moveToError(item.id)}
+                className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border border-[#E7A29D] bg-white px-3 py-1.5 text-left text-xs font-semibold text-[#8C1D18] transition-colors hover:bg-[#FDEBE9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B3261E]/30"
+                title={item.detail}
+              >
+                <span className="max-w-44 truncate">{item.label}</span>
+                <span aria-hidden="true">바로가기 →</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
       {form.questions.filter((q) => isQuestionVisible(q, answers)).map((q) => (
@@ -187,7 +223,7 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
         <div role="note" className="rounded-xl border border-[#B7DCC8] bg-[#F1FAF4] px-4 py-3 text-sm leading-6 text-[#355C45]">
           <strong className="text-[#0B4D3D]">작성자 미리보기</strong> · 이 화면에서 작성한 내용은 저장·전송되지 않으며, 보안 확인도 생략됩니다.
         </div>
-      ) : <TurnstileChallenge onToken={setSecurityToken} resetSignal={securityReset} />}
+      ) : <div id="cokform-question-_security"><TurnstileChallenge onToken={setSecurityToken} resetSignal={securityReset} /></div>}
       <div className="sticky bottom-0 z-10 -mx-3 bg-gradient-to-t from-[#F5F3EC] via-[#F5F3EC]/95 to-transparent px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-5 sm:static sm:mx-0 sm:bg-none sm:p-0">
         <button
           type="button"
