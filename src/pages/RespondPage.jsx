@@ -1,11 +1,43 @@
-import { useEffect, useState } from "react";
+import { Component, useEffect, useState } from "react";
 import PreviewForm from "../components/PreviewForm";
 import { getFormDoc, submitResponse, recordFormParticipation, recordFormView } from "../lib/formsStore";
 import { ELEV1, MD } from "../theme";
 import { getResponseWindowMessage, getResponseWindowState } from "../lib/responseWindow";
 import { verifyResponsePassword } from "../lib/responseAccess";
 
-export default function RespondPage({ formId }) {
+class RespondPageErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { failed: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error) {
+    // Keep detailed diagnostics in the browser console without exposing internal
+    // details or potentially sensitive form metadata to respondents.
+    console.error("공개 응답 화면 렌더링 오류", error);
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-[#F5F3EC] px-4 text-center">
+          <div className="max-w-sm rounded-2xl border border-[#DDE1D9] bg-white p-6 shadow-sm">
+            <h1 className="text-lg font-semibold text-[#17251F]">응답 양식을 열지 못했어요</h1>
+            <p className="mt-2 text-sm leading-6 text-[#59645E]">새로고침한 뒤 다시 시도해 주세요. 계속되면 폼 작성자에게 공유 링크를 다시 받아주세요.</p>
+            <button type="button" onClick={() => window.location.reload()} className="mt-5 rounded-full bg-[#17866D] px-4 py-2 text-sm font-semibold text-white">새로고침</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function RespondPageContent({ formId }) {
   const [doc, setDoc] = useState(undefined); // undefined = loading, null = not found
   const [alreadyResponded, setAlreadyResponded] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -112,4 +144,8 @@ export default function RespondPage({ formId }) {
       </div>
     </div>
   );
+}
+
+export default function RespondPage({ formId }) {
+  return <RespondPageErrorBoundary><RespondPageContent formId={formId} /></RespondPageErrorBoundary>;
 }
