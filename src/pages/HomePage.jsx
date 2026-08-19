@@ -245,9 +245,9 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         ) : null}
 
         {/* 업무 시작 양식 */}
-        <p className="mb-2 text-xs font-bold tracking-[0.08em] text-[#17866D]">자주 쓰는 업무 양식</p>
-        <h1 className="cok-display mb-2">지금 필요한 양식을 고르세요</h1>
-        <p className="mb-6 max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">상담, 예약, 참가 신청, 출결, 견적처럼 바로 시작할 수 있는 양식입니다. 개인정보가 필요하면 수집 안내와 동의 문항을 함께 확인하세요.</p>
+        <p className="mb-2 text-xs font-bold tracking-[0.08em] text-[#17866D]">빠르게 시작</p>
+        <h1 className="cok-display mb-2">무엇을 만들까요?</h1>
+        <p className="mb-6 max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">가장 가까운 양식을 고른 뒤 필요한 질문만 남기면 됩니다.</p>
         <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
         <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
           {TEMPLATES.map((t) => (
@@ -255,12 +255,11 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           ))}
         </div>
 
-        {/* 확장 업무 양식 */}
+        {/* 업무별 템플릿 */}
         <div className="mb-2 flex items-center gap-2">
-          <p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">더 긴 업무 흐름</p>
-          <span className="rounded-full bg-[#EAF7EF] px-2 py-0.5 text-[10px] font-bold text-[#0B4D3D]">확장 양식</span>
+          <p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">업무별 템플릿</p>
         </div>
-        <p className="mb-4 text-sm leading-6 text-[#59645E]">채용, 만족도 조사, 개인정보 동의, 교육 운영, 사내 의견 수렴처럼 질문이 더 필요한 업무에 맞춘 양식입니다.</p>
+        <p className="mb-4 text-sm leading-6 text-[#59645E]">채용, 교육, 만족도 조사처럼 질문이 많은 업무를 위한 양식입니다.</p>
         <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
         <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
           {PREMIUM_TEMPLATES.map((t) => (
@@ -271,8 +270,8 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         {!query.trim() && totals.forms > 0 && (
           <section className="mb-12">
             <div className="mb-3 flex items-end justify-between gap-3">
-              <div><div className="text-xs font-bold tracking-[0.08em] text-[#17866D]">운영 현황</div><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">폼 운영 현황</h2></div>
-              <div className="hidden items-center gap-1 text-xs text-[#78837C] sm:flex"><BarChart3 size={14} /> 개인정보 없이 집계</div>
+              <div><div className="text-xs font-bold tracking-[0.08em] text-[#17866D]">내 폼</div><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">지금 운영 중</h2></div>
+              <div className="hidden items-center gap-1 text-xs text-[#78837C] sm:flex"><BarChart3 size={14} /> 답변 내용은 포함하지 않음</div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <MetricCard label="만든 폼" value={totals.forms} icon={<BarChart3 size={17} />} />
@@ -280,16 +279,16 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
               <MetricCard label="전체 응답" value={totals.responses} suffix="건" icon={<CheckCircle2 size={17} />} />
               <MetricCard label="응답 받는 폼" value={totals.active} suffix="개" icon={<ChevronRight size={17} />} />
             </div>
-            <div className="mt-3 rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] px-4 py-3 text-xs leading-5 text-[#59645E]">응답 내용은 암호화되어 저장되고, 이 화면에는 폼별 조회·응답 건수만 표시됩니다. 조회 수는 같은 브라우저의 중복 방문을 한 번으로 계산합니다.</div>
+            <div className="mt-3 rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] px-4 py-3 text-xs leading-5 text-[#59645E]">여기에는 조회와 응답 수만 표시됩니다. 답변 내용은 열리지 않습니다.</div>
           </section>
         )}
 
         {/* recent forms */}
         {!query.trim() && filtered.length > 0 && <div className="mb-3 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-bold tracking-[0.08em] text-[#17866D]">내가 만든 양식</div>
-            <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">내가 만든 폼</h2>
-          </div>
+              <div>
+                <div className="text-xs font-bold tracking-[0.08em] text-[#17866D]">최근 작업</div>
+                <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">이어서 작업하기</h2>
+              </div>
           <button
             onClick={() => setSortBy((s) => (s === "updated" ? "title" : "updated"))}
             className="flex items-center gap-1.5 rounded-full border border-[#DDE1D9] bg-[#FFFDF8] px-3 py-2 text-xs font-semibold text-[#59645E] transition hover:border-[#17866D] hover:text-[#0B4D3D] sm:text-sm"

@@ -14,6 +14,11 @@ export default class AppErrorBoundary extends Component {
     // Keep the user-facing recovery page generic. Detailed diagnostics stay local
     // to the browser console and never include form or response contents.
     console.error("콕폼 화면 렌더링 오류", error);
+    try {
+      sessionStorage.setItem("cokform:last-render-error", String(error?.message || "unknown-render-error").slice(0, 240));
+    } catch {
+      // Storage may be unavailable in a restricted browser context.
+    }
   }
 
   render() {
