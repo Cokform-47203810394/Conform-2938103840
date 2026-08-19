@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Check, Mail } from "lucide-react";
 import QuestionField from "./QuestionField";
 import TurnstileChallenge from "./TurnstileChallenge";
-import { ELEV1_HOVER, MD } from "../theme";
+import { ELEV1, ELEV1_HOVER, MD } from "../theme";
 import { sanitizeImageSource, sanitizeRichText } from "../lib/sanitizeRichText";
 
 function isQuestionVisible(question, answers) {

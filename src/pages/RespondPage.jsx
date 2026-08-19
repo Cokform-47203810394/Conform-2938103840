@@ -16,12 +16,7 @@ class RespondPageErrorBoundary extends Component {
   }
 
   componentDidCatch(error) {
-    // Expose diagnostics only in the current browser session for incident triage.
-    // The fallback UI intentionally stays generic and never reveals form data.
-    window.__cokformRespondRenderError = {
-      name: error instanceof Error ? error.name : "UnknownError",
-      message: error instanceof Error ? error.message : String(error),
-    };
+    // The fallback UI stays generic and never reveals form data.
     console.error("공개 응답 화면 렌더링 오류", error);
   }
 
