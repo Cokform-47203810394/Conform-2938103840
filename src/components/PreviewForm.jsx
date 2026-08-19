@@ -12,7 +12,7 @@ function isQuestionVisible(question, answers) {
   return Array.isArray(sourceValue) ? sourceValue.includes(condition.value) : sourceValue === condition.value;
 }
 
-export default function PreviewForm({ form, onSubmit, accent }) {
+export default function PreviewForm({ form, onSubmit, accent, previewMode = false }) {
   const color = accent || MD.primary;
   const descriptionImageSrc = sanitizeImageSource(form.descriptionImage?.src);
   const [answers, setAnswers] = useState({});
@@ -69,7 +69,7 @@ export default function PreviewForm({ form, onSubmit, accent }) {
       }
     });
 
-    if (!securityToken) {
+    if (!previewMode && !securityToken) {
       markError("_security", "보안 확인을 완료한 뒤 제출할 수 있어요.");
     }
 
@@ -88,12 +88,11 @@ export default function PreviewForm({ form, onSubmit, accent }) {
     try {
       const visibleQuestionIds = new Set(form.questions.filter((question) => isQuestionVisible(question, answers)).map((question) => question.id));
       const submittedAnswers = Object.fromEntries(Object.entries(answers).filter(([id]) => id.startsWith("_cokform_") || visibleQuestionIds.has(id)));
-      const completed = await onSubmit(submittedAnswers, securityToken);
+      const completed = await onSubmit(submittedAnswers, previewMode ? "" : securityToken);
       if (completed !== false) setSubmitted(true);
     } finally {
-      // Turnstile tokens are single-use. Always request a new one after a
-      // submission attempt, including a transient network failure.
-      setSecurityReset((value) => value + 1);
+      // Turnstile tokens are single-use. Refresh only in the real respondent flow.
+      if (!previewMode) setSecurityReset((value) => value + 1);
       setSubmitting(false);
     }
   };
@@ -113,9 +112,10 @@ export default function PreviewForm({ form, onSubmit, accent }) {
         >
           <Check size={22} />
         </div>
-        <div className="text-[15px] font-medium text-[#17251F]">응답이 저장되었습니다</div>
+        <div className="text-[15px] font-medium text-[#17251F]">{previewMode ? "작성 흐름을 확인했어요" : "응답이 저장되었습니다"}</div>
+        {previewMode && <p className="mt-2 text-sm text-[#59645E]">미리보기에서는 응답을 저장하지 않았어요.</p>}
         <button onClick={restart} className="mt-4 text-sm font-medium hover:underline" style={{ color }}>
-          다른 응답 제출하기
+          {previewMode ? "처음부터 다시 확인" : "다른 응답 제출하기"}
         </button>
       </div>
     );
@@ -183,7 +183,11 @@ export default function PreviewForm({ form, onSubmit, accent }) {
       {form.questions.filter((q) => isQuestionVisible(q, answers)).map((q) => (
         <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={handleChange} />
       ))}
-      <TurnstileChallenge onToken={setSecurityToken} resetSignal={securityReset} />
+      {previewMode ? (
+        <div role="note" className="rounded-xl border border-[#B7DCC8] bg-[#F1FAF4] px-4 py-3 text-sm leading-6 text-[#355C45]">
+          <strong className="text-[#0B4D3D]">작성자 미리보기</strong> · 이 화면에서 작성한 내용은 저장·전송되지 않으며, 보안 확인도 생략됩니다.
+        </div>
+      ) : <TurnstileChallenge onToken={setSecurityToken} resetSignal={securityReset} />}
       <div className="sticky bottom-0 z-10 -mx-3 bg-gradient-to-t from-[#F5F3EC] via-[#F5F3EC]/95 to-transparent px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-5 sm:static sm:mx-0 sm:bg-none sm:p-0">
         <button
           type="button"
@@ -192,7 +196,7 @@ export default function PreviewForm({ form, onSubmit, accent }) {
           className={`min-h-[48px] w-full rounded-full px-6 py-3 text-base font-semibold text-white transition-shadow active:shadow-none disabled:cursor-wait disabled:opacity-60 sm:min-h-0 sm:w-auto sm:py-2.5 sm:text-sm ${ELEV1_HOVER}`}
           style={{ backgroundColor: color }}
         >
-          {submitting ? "저장하는 중…" : "제출"}
+          {submitting ? (previewMode ? "확인 중…" : "저장하는 중…") : (previewMode ? "작성 흐름 확인" : "제출")}
         </button>
       </div>
     </div>

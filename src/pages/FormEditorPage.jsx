@@ -548,6 +548,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   // ---- share / theme / collaborators ----
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
   const [collabInput, setCollabInput] = useState("");
@@ -569,6 +570,20 @@ export default function FormEditorPage({ formId, user, onBack }) {
     && form.settings?.responseEndAt
     && new Date(form.settings.responseEndAt).getTime() <= new Date(form.settings.responseStartAt).getTime(),
   );
+
+  const openPreview = () => {
+    setPaletteOpen(false);
+    setPreviewOpen(true);
+  };
+
+  useEffect(() => {
+    if (!previewOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setPreviewOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [previewOpen]);
 
   const openShare = () => {
     if (!form.publicKey) {
@@ -724,7 +739,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
                 </Popover>
               )}
             </div>
-            <IconButton title="미리보기 (새 탭)" onClick={() => window.open(shareUrl, "_blank")}>
+            <IconButton title="미리보기" onClick={openPreview}>
               <Eye size={18} />
             </IconButton>
             <IconButton title="실행 취소" onClick={undo} disabled={past.length === 0}>
@@ -754,7 +769,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
         </div>
         <div className="flex items-center justify-between gap-1 border-t border-[#F0EEE6] px-3 py-1.5 sm:hidden">
           <IconButton title="테마 색상" onClick={() => setPaletteOpen((v) => !v)}><Palette size={17} /></IconButton>
-          <IconButton title="미리보기" onClick={() => window.open(shareUrl, "_blank")}><Eye size={17} /></IconButton>
+          <IconButton title="미리보기" onClick={openPreview}><Eye size={17} /></IconButton>
           <IconButton title="실행 취소" onClick={undo} disabled={past.length === 0}><Undo2 size={17} /></IconButton>
           <IconButton title="다시 실행" onClick={redo} disabled={future.length === 0}><Redo2 size={17} /></IconButton>
           <IconButton title="버전 기록" onClick={openVersionHistory}><History size={17} /></IconButton>
@@ -1151,6 +1166,35 @@ export default function FormEditorPage({ formId, user, onBack }) {
           </>
         )}
       </div>
+
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-[#F5F3EC]" role="dialog" aria-modal="true" aria-label="응답자 미리보기">
+          <header className={`shrink-0 border-b border-[#DDE1D9] bg-[#FFFDF8]/95 backdrop-blur ${ELEV1}`}>
+            <div className="mx-auto flex max-w-4xl items-center gap-3 px-3 py-3 sm:px-4">
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] font-semibold text-[#17866D]">작성자 미리보기</div>
+                <h2 className="truncate text-sm font-semibold text-[#17251F] sm:text-base">{form.title || "제목 없는 설문지"}</h2>
+              </div>
+              {form.publicKey && privacyAudit.blocking.length === 0 && (
+                <button type="button" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")} className="hidden shrink-0 rounded-full border border-[#B7DCC8] bg-white px-3 py-2 text-xs font-semibold text-[#0B4D3D] hover:bg-[#EAF6EF] sm:inline-flex">
+                  공개 링크 새 탭
+                </button>
+              )}
+              <button type="button" onClick={() => setPreviewOpen(false)} className="shrink-0 rounded-full bg-[#17251F] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0B4D3D]">
+                편집으로 돌아가기
+              </button>
+            </div>
+          </header>
+          <main className="min-h-0 flex-1 overflow-y-auto px-3 py-5 sm:px-4 sm:py-7" style={{ backgroundColor: form.backgroundColor || "#F5F3EC" }}>
+            <div className="mx-auto max-w-2xl">
+              <div className="mb-3 rounded-xl border border-[#B7DCC8] bg-[#F1FAF4] px-4 py-3 text-xs leading-5 text-[#355C45]">
+                <strong className="text-[#0B4D3D]">저장 전 실시간 미리보기</strong> · 지금 편집 중인 내용을 그대로 보여줍니다. 이 화면의 응답은 저장·전송되지 않습니다.
+              </div>
+              <PreviewForm form={form} onSubmit={async () => true} accent={accent} previewMode />
+            </div>
+          </main>
+        </div>
+      )}
 
       {keyVaultOpen && (
         <Modal title="개인키 금고" onClose={() => setKeyVaultOpen(false)}>
