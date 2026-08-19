@@ -2,11 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronRight, X, Mail } from "lucide-react";
 import AuthControl from "../components/AuthControl";
 import { signInWithGoogle } from "../lib/auth";
-import FormThumbnail from "../components/FormThumbnail";
 import { Modal } from "../components/Overlay";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
 import { listForms, listParticipatedForms, listOwnerNotifications, markOwnerNotificationsRead, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
-import { MD, TYPE_COLORS, ELEV1, ELEV1_HOVER } from "../theme";
+import { MD, ELEV1, ELEV1_HOVER } from "../theme";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
 import { getResponseWindowState } from "../lib/responseWindow";
 
@@ -245,9 +244,9 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         ) : null}
 
         {/* 업무 시작 양식 */}
-        <p className="mb-2 text-xs font-bold tracking-[0.08em] text-[#17866D]">자주 쓰는 업무 양식</p>
-        <h1 className="cok-display mb-2">지금 필요한 양식을 고르세요</h1>
-        <p className="mb-6 max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">상담, 예약, 참가 신청, 출결, 견적처럼 바로 시작할 수 있는 양식입니다. 개인정보가 필요하면 수집 안내와 동의 문항을 함께 확인하세요.</p>
+        <p className="mb-2 text-xs font-bold tracking-[0.08em] text-[#17866D]">빠르게 시작</p>
+        <h1 className="cok-display mb-2">무엇을 만들까요?</h1>
+        <p className="mb-6 max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">가장 가까운 업무 양식을 고른 뒤, 내 상황에 맞게 문항과 안내를 바로 바꿔보세요.</p>
         <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
         <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
           {TEMPLATES.map((t) => (
@@ -255,12 +254,11 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           ))}
         </div>
 
-        {/* 확장 업무 양식 */}
+        {/* 업무별 템플릿 */}
         <div className="mb-2 flex items-center gap-2">
-          <p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">더 긴 업무 흐름</p>
-          <span className="rounded-full bg-[#EAF7EF] px-2 py-0.5 text-[10px] font-bold text-[#0B4D3D]">확장 양식</span>
+          <p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">업무별 템플릿</p>
         </div>
-        <p className="mb-4 text-sm leading-6 text-[#59645E]">채용, 만족도 조사, 개인정보 동의, 교육 운영, 사내 의견 수렴처럼 질문이 더 필요한 업무에 맞춘 양식입니다.</p>
+        <p className="mb-4 text-sm leading-6 text-[#59645E]">채용, 만족도 조사, 행사 운영처럼 질문이 더 필요한 업무를 위한 시작점입니다.</p>
         <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
         <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
           {PREMIUM_TEMPLATES.map((t) => (
@@ -472,28 +470,28 @@ function MetricCard({ label, value, suffix = "", icon }) {
 }
 
 function TemplateCard({ template: t, onCreate, busy, creating }) {
-  const previewQuestions = t.blank ? [] : t.build().questions;
-  const primaryQuestion = previewQuestions.find((question) => !["privacy_notice", "privacy_consent"].includes(question.type));
-  const accent = TYPE_COLORS[primaryQuestion?.type] || TYPE_COLORS.radio;
+  const form = t.blank ? null : t.build();
+  const inputCount = form?.questions.filter((question) => !["section", "privacy_notice"].includes(question.type)).length || 0;
+  const includesPrivacyGuide = Boolean(form?.settings?.privacyNotice);
 
   return (
     <button
       onClick={() => onCreate(t)}
       disabled={busy}
-      className={`group relative w-[min(40vw,148px)] shrink-0 snap-start overflow-hidden rounded-lg bg-white text-left transition-all sm:w-[148px] ${ELEV1_HOVER} ${
+      className={`group relative flex w-[min(68vw,228px)] shrink-0 snap-start flex-col justify-between rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-4 text-left transition-all sm:w-[220px] ${ELEV1_HOVER} ${
         creating ? "opacity-60" : ""
       }`}
     >
-      <div className="flex h-[104px] items-center justify-center border-b border-[#DDE1D9] bg-[#F5F3EC] sm:h-[118px]">
-        {t.blank ? (
-          <span className="relative flex h-9 w-9 items-center justify-center">
-            <Plus size={34} strokeWidth={2.5} style={{ color: MD.primary }} />
-          </span>
-        ) : (
-          <FormThumbnail questions={previewQuestions} accent={accent} />
-        )}
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <span className="text-sm font-semibold tracking-[-0.02em] text-[#17251F]">{t.label}</span>
+          {t.blank ? <Plus size={20} strokeWidth={2.5} style={{ color: MD.primary }} /> : <ChevronRight size={18} className="mt-0.5 text-[#17866D] transition-transform group-hover:translate-x-0.5" />}
+        </div>
+        {t.segment && <p className="mt-2 text-xs leading-5 text-[#59645E]">{t.segment}</p>}
       </div>
-      <div className="px-3 py-3"><div className="text-sm font-semibold text-[#17251F]">{t.label}</div>{t.segment && <div className="mt-1 text-[11px] font-medium text-[#78837C]">{t.segment}</div>}</div>
+      <div className="mt-7 flex flex-wrap gap-1.5 text-[11px] font-medium text-[#78837C]">
+        {t.blank ? <span>처음부터 구성</span> : <><span>{inputCount}개 문항</span>{includesPrivacyGuide && <><span className="text-[#B8C5BA]">·</span><span>안내 포함</span></>}</>}
+      </div>
     </button>
   );
 }
