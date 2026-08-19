@@ -36,6 +36,7 @@ export default function TurnstileChallenge({ onToken, resetSignal = 0 }) {
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
   const [status, setStatus] = useState("loading");
+  const [retrySignal, setRetrySignal] = useState(0);
 
   useEffect(() => {
     if (!containerRef.current) return undefined;
@@ -55,7 +56,10 @@ export default function TurnstileChallenge({ onToken, resetSignal = 0 }) {
             onToken("");
             setStatus("expired");
           },
-          "error-callback": () => {
+          "error-callback": (errorCode) => {
+            // No form data is sent to this callback. Keep a diagnostic code only
+            // in the console, while offering a clear recovery action in the UI.
+            console.warn("Turnstile verification error", errorCode);
             onToken("");
             setStatus("error");
           },
@@ -68,7 +72,7 @@ export default function TurnstileChallenge({ onToken, resetSignal = 0 }) {
       if (widgetIdRef.current !== null && window.turnstile) window.turnstile.remove(widgetIdRef.current);
       widgetIdRef.current = null;
     };
-  }, [onToken]);
+  }, [onToken, retrySignal]);
 
   useEffect(() => {
     if (resetSignal && widgetIdRef.current !== null && window.turnstile) {
@@ -78,12 +82,27 @@ export default function TurnstileChallenge({ onToken, resetSignal = 0 }) {
     }
   }, [resetSignal, onToken]);
 
+  const retryVerification = () => {
+    onToken("");
+    setStatus("loading");
+    if (widgetIdRef.current !== null && window.turnstile) {
+      window.turnstile.reset(widgetIdRef.current);
+      return;
+    }
+    setRetrySignal((value) => value + 1);
+  };
+
   return (
     <div className="rounded-xl border border-[#DDE1D9] bg-white px-4 py-3" aria-live="polite">
       <div ref={containerRef} />
       {status === "loading" && <p className="mt-2 text-xs text-[#59645E]">안전한 응답 제출을 확인하는 중입니다.</p>}
       {status === "expired" && <p className="mt-2 text-xs text-[#B3261E]">보안 확인 시간이 만료되었습니다. 다시 확인해 주세요.</p>}
-      {status === "error" && <p className="mt-2 text-xs text-[#B3261E]">보안 확인을 불러오지 못했습니다. 네트워크 차단 설정을 확인한 뒤 다시 시도해 주세요.</p>}
+      {status === "error" && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs leading-5 text-[#B3261E]">
+          <p>보안 확인에 실패했어요. 네트워크 차단 설정을 확인한 뒤 다시 시도해 주세요.</p>
+          <button type="button" onClick={retryVerification} className="rounded-full border border-[#E7A29D] bg-white px-2.5 py-1 text-xs font-semibold text-[#8C1D18] hover:bg-[#FDEBE9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B3261E]/30">보안 확인 다시 시도</button>
+        </div>
+      )}
     </div>
   );
 }
