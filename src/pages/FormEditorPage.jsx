@@ -564,6 +564,12 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const coverImageSrc = sanitizeImageSource(form.coverImage?.src);
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}?respond=${formId}` : "";
   const privacyAudit = analyzePrivacyRisk(form);
+  const privacyAuditSignals = Object.values(privacyAudit.signals.reduce((grouped, signal) => {
+    const key = `${signal.level}:${signal.code}:${signal.message}`;
+    if (!grouped[key]) grouped[key] = { ...signal, count: 0 };
+    grouped[key].count += 1;
+    return grouped;
+  }, {}));
   const responseWindowState = getResponseWindowState(form.settings);
   const responseScheduleInvalid = Boolean(
     form.settings?.responseStartAt
@@ -900,12 +906,12 @@ export default function FormEditorPage({ formId, user, onBack }) {
                   {(form.settings?.collectEmail || form.questions.some((q) => q.type === "privacy_consent")) && !form.settings?.privacyNotice && (
                     <div className="rounded-lg border border-[#E4C77A] bg-[#FFF8DE] px-3 py-2.5 text-xs leading-5 text-[#65521A]">개인정보 항목을 수집하는 폼이에요. 응답자가 확인할 수 있도록 아래의 <strong>개인정보 수집 안내 표시</strong>를 켜고 목적·항목·보관기간을 작성하세요.</div>
                   )}
-                  {privacyAudit.signals.length > 0 && (
+                  {privacyAuditSignals.length > 0 && (
                     <div className="space-y-2 rounded-lg border border-[#E4C77A] bg-[#FFFDF2] p-3">
                       <div className="text-xs font-semibold text-[#65521A]">개인정보 점검 · 질문 제목과 설정만 확인하며 응답 내용은 읽지 않아요.</div>
-                      {privacyAudit.signals.map((item, index) => (
-                        <div key={`${item.code}-${item.questionId || index}`} className="rounded-md px-2.5 py-2 text-[11px] leading-5" style={{ color: PRIVACY_AUDIT_LEVEL[item.level].color, backgroundColor: PRIVACY_AUDIT_LEVEL[item.level].background }}>
-                          <strong>{PRIVACY_AUDIT_LEVEL[item.level].label}</strong> · {item.message}
+                      {privacyAuditSignals.map((item, index) => (
+                        <div key={`${item.code}-${index}`} className="rounded-md px-2.5 py-2 text-[11px] leading-5" style={{ color: PRIVACY_AUDIT_LEVEL[item.level].color, backgroundColor: PRIVACY_AUDIT_LEVEL[item.level].background }}>
+                          <strong>{PRIVACY_AUDIT_LEVEL[item.level].label}</strong> · {item.message}{item.count > 1 ? ` (${item.count}개 질문)` : ""}
                         </div>
                       ))}
                     </div>
