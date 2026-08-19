@@ -29,3 +29,9 @@
 
 - 개인정보보호위원회, 2026 개인정보 처리방침 작성지침: https://www.privacy.go.kr/front/bbs/bbsView.do?bbsNo=BBSMSTR_000000000049&bbscttNo=20885
 - 국가법령정보센터, 전자상거래 등에서의 소비자보호 지침: https://www.law.go.kr/LSW/admRulInfoP.do?admRulSeq=2100000243022&chrClsCd=010201
+
+## 사업자 안내 추가 검증 — 2026-08-19
+
+`/business-info`를 React 공개 페이지로 추가하고 운영 배포에서 정상 렌더링을 확인했다. 페이지에는 사업자등록 전 비공개 파일럿 상태, 서비스명, 임시 문의처, 아직 확정되지 않은 상호·대표자명·사업자등록번호·주소·개인정보 보호책임자 정보를 사실대로 구분해 표시한다.
+
+정적 `/sitemap` 페이지와 XML `/sitemap.xml`, 홈 푸터, 개인정보처리방침, 이용약관 모두 `/business-info`로 연결되도록 반영했다. 운영 사이트맵에서 사업자 안내 링크가 실제로 표시되는 것도 확인했다.
