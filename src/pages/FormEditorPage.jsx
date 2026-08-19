@@ -600,12 +600,21 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   useEffect(() => {
     if (!previewOpen) return undefined;
-    const closeOnEscape = (event) => {
+    const handleKeyDown = (event) => {
       if (event.key === "Escape") setPreviewOpen(false);
     };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [previewOpen]);
+
+  useEffect(() => {
+    if (!paletteOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setPaletteOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [paletteOpen]);
 
   const openShare = () => {
     if (!form.publicKey) {
@@ -799,16 +808,19 @@ export default function FormEditorPage({ formId, user, onBack }) {
           <button type="button" onClick={openShare} className="ml-1 flex-1 rounded-full px-3 py-2 text-xs font-semibold text-white" style={{ backgroundColor: accent }}>공유</button>
         </div>
         {paletteOpen && (
-          <div className="absolute right-3 top-[6.5rem] z-30 w-[min(18rem,calc(100vw-1.5rem))] rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-3 shadow-[0_8px_24px_rgba(23,37,31,0.14)] sm:hidden">
-            <div className="mb-2 text-xs font-semibold text-[#59645E]">테마 색상</div>
-            <div className="mb-3 grid grid-cols-8 gap-2">
-              {PALETTE_SWATCHES.map((c) => <button key={c} type="button" aria-label={`강조색 ${c}`} onClick={() => { updateForm((f) => ({ ...f, accentColor: c })); setPaletteOpen(false); }} className="h-7 w-7 rounded-full border border-white ring-1 ring-[#DDE1D9]" style={{ backgroundColor: c }} />)}
+          <>
+            <div className="fixed inset-0 z-20 sm:hidden" aria-hidden="true" onMouseDown={() => setPaletteOpen(false)} />
+            <div role="dialog" aria-label="테마 색상" onMouseDown={(event) => event.stopPropagation()} className="absolute right-3 top-[6.5rem] z-30 w-[min(18rem,calc(100vw-1.5rem))] rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-3 shadow-[0_8px_24px_rgba(23,37,31,0.14)] sm:hidden">
+              <div className="mb-2 text-xs font-semibold text-[#59645E]">테마 색상</div>
+              <div className="mb-3 grid grid-cols-8 gap-2">
+                {PALETTE_SWATCHES.map((c) => <button key={c} type="button" aria-label={`강조색 ${c}`} onClick={() => { updateForm((f) => ({ ...f, accentColor: c })); setPaletteOpen(false); }} className="h-7 w-7 rounded-full border border-white ring-1 ring-[#DDE1D9]" style={{ backgroundColor: c }} />)}
+              </div>
+              <div className="grid grid-cols-2 gap-2 border-t border-[#F0EEE6] pt-3">
+                <label className="flex items-center justify-between gap-2 text-xs text-[#59645E]">강조색<input type="color" value={accent} onChange={(e) => updateForm((f) => ({ ...f, accentColor: e.target.value }))} className="h-8 w-10" /></label>
+                <label className="flex items-center justify-between gap-2 text-xs text-[#59645E]">배경색<input type="color" value={form.backgroundColor || "#F5F3EC"} onChange={(e) => updateForm((f) => ({ ...f, backgroundColor: e.target.value }))} className="h-8 w-10" /></label>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 border-t border-[#F0EEE6] pt-3">
-              <label className="flex items-center justify-between gap-2 text-xs text-[#59645E]">강조색<input type="color" value={accent} onChange={(e) => updateForm((f) => ({ ...f, accentColor: e.target.value }))} className="h-8 w-10" /></label>
-              <label className="flex items-center justify-between gap-2 text-xs text-[#59645E]">배경색<input type="color" value={form.backgroundColor || "#F5F3EC"} onChange={(e) => updateForm((f) => ({ ...f, backgroundColor: e.target.value }))} className="h-8 w-10" /></label>
-            </div>
-          </div>
+          </>
         )}
         <div className="mx-auto flex max-w-4xl justify-center gap-4 border-t border-[#DDE1D9] px-3 sm:gap-8 sm:px-4">
           {tabs.map((t) => (

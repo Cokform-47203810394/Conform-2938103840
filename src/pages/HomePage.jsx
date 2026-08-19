@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronRight, X, Mail } from "lucide-react";
 import AuthControl from "../components/AuthControl";
 import { signInWithGoogle } from "../lib/auth";
@@ -48,6 +48,8 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
   const [notice, setNotice] = useState(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const searchPanelRef = useRef(null);
+  const notificationsPanelRef = useRef(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -63,6 +65,24 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
   useEffect(() => {
     refresh();
   }, [user?.id]);
+
+  useEffect(() => {
+    const dismissFloatingPanels = (event) => {
+      if (!searchPanelRef.current?.contains(event.target)) setSearchFocused(false);
+      if (!notificationsPanelRef.current?.contains(event.target)) setNotificationsOpen(false);
+    };
+    const dismissWithEscape = (event) => {
+      if (event.key !== "Escape") return;
+      setSearchFocused(false);
+      setNotificationsOpen(false);
+    };
+    document.addEventListener("mousedown", dismissFloatingPanels);
+    window.addEventListener("keydown", dismissWithEscape);
+    return () => {
+      document.removeEventListener("mousedown", dismissFloatingPanels);
+      window.removeEventListener("keydown", dismissWithEscape);
+    };
+  }, []);
 
   const openParticipatedForm = (id) => {
     window.location.href = `${window.location.origin}/?respond=${encodeURIComponent(id)}`;
@@ -171,7 +191,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             />
           </div>
 
-          <div className="order-3 relative w-full basis-full sm:order-2 sm:mx-auto sm:max-w-xl sm:flex-1 sm:basis-auto">
+          <div ref={searchPanelRef} className="order-3 relative w-full basis-full sm:order-2 sm:mx-auto sm:max-w-xl sm:flex-1 sm:basis-auto">
             <Search size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#17866D]" />
             <input
               value={query}
@@ -195,8 +215,8 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
           </div>
 
           <div className="order-2 ml-auto flex shrink-0 items-center gap-1.5 sm:order-3">
-            <div className="relative">
-              <button onClick={() => setNotificationsOpen((v) => !v)} title="응답 알림" className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition hover:bg-[#D8F5E8] hover:text-[#0B4D3D]">
+            <div ref={notificationsPanelRef} className="relative">
+              <button onClick={() => { setNotificationsOpen((v) => !v); setSearchFocused(false); }} title="응답 알림" className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#59645E] transition hover:bg-[#D8F5E8] hover:text-[#0B4D3D]">
                 <Bell size={19} />
                 {unreadNotificationCount > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#D85B4A] ring-2 ring-[#FFFDF8]" />}
               </button>

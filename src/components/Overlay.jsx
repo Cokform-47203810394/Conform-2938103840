@@ -1,10 +1,25 @@
+import { useEffect } from "react";
 import { X } from "lucide-react";
 
+function useEscapeDismiss(onClose) {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+}
+
 export function Popover({ onClose, children, width = "w-72" }) {
+  useEscapeDismiss(onClose);
   return (
     <>
-      <div className="fixed inset-0 z-30" onClick={onClose} />
+      <div className="fixed inset-0 z-30" aria-hidden="true" onMouseDown={onClose} />
       <div
+        role="dialog"
+        aria-label="메뉴"
+        onMouseDown={(event) => event.stopPropagation()}
         className={`absolute right-0 top-12 z-40 ${width} overflow-hidden rounded-xl bg-white p-4 shadow-[0_4px_8px_3px_rgba(0,0,0,0.15),0_1px_3px_rgba(0,0,0,0.3)]`}
       >
         {children}
@@ -14,6 +29,7 @@ export function Popover({ onClose, children, width = "w-72" }) {
 }
 
 export function Modal({ title, onClose, children }) {
+  useEscapeDismiss(onClose);
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onMouseDown={onClose}>
       <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl" onMouseDown={(event) => event.stopPropagation()}>
