@@ -48,7 +48,15 @@ import AuthControl from "../components/AuthControl";
 import QuickAddToolbar from "../components/QuickAddToolbar";
 
 const PALETTE_SWATCHES = [MD.primary, ...CHART_PALETTE.filter((c) => c !== MD.primary), NAVER_GREEN];
-const BACKGROUND_SWATCHES = ["#F5F3EC", "#FFFDF8", "#FFF2E8", "#EAF6EF", "#EAF1FB", "#FCEFEF"];
+const BACKGROUND_SWATCHES = ["#F5F3EC", "#FFFDF8", "#FFF2E8", "#EAF6EF", "#FCEFEF"];
+
+function matchesPublicKey(left, right) {
+  return Boolean(left && right)
+    && left.kty === right.kty
+    && left.crv === right.crv
+    && left.x === right.x
+    && left.y === right.y;
+}
 
 function formatVersionDate(value) {
   if (!value) return "저장 시각 없음";
@@ -107,6 +115,10 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const finishSecureLoad = useCallback(async (keyPair) => {
     const doc = await getFormDoc(formId);
     let nextForm = normalizeForm(doc?.form);
+    if (nextForm.publicKey && !matchesPublicKey(nextForm.publicKey, keyPair.publicJwk)) {
+      lockFormKeyVault(formId);
+      throw new Error("이 기기의 개인키가 이 폼의 암호화 키와 일치하지 않습니다. 새 금고를 만들지 말고 기존 암호화 키 백업 또는 전체 복구 번들을 가져와 주세요.");
+    }
     if (!nextForm.publicKey) nextForm = { ...nextForm, publicKey: keyPair.publicJwk };
     formRef.current = nextForm;
     setForm(nextForm);
@@ -147,6 +159,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
       let keyPair;
       const needsSetup = ["setup_required", "legacy_unprotected"].includes(keyVaultState);
       if (needsSetup) {
+        if (formRef.current?.publicKey) {
+          throw new Error("이 폼은 이미 암호화 공개키를 사용 중입니다. 기존 응답을 잃지 않으려면 새 금고를 만들지 말고 암호화 키 백업 또는 전체 복구 번들을 가져와 주세요.");
+        }
         if (recoveryPassphrase !== recoveryPassphraseConfirm) {
           throw new Error("복구 비밀번호가 서로 다릅니다.");
         }
