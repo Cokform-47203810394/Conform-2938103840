@@ -579,6 +579,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const coverImageSrc = sanitizeImageSource(form.coverImage?.src);
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}?respond=${formId}` : "";
   const privacyAudit = analyzePrivacyRisk(form);
+  const needsExistingKeyRecovery = keyVaultState === "setup_required" && Boolean(form.publicKey);
   const privacyAuditSignals = Object.values(privacyAudit.signals.reduce((grouped, signal) => {
     const key = `${signal.level}:${signal.code}:${signal.message}`;
     if (!grouped[key]) grouped[key] = { ...signal, count: 0 };
@@ -1226,21 +1227,25 @@ export default function FormEditorPage({ formId, user, onBack }) {
             </div>
 
             {keyVaultState === "legacy_unprotected" && <p className="rounded-lg bg-[#FFF4E5] px-3 py-2.5 text-xs leading-5 text-[#8A4B08]">기존 개인키가 안전하지 않은 브라우저 저장소에 있습니다. 계속하면 평문 키를 삭제하고 암호화 금고로 옮깁니다.</p>}
-            {keyVaultState === "setup_required" && <p className="text-xs leading-5 text-[#59645E]">이 폼은 아직 개인키가 없습니다. 복구 비밀번호를 만들면 공개키와 개인키를 생성하고, 이후 응답은 이 키로만 복호화할 수 있습니다.</p>}
+            {needsExistingKeyRecovery ? (
+              <p className="rounded-lg border border-[#E7A29D] bg-[#FFF6F5] px-3 py-2.5 text-xs leading-5 text-[#8C1D18]">이 폼은 이미 암호화된 응답을 받고 있지만 이 기기에 개인키가 없습니다. <strong>새 금고를 만들면 기존 응답을 열 수 없으므로</strong> 암호화 키 백업 또는 전체 복구 번들을 가져와 주세요.</p>
+            ) : keyVaultState === "setup_required" ? (
+              <p className="text-xs leading-5 text-[#59645E]">이 폼은 아직 개인키가 없습니다. 복구 비밀번호를 만들면 공개키와 개인키를 생성하고, 이후 응답은 이 키로만 복호화할 수 있습니다.</p>
+            ) : null}
             {keyVaultState === "locked" && <p className="text-xs leading-5 text-[#59645E]">응답과 암호화된 버전 기록을 보려면 복구 비밀번호로 이 기기의 개인키 금고를 열어야 합니다.</p>}
 
             <label className="block text-xs font-semibold text-[#355C45]">
-              {keyVaultState === "setup_required" || keyVaultState === "legacy_unprotected" ? "새 복구 비밀번호" : "복구 비밀번호"}
+              {needsExistingKeyRecovery ? "전체 복구 번들 비밀번호" : keyVaultState === "setup_required" || keyVaultState === "legacy_unprotected" ? "새 복구 비밀번호" : "복구 비밀번호"}
               <input
                 type="password"
-                autoComplete={["setup_required", "legacy_unprotected"].includes(keyVaultState) ? "new-password" : "current-password"}
+                autoComplete={!needsExistingKeyRecovery && ["setup_required", "legacy_unprotected"].includes(keyVaultState) ? "new-password" : "current-password"}
                 value={recoveryPassphrase}
                 onChange={(event) => setRecoveryPassphrase(event.target.value)}
                 placeholder="12자 이상, 다른 서비스와 다른 문구"
                 className="mt-1.5 w-full rounded-lg border border-[#C9CEC6] bg-white px-3 py-2.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]"
               />
             </label>
-            {["setup_required", "legacy_unprotected"].includes(keyVaultState) && (
+            {!needsExistingKeyRecovery && ["setup_required", "legacy_unprotected"].includes(keyVaultState) && (
               <label className="block text-xs font-semibold text-[#355C45]">
                 복구 비밀번호 다시 입력
                 <input
@@ -1259,7 +1264,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
               <button type="button" onClick={() => recoveryBundleInputRef.current?.click()} disabled={keyVaultBusy || !recoveryPassphrase} className="inline-flex items-center gap-1.5 rounded-full border border-[#C9CEC6] bg-white px-3 py-2 text-xs font-semibold text-[#59645E] hover:bg-[#F5F3EC] disabled:opacity-50"><Upload size={13} /> 전체 복구 가져오기</button>
               <button type="button" onClick={() => keyBackupInputRef.current?.click()} disabled={keyVaultBusy} className="inline-flex items-center gap-1.5 rounded-full border border-[#C9CEC6] bg-white px-3 py-2 text-xs font-semibold text-[#59645E] hover:bg-[#F5F3EC] disabled:opacity-50"><Upload size={13} /> 키 백업 가져오기</button>
               {keyVaultState === "unlocked" && <button type="button" onClick={downloadRecoveryBundle} disabled={keyVaultBusy || !recoveryPassphrase} className="inline-flex items-center gap-1.5 rounded-full border border-[#B7DCC8] bg-white px-3 py-2 text-xs font-semibold text-[#0B4D3D] hover:bg-[#EAF6EF] disabled:opacity-50"><Download size={13} /> 전체 복구 번들</button>}
-              <button type="button" onClick={handleKeyVaultUnlock} disabled={keyVaultBusy || !recoveryPassphrase} className="inline-flex items-center gap-1.5 rounded-full bg-[#17866D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0F705B] disabled:cursor-wait disabled:opacity-60"><LockKeyhole size={13} /> {keyVaultBusy ? "보호 중…" : ["setup_required", "legacy_unprotected"].includes(keyVaultState) ? "금고 만들기" : "금고 열기"}</button>
+              {!needsExistingKeyRecovery && <button type="button" onClick={handleKeyVaultUnlock} disabled={keyVaultBusy || !recoveryPassphrase} className="inline-flex items-center gap-1.5 rounded-full bg-[#17866D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0F705B] disabled:cursor-wait disabled:opacity-60"><LockKeyhole size={13} /> {keyVaultBusy ? "보호 중…" : ["setup_required", "legacy_unprotected"].includes(keyVaultState) ? "금고 만들기" : "금고 열기"}</button>}
             </div>
             <input ref={recoveryBundleInputRef} type="file" accept="application/json,.cokform-recovery.json" className="sr-only" onChange={(event) => handleRecoveryBundleImport(event.target.files?.[0])} />
             <p className="text-[11px] leading-5 text-[#78837C]">`.cokform-recovery.json`에는 개인키 금고와 응답 암호문·폼·버전이 모두 다시 암호화되어 들어갑니다. 복구 비밀번호와 파일은 서로 다른 안전한 곳에 보관하세요.</p>
