@@ -11,6 +11,7 @@ const DocsDetailPage = lazy(() => import("./pages/DocsDetailPage"));
 const ResourcesPage = lazy(() => import("./pages/ResourcesPage"));
 const InternationalTransferPage = lazy(() => import("./pages/InternationalTransferPage"));
 const ServiceRestrictionsPage = lazy(() => import("./pages/ServiceRestrictionsPage"));
+const BusinessInfoPage = lazy(() => import("./pages/BusinessInfoPage"));
 import AuthControl from "./components/AuthControl";
 import { subscribeAuth } from "./lib/auth";
 import { ArrowLeft } from "lucide-react";
@@ -21,7 +22,7 @@ function PageLoading() {
 }
 
 function getQueryMode() {
-  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false };
+  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false };
   const params = new URLSearchParams(window.location.search);
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
   return {
@@ -34,13 +35,14 @@ function getQueryMode() {
     resources: pathname === "/resources",
     internationalTransfer: pathname === "/international-transfer",
     serviceRestrictions: pathname === "/service-restrictions",
+    businessInfo: pathname === "/business-info",
   };
 }
 
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const { respond: respondFormId, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions } = getQueryMode();
+  const { respond: respondFormId, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
   if (privacy) return <Suspense fallback={<PageLoading />}><PrivacyPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (terms) return <Suspense fallback={<PageLoading />}><TermsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
@@ -50,6 +52,7 @@ export default function App() {
   if (resources) return <Suspense fallback={<PageLoading />}><ResourcesPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (internationalTransfer) return <Suspense fallback={<PageLoading />}><InternationalTransferPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (serviceRestrictions) return <Suspense fallback={<PageLoading />}><ServiceRestrictionsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
+  if (businessInfo) return <Suspense fallback={<PageLoading />}><BusinessInfoPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   return <Builder />;
 }
 

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BookOpen, ChevronRight, FileText, Globe2, LockKeyhole, MessageCircleQuestion, Palette, ShieldCheck, ShieldOff } from "lucide-react";
+import { BookOpen, Building2, ChevronRight, FileText, Globe2, LockKeyhole, MessageCircleQuestion, Palette, ShieldCheck, ShieldOff } from "lucide-react";
 import { DocumentCard, PublicPageShell } from "../components/PublicPageShell";
 
 const groups = [
@@ -21,6 +21,7 @@ const groups = [
       { title: "개인정보 국외이전 안내", description: "국내 저장 구조와 조건부 외부 연동의 해외 처리 가능성을 확인합니다.", href: "/international-transfer", icon: Globe2 },
       { title: "서비스 이용제한 정책", description: "금지행위, 비례적 조치, 이의제기와 보안 제보 기준을 안내합니다.", href: "/service-restrictions", icon: ShieldOff },
       { title: "이용약관", description: "서비스 이용과 운영 기준을 안내합니다.", href: "/terms", icon: FileText },
+      { title: "사업자 안내", description: "현재 운영 단계와 사업자 정보 공개 상태, 공식 문의 경로를 안내합니다.", href: "/business-info", icon: Building2 },
     ],
   },
 ];

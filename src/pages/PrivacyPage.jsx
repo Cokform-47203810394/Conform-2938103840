@@ -53,7 +53,7 @@ export default function PrivacyPage({ onBack }) {
       <section id="rights" className="scroll-mt-8 pt-3">
         <DocumentCard tone="success">
           <h2 className="font-semibold text-[#0B4D3D]">국외 처리와 권리 행사</h2>
-          <p className="mt-2 text-sm leading-6">국내 저장 구조와 Cloudflare·Google 선택 연동의 해외 처리 가능성은 <a href="/international-transfer" className="font-semibold underline underline-offset-2">개인정보 국외이전 안내</a>에서 확인하세요.</p>
+          <p className="mt-2 text-sm leading-6">국내 저장 구조와 Cloudflare·Google 선택 연동의 해외 처리 가능성은 <a href="/international-transfer" className="font-semibold underline underline-offset-2">개인정보 국외이전 안내</a>에서, 현재 운영 단계와 사업자 정보 공개 상태는 <a href="/business-info" className="font-semibold underline underline-offset-2">사업자 안내</a>에서 확인하세요.</p>
           <p className="mt-2 text-sm leading-6">콕폼 계정·서비스 운영 정보에 대한 문의는 위 문의처로, 응답 원문에 대한 열람·정정·삭제 요청은 해당 폼 운영자에게 해주세요. 콕폼은 암호화된 응답 원문을 복호화할 수 없습니다.</p>
         </DocumentCard>
         <p className="mt-5 text-xs leading-5 text-[#78837C]">시행일: 2026년 8월 18일 · 문서 변경 시 시행일과 변경 내용을 이 페이지에 기록합니다.</p>

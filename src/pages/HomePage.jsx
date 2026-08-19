@@ -441,6 +441,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
                 <a href="/international-transfer" className="transition hover:text-[#D8ED59]">개인정보 국외이전 안내</a>
                 <a href="/service-restrictions" className="transition hover:text-[#D8ED59]">서비스 이용제한 정책</a>
                 <a href="/terms" className="transition hover:text-[#D8ED59]">이용약관</a>
+                <a href="/business-info" className="transition hover:text-[#D8ED59]">사업자 안내</a>
                 <a href="/sitemap" className="transition hover:text-[#D8ED59]">사이트맵</a>
               </div>
             </nav>
