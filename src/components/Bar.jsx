@@ -6,7 +6,7 @@ export default function Bar({ label, count, max, color }) {
     <div className="mb-2">
       <div className="mb-1 flex items-center justify-between text-xs text-[#59645E]">
         <span>{label}</span>
-        <span className="font-mono">{count}</span>
+        <span className="cok-number">{count}</span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-[#E7E5DC]">
         <div

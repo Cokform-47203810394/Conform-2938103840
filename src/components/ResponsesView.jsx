@@ -174,10 +174,10 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className={`flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`}>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-y border-[#DDE1D9] py-4 sm:py-5">
         <div>
-          <div className="font-mono text-2xl font-bold text-[#17251F]">{responses.length}</div>
-          <div className="text-xs text-[#78837C]">개 응답</div>
+          <div className="cok-number text-2xl font-medium text-[#17251F]">{responses.length}</div>
+          <div className="text-xs font-normal text-[#78837C]">개 응답</div>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -227,7 +227,7 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
         <button type="button" role="tab" aria-selected={view === "individual"} onClick={() => setView("individual")} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${view === "individual" ? "bg-[#EAF6EF] text-[#0B4D3D]" : "text-[#78837C] hover:bg-[#F5F3EC]"}`}>개별 응답</button>
       </div>
 
-      <div className="grid gap-2 rounded-xl border border-[#DDE1D9] bg-white p-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
+      <div className="grid gap-2 border-y border-[#DDE1D9] py-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
         <label className="relative block">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#78837C]" />
           <input value={responseQuery} onChange={(event) => setResponseQuery(event.target.value)} placeholder="이름, 이메일, 답변 내용으로 검색" className="w-full rounded-lg border border-[#C9CEC6] bg-[#FFFDF8] py-2 pl-9 pr-3 text-sm text-[#17251F] outline-none focus:border-[#17866D]" />
@@ -241,13 +241,13 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
 
       {view === "summary" && (
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className={`rounded-xl bg-white p-4 ${ELEV1}`}><div className="text-xs font-medium text-[#78837C]">전체 응답</div><div className="mt-1 font-mono text-2xl font-bold text-[#17251F]">{responses.length}</div></div>
-            <div className={`rounded-xl bg-white p-4 ${ELEV1}`}><div className="text-xs font-medium text-[#78837C]">기록된 이메일</div><div className="mt-1 font-mono text-2xl font-bold text-[#17251F]">{recordedEmailCount}</div></div>
-            <button type="button" onClick={() => setView("individual")} className={`rounded-xl bg-[#EAF6EF] p-4 text-left transition-colors hover:bg-[#DDF1E5] ${ELEV1}`}><div className="text-xs font-medium text-[#355C45]">응답 원문 확인</div><div className="mt-1 text-sm font-semibold text-[#0B4D3D]">개별 응답 보기 →</div></button>
+          <div className="grid border-y border-[#DDE1D9] sm:grid-cols-3">
+            <div className="border-b border-[#DDE1D9] px-4 py-4 sm:border-b-0 sm:border-r"><div className="text-xs font-normal text-[#78837C]">전체 응답</div><div className="cok-number mt-2 text-2xl font-medium text-[#17251F]">{responses.length}</div></div>
+            <div className="border-b border-[#DDE1D9] px-4 py-4 sm:border-b-0 sm:border-r"><div className="text-xs font-normal text-[#78837C]">기록된 이메일</div><div className="cok-number mt-2 text-2xl font-medium text-[#17251F]">{recordedEmailCount}</div></div>
+            <button type="button" onClick={() => setView("individual")} className="px-4 py-4 text-left transition-colors hover:bg-[#EAF6EF]"><div className="text-xs font-normal text-[#355C45]">응답 원문 확인</div><div className="mt-2 text-sm font-medium text-[#0B4D3D]">개별 응답 보기 →</div></button>
           </div>
-          <section className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`}>
-            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-[#17251F]">최근 응답</h3><p className="mt-1 text-xs text-[#78837C]">응답자를 선택하면 모든 답변을 바로 확인할 수 있어요.</p></div><button type="button" onClick={() => setView("individual")} className="text-xs font-semibold text-[#0B4D3D] underline underline-offset-2">전체 보기</button></div>
+          <section className="border-t-2 border-[#B8C5BA] px-1 py-4 sm:py-5">
+            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-medium text-[#17251F]">최근 응답</h3><p className="mt-1 text-xs text-[#78837C]">응답자를 선택하면 모든 답변을 바로 확인할 수 있어요.</p></div><button type="button" onClick={() => setView("individual")} className="text-xs font-semibold text-[#0B4D3D] underline underline-offset-2">전체 보기</button></div>
             <div className="divide-y divide-[#F0EEE6]">
               {recentResponses.map((response) => <button key={response.id} type="button" onClick={() => selectResponse(response.id)} className="flex w-full items-center justify-between gap-3 px-1 py-3 text-left transition-colors hover:bg-[#F8F9F4]"><span className="min-w-0"><span className="block truncate text-sm font-medium text-[#17251F]">{response.answers?._cokform_email || "이메일을 기록하지 않은 응답"}</span><span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[#78837C]">{formatSubmittedAt(response.submittedAt)} <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${workflowClass(response.status || "new")}`}>{workflowLabel(response.status || "new")}</span></span></span><ChevronRight size={16} className="shrink-0 text-[#78837C]" /></button>)}
             </div>
@@ -261,7 +261,7 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
           {responseQuestions.map((question) => {
             const values = responses.map((response) => response.answers[question.id]).filter((value) => value !== undefined && value !== "");
             return (
-              <div key={question.id} className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1}`} style={{ borderLeft: `4px solid ${TYPE_COLORS[question.type] || MD.primary}` }}>
+              <div key={question.id} className="border-t-2 bg-[#FFFDF8] p-4 sm:p-5" style={{ borderTopColor: TYPE_COLORS[question.type] || MD.primary }}>
                 <div className="mb-3 text-sm font-medium text-[#17251F]">{richTextToPlain(question.title) || "제목 없는 질문"}<span className="ml-2 text-xs font-normal text-[#78837C]">{TYPE_LABEL[question.type]}</span></div>
                 {["radio", "dropdown", "privacy_consent"].includes(question.type) && <div>{question.options.map((option, index) => <Bar key={option} label={option} count={values.filter((value) => value === option).length} max={responses.length} color={CHART_PALETTE[index % CHART_PALETTE.length]} />)}</div>}
                 {question.type === "checkbox" && <div>{question.options.map((option, index) => <Bar key={option} label={option} count={values.filter((value) => Array.isArray(value) && value.includes(option)).length} max={responses.length} color={CHART_PALETTE[index % CHART_PALETTE.length]} />)}</div>}

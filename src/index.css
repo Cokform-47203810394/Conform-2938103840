@@ -51,6 +51,9 @@ body {
   min-width: 320px;
   background: #f5f3ec;
   font-family: "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif;
+  font-kerning: normal;
+  font-variant-numeric: proportional-nums;
+  font-feature-settings: "kern" 1, "tnum" 0;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -72,22 +75,38 @@ button {
 
 @layer components {
   .cok-eyebrow {
-    @apply text-[11px] font-bold uppercase tracking-[0.18em] text-[#17866D];
+    @apply text-[11px] font-medium tracking-[0.06em] text-[#17866D];
   }
 
   .cok-display {
-    @apply text-3xl font-semibold tracking-[-0.04em] text-[#17251F] sm:text-4xl;
+    @apply text-3xl font-bold tracking-[-0.045em] text-[#17251F] sm:text-4xl;
   }
 
   .cok-button-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#17866D] px-5 py-3 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(23,37,31,0.12)] transition-colors duration-150 hover:bg-[#0F705B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/45 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#17866D] px-5 py-3 text-sm font-medium text-white transition-colors duration-150 hover:bg-[#0F705B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/45 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .cok-button-soft {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#D8F5E8] px-4 py-2.5 text-sm font-semibold text-[#0B4D3D] transition-colors duration-150 hover:bg-[#BCEBD7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/40;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#D8F5E8] px-4 py-2.5 text-sm font-medium text-[#0B4D3D] transition-colors duration-150 hover:bg-[#BCEBD7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/40;
+  }
+
+  .cok-card {
+    @apply border border-[#DDE1D9] bg-[#FFFDF8] shadow-none;
+    border-radius: 12px;
+  }
+
+  .cok-card-interactive {
+    @apply transition-colors duration-150 hover:border-[#A8CABB] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/40;
+  }
+
+  .cok-number {
+    font-family: "Pretendard Variable", "Pretendard", "Noto Sans KR", sans-serif;
+    font-variant-numeric: proportional-nums;
+    font-feature-settings: "kern" 1, "tnum" 0;
+    letter-spacing: -0.025em;
   }
 
   .export-button {
-    @apply inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-[#DDE1D9] bg-white px-2.5 py-2 text-xs font-semibold text-[#59645E] transition-colors duration-150 hover:border-[#B7DCC8] hover:bg-[#F0FAF6] hover:text-[#0B4D3D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/40 disabled:cursor-wait disabled:opacity-55;
+    @apply inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-[#DDE1D9] bg-white px-2.5 py-2 text-xs font-medium text-[#59645E] transition-colors duration-150 hover:border-[#B7DCC8] hover:bg-[#F0FAF6] hover:text-[#0B4D3D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/40 disabled:cursor-wait disabled:opacity-55;
   }
 }

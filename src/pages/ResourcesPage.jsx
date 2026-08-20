@@ -263,8 +263,8 @@ export default function ResourcesPage({ onBack }) {
             >
               <span className="h-12 w-12 shrink-0 rounded-xl border border-black/5" style={{ backgroundColor: hex }} />
               <div className="min-w-0">
-                <h3 className="font-semibold">{name}</h3>
-                <p className="mt-0.5 font-mono text-xs text-[#17866D]">{hex}</p>
+                <h3 className="font-medium">{name}</h3>
+                <p className="cok-number mt-0.5 text-xs text-[#17866D]">{hex}</p>
                 <p className="mt-1 text-xs text-[#78837C]">{usage}</p>
               </div>
             </article>

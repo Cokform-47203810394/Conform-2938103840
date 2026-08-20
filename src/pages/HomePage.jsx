@@ -487,7 +487,7 @@ function matchScore(title = "", keyword = "") {
 }
 
 function MetricCard({ label, value, suffix = "", icon }) {
-  return <div className="border-l border-[#DDE1D9] px-3 py-4 first:border-l-0 sm:px-4"><div className="flex items-center justify-between gap-2 text-[#17866D]"><span className="text-xs font-semibold text-[#78837C]">{label}</span>{icon}</div><div className="mt-4 text-2xl font-semibold tracking-[-0.04em] text-[#17251F]">{value.toLocaleString("ko-KR")}<span className="ml-1 text-xs font-medium text-[#78837C]">{suffix}</span></div></div>;
+  return <div className="border-l border-[#DDE1D9] px-3 py-4 first:border-l-0 sm:px-4"><div className="flex items-center justify-between gap-2 text-[#17866D]"><span className="text-xs font-normal text-[#78837C]">{label}</span>{icon}</div><div className="cok-number mt-4 text-2xl font-medium text-[#17251F]">{value.toLocaleString("ko-KR")}<span className="ml-1 text-xs font-normal text-[#78837C]">{suffix}</span></div></div>;
 }
 
 function TemplateCarousel({ id, templates, onCreate, busy, creating }) {
@@ -546,7 +546,7 @@ function TemplateCarousel({ id, templates, onCreate, busy, creating }) {
     <div className="relative">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2" aria-label={`템플릿 ${activeIndex + 1} / ${templates.length}`}>
-          <span className="font-mono text-xs font-semibold text-[#0B4D3D]">{String(activeIndex + 1).padStart(2, "0")} / {String(templates.length).padStart(2, "0")}</span>
+          <span className="cok-number text-xs font-normal text-[#0B4D3D]">{String(activeIndex + 1).padStart(2, "0")} / {String(templates.length).padStart(2, "0")}</span>
           <div className="flex gap-1.5" aria-hidden="true">
             {templates.map((template, index) => <span key={template.key} className={`h-1.5 rounded-full transition-all duration-200 ${index === activeIndex ? "w-5 bg-[#17866D]" : "w-1.5 bg-[#C9CEC6]"}`} />)}
           </div>
@@ -596,13 +596,13 @@ function TemplateCard({ template: t, onCreate, busy, creating }) {
     >
       <div>
         <div className="flex items-start justify-between gap-3">
-          <span className="text-[15px] font-semibold leading-5 tracking-[-0.02em] text-[#17251F]">{t.label}</span>
+          <span className="text-[15px] font-medium leading-5 tracking-[-0.015em] text-[#17251F]">{t.label}</span>
           {t.blank ? <Plus size={21} strokeWidth={2.3} className="shrink-0" style={{ color: MD.primary }} /> : <ChevronRight size={18} className="mt-0.5 shrink-0 text-[#17866D] transition-transform group-hover:translate-x-0.5" />}
         </div>
         {t.segment && <p className="mt-2 text-xs leading-5 text-[#59645E]">{t.segment}</p>}
-        {!t.blank && <span className="mt-4 inline-flex w-fit border-b border-[#DDE1D9] pb-1 text-[11px] font-semibold text-[#59645E] transition-colors group-hover:border-[#17866D] group-hover:text-[#0B4D3D]">열어서 바꾸기</span>}
+        {!t.blank && <span className="mt-4 inline-flex w-fit border-b border-[#DDE1D9] pb-1 text-[11px] font-medium text-[#59645E] transition-colors group-hover:border-[#17866D] group-hover:text-[#0B4D3D]">열어서 바꾸기</span>}
       </div>
-      <div className="mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-medium text-[#78837C]">
+      <div className="mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-normal text-[#78837C]">
         {t.blank ? <span>처음부터 구성</span> : <><span>문항 {questionCount}개</span>{hasPrivacyGuide && <><span className="text-[#B8C5BA]">·</span><span>개인정보 안내</span></>}</>}
       </div>
     </button>

@@ -14,7 +14,7 @@ import {
 import { IconButton, Toggle } from "./Primitives";
 import RichTextInput from "./RichTextInput";
 import { QUESTION_TYPES, PRIVACY_TYPES, defaultQuestion } from "../questionTypes";
-import { MD, NAVER_GREEN, TYPE_COLORS, ELEV1, FIELD } from "../theme";
+import { MD, NAVER_GREEN, TYPE_COLORS, FIELD } from "../theme";
 
 export default function QuestionEditor({
   q,
@@ -60,8 +60,8 @@ export default function QuestionEditor({
       }}
       onMouseDown={onSelect}
       onFocusCapture={onSelect}
-      className={`rounded-[18px] bg-white p-4 transition-[box-shadow,border-color,transform] duration-150 sm:p-5 ${ELEV1} ${isDragging ? "opacity-40" : ""} ${isSelected ? "ring-2 ring-[#17866D]/20" : "border border-transparent hover:border-[#DDE1D9] hover:shadow-[0_6px_18px_rgba(23,37,31,0.08)]"}`}
-      style={{ borderLeft: `4px solid ${accent}` }}
+      className={`border-t-2 bg-[#FFFDF8] p-4 transition-[background-color,border-color] duration-150 sm:p-5 ${isDragging ? "opacity-40" : ""} ${isSelected ? "border-x border-b border-[#B7DCC8] bg-white" : "border-x border-b border-transparent hover:border-[#DDE1D9] hover:bg-white"}`}
+      style={{ borderTopColor: accent }}
     >
       <div
         onMouseDown={() => setDragHandleActive(true)}
@@ -73,7 +73,7 @@ export default function QuestionEditor({
       </div>
       <div className="mb-3 flex flex-wrap items-start gap-2 sm:gap-3">
         <span
-          className="mt-1 shrink-0 rounded-full px-2 py-0.5 font-mono text-xs font-semibold tracking-wider"
+          className="cok-number mt-1 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium tracking-[0.02em]"
           style={{ backgroundColor: `${accent}1F`, color: accent }}
         >
           Q{String(index + 1).padStart(2, "0")}
@@ -83,10 +83,10 @@ export default function QuestionEditor({
             value={q.title}
             onChange={(html) => update({ title: html })}
             placeholder="질문"
-            className={`${FIELD} min-w-[100px] flex-1 font-medium`}
+            className={`${FIELD} min-w-[100px] flex-1 font-normal`}
           />
         ) : (
-          <button type="button" onClick={onSelect} className="min-w-[100px] flex-1 truncate text-left text-sm font-medium text-[#17251F]">
+          <button type="button" onClick={onSelect} className="min-w-[100px] flex-1 truncate text-left text-sm font-normal text-[#17251F]">
             {String(q.title || "").replace(/<[^>]+>/g, "").trim() || "제목 없는 질문"}
           </button>
         )}
@@ -118,7 +118,7 @@ export default function QuestionEditor({
               </optgroup>
             </select>
           ) : (
-            <button type="button" onClick={onSelect} className="rounded-md bg-[#F5F3EC] px-2 py-1.5 text-xs font-medium text-[#59645E]">
+            <button type="button" onClick={onSelect} className="rounded-md bg-[#F5F3EC] px-2 py-1.5 text-xs font-normal text-[#59645E]">
               {questionTypeLabel(q.type)}
             </button>
           )}
@@ -128,7 +128,7 @@ export default function QuestionEditor({
       {!isSelected && (
         <button type="button" onClick={onSelect} className="ml-9 mt-1 flex w-[calc(100%-2.25rem)] items-center justify-between gap-3 rounded-lg bg-[#F8F9F4] px-3 py-2 text-left text-xs text-[#59645E] transition hover:bg-[#F0FAF6]">
           <span className="truncate">{questionSummary(q)}</span>
-          <span className="shrink-0 font-semibold text-[#17866D]">편집</span>
+          <span className="shrink-0 font-medium text-[#17866D]">편집</span>
         </button>
       )}
 

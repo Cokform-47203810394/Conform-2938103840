@@ -125,8 +125,8 @@ export default function DocsPage({ onBack }) {
                     <div className="mt-5 overflow-hidden rounded-xl border border-[#DDE1D9] bg-[#FFFDF8]">
                       {section.links.map((link, index) => (
                         <a key={link.title} href={link.href} className="group flex items-start gap-3 px-4 py-4 transition hover:bg-[#F1FAF4] sm:px-5">
-                          <span className="mt-0.5 font-mono text-xs font-semibold text-[#98A59C]">{String(index + 1).padStart(2, "0")}</span>
-                          <span className="min-w-0 flex-1"><span className="block text-base font-semibold tracking-[-0.02em] text-[#17251F]">{link.title}</span><span className="mt-1 block text-sm leading-6 text-[#59645E]">{link.body}</span><span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-[#0B4D3D] transition group-hover:text-[#17866D]">{link.action}<ChevronRight size={15} /></span></span>
+                          <span className="cok-number mt-0.5 text-xs font-medium text-[#98A59C]">{String(index + 1).padStart(2, "0")}</span>
+                          <span className="min-w-0 flex-1"><span className="block text-base font-medium tracking-[-0.015em] text-[#17251F]">{link.title}</span><span className="mt-1 block text-sm leading-6 text-[#59645E]">{link.body}</span><span className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[#0B4D3D] transition group-hover:text-[#17866D]">{link.action}<ChevronRight size={15} /></span></span>
                           <ChevronRight size={18} className="mt-1 shrink-0 text-[#A2AAA3] transition-transform group-hover:translate-x-0.5" />
                         </a>
                       ))}

@@ -922,7 +922,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
             >
               {t.label}
               {t.badge > 0 && (
-                <span className="rounded-full bg-[#D8ED59] px-1.5 font-mono text-[11px] font-semibold text-[#17251F]">{t.badge}</span>
+                <span className="cok-number rounded-full bg-[#D8ED59] px-1.5 text-[11px] font-medium text-[#17251F]">{t.badge}</span>
               )}
             </button>
           ))}
