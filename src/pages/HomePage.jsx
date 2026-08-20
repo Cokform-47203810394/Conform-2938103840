@@ -264,21 +264,21 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         <section className="mb-10 border-b border-[#DDE1D9] pb-7 sm:mb-12 sm:pb-9">
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
-              <p className="mb-2 text-xs font-bold tracking-[0.08em] text-[#17866D]">빠르게 시작</p>
-              <h1 className="cok-display mb-2">무엇을 만들까요?</h1>
-              <p className="max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">템플릿은 출발점일 뿐이에요. 질문, 순서, 조건, 디자인, 응답 기간을 내 방식으로 바꿔서 쓰세요.</p>
+              <p className="mb-2 text-xs font-bold tracking-[0.08em] text-[#17866D]">한국 실무용 폼</p>
+              <h1 className="cok-display mb-2">접수부터 마감까지,<br className="hidden sm:block" /> 내 방식대로.</h1>
+              <p className="max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">행사·교육·커뮤니티 신청을 받고, 필요한 질문과 동의·마감 조건만 내 운영 방식에 맞춰 더하세요.</p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
               <button type="button" onClick={() => handleCreate(TEMPLATES[0])} disabled={creating !== null} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#17866D] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#0F705B] active:scale-[0.97] disabled:cursor-wait disabled:opacity-60"><Plus size={17} /> 빈 양식으로 시작</button>
               {forms.length > 0 && <button type="button" onClick={handleDuplicateAndOpen} disabled={creating !== null} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#B7DCC8] bg-[#FFFDF8] px-4 py-2.5 text-sm font-semibold text-[#0B4D3D] transition hover:bg-[#EAF6EF] active:scale-[0.97] disabled:cursor-wait disabled:opacity-60"><Copy size={16} /> 내 폼 사본으로 시작</button>}
             </div>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#59645E]"><span className="rounded-full bg-[#EAF6EF] px-3 py-1.5">질문 유형 직접 선택</span><span className="rounded-full bg-[#EAF6EF] px-3 py-1.5">선택에 따른 질문 표시</span><span className="rounded-full bg-[#EAF6EF] px-3 py-1.5">색상·표지·응답 기간 설정</span></div>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#59645E]"><span className="rounded-full bg-[#EAF6EF] px-3 py-1.5">필요한 질문만 추가</span><span className="rounded-full bg-[#EAF6EF] px-3 py-1.5">선택에 따른 질문 표시</span><span className="rounded-full bg-[#EAF6EF] px-3 py-1.5">마감·동의·응답 기간 설정</span></div>
         </section>
 
         <section className="mb-12">
           <div className="mb-4 flex items-end justify-between gap-4">
-            <div><p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">기본 템플릿</p><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">바로 시작할 업무</h2></div>
+            <div><p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">신청·접수 양식</p><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">이번 운영에 바로 쓰기</h2></div>
             <span className="hidden text-xs text-[#78837C] sm:block">자동으로 넘기거나 직접 끌어서 볼 수 있어요</span>
           </div>
           <TemplateCarousel id="quick-templates" templates={TEMPLATES} onCreate={handleCreate} busy={creating !== null} creating={creating} />
@@ -286,7 +286,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
 
         <section className="mb-12">
           <div className="mb-4 flex items-end justify-between gap-4">
-            <div><p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">업무별 템플릿</p><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">조금 더 갖춰진 양식</h2></div>
+            <div><p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">운영용 양식</p><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">정보를 받고, 정리하기</h2></div>
             <span className="hidden text-xs text-[#78837C] sm:block">필요 없는 질문은 바로 지울 수 있어요</span>
           </div>
           <TemplateCarousel id="work-templates" templates={PREMIUM_TEMPLATES} onCreate={handleCreate} busy={creating !== null} creating={creating} />
