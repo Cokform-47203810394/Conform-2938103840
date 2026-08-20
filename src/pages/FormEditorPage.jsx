@@ -86,6 +86,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const [form, setForm] = useState(emptyForm());
   const [responses, setResponses] = useState([]);
   const [tab, setTab] = useState("edit");
+  const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [saveState, setSaveState] = useState("saved");
   const [confirmAction, setConfirmAction] = useState(null);
@@ -111,6 +112,16 @@ export default function FormEditorPage({ formId, user, onBack }) {
   useEffect(() => {
     formRef.current = form;
   }, [form]);
+
+  useEffect(() => {
+    if (!form.questions?.length) {
+      setSelectedQuestionId(null);
+      return;
+    }
+    if (!form.questions.some((question) => question.id === selectedQuestionId)) {
+      setSelectedQuestionId(form.questions[0].id);
+    }
+  }, [form.questions, selectedQuestionId]);
 
   const finishSecureLoad = useCallback(async (keyPair) => {
     const doc = await getFormDoc(formId);
@@ -436,13 +447,15 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setConfirmAction({ kind: "question", id, title: "질문 삭제", description: "이 질문을 삭제합니다. 저장 후에도 버전 기록에서 이전 상태를 확인할 수 있어요." });
   };
   const duplicateQuestion = (id) => {
+    const copyId = uid();
     updateForm((f) => {
       const idx = f.questions.findIndex((q) => q.id === id);
-      const copy = { ...f.questions[idx], id: uid() };
+      const copy = { ...f.questions[idx], id: copyId };
       const questions = [...f.questions];
       questions.splice(idx + 1, 0, copy);
       return { ...f, questions };
     });
+    setSelectedQuestionId(copyId);
   };
   const moveQuestion = (id, dir) => {
     updateForm((f) => {
@@ -455,7 +468,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
     });
   };
   const addQuestion = (type = "short") => {
-    updateForm((f) => ({ ...f, questions: [...f.questions, defaultQuestion(type)] }));
+    const question = defaultQuestion(type);
+    updateForm((f) => ({ ...f, questions: [...f.questions, question] }));
+    setSelectedQuestionId(question.id);
   };
 
   // ---- drag reorder (native HTML5 DnD, no extra dependency) ----
@@ -906,6 +921,8 @@ export default function FormEditorPage({ formId, user, onBack }) {
                     onDrop={handleDrop(i)}
                     onDragEnd={() => setDragIndex(null)}
                     isDragging={dragIndex === i}
+                    isSelected={selectedQuestionId === q.id}
+                    onSelect={() => setSelectedQuestionId(q.id)}
                   />
                 ))}
 

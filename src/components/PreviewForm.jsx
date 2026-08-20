@@ -154,38 +154,40 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
         )}
       </div>
       {form.settings?.privacyNotice && (
-        <div className="rounded-xl border border-[#B7DCC8] bg-[#F1FAF4] p-4 text-sm leading-6 text-[#355C45]" role="note">
-          <div className="font-semibold text-[#0B4D3D]">개인정보 수집 안내</div>
-          <p className="mt-1">
-            이 폼은 <strong>{form.settings.privacyPurpose || "설문 응답 접수 및 결과 분석"}</strong>을 위해 개인정보를 수집할 수 있습니다.
-            {form.settings.privacyItems ? ` 수집 항목은 ${form.settings.privacyItems}입니다.` : " 수집 항목과 입력 내용은 응답 전에 확인해 주세요."}
-            {` 응답 데이터는 ${form.settings.retentionDays ?? 180}일간 보관 후 파기됩니다.`}
-            {" 동의를 거부할 수 있으며, 거부 시 개인정보 수집이 필요한 응답 제출이 제한될 수 있습니다."}
-            {form.settings.privacyThirdParty
-              ? ` 제3자 제공: ${form.settings.privacyThirdPartyDetails || "제공 관련 세부 안내를 폼 작성자에게 확인해 주세요."}`
-              : " 제3자 제공은 별도 동의 없이 진행하지 않습니다."}
-            {form.settings.privacyOutsourcing
-              ? ` 처리 위탁: ${form.settings.privacyOutsourcingDetails || "위탁 관련 세부 안내를 폼 작성자에게 확인해 주세요."}`
-              : " 처리 위탁은 현재 설정되지 않았습니다."}
-          </p>
-          <a href="/privacy" target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold text-[#0B4D3D] underline underline-offset-2">콕폼 개인정보처리방침 보기</a>
-        </div>
+        <details className="rounded-xl border border-[#B7DCC8] bg-[#F7FCF8] text-sm text-[#355C45]" role="note">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 font-semibold text-[#0B4D3D] [&::-webkit-details-marker]:hidden">
+            <span>개인정보 수집 안내</span>
+            <span className="text-xs font-medium text-[#17866D]">제출 전 확인</span>
+          </summary>
+          <div className="border-t border-[#CDE9D8] px-4 pb-4 pt-3 leading-6">
+            <p>
+              이 폼은 <strong>{form.settings.privacyPurpose || "설문 응답 접수 및 결과 분석"}</strong>을 위해 개인정보를 수집할 수 있습니다.
+              {form.settings.privacyItems ? ` 수집 항목은 ${form.settings.privacyItems}입니다.` : " 수집 항목과 입력 내용은 응답 전에 확인해 주세요."}
+              {` 응답 데이터는 ${form.settings.retentionDays ?? 180}일간 보관 후 파기됩니다.`}
+              {" 동의를 거부할 수 있으며, 거부 시 개인정보 수집이 필요한 응답 제출이 제한될 수 있습니다."}
+              {form.settings.privacyThirdParty
+                ? ` 제3자 제공: ${form.settings.privacyThirdPartyDetails || "제공 관련 세부 안내를 폼 작성자에게 확인해 주세요."}`
+                : " 제3자 제공은 별도 동의 없이 진행하지 않습니다."}
+              {form.settings.privacyOutsourcing
+                ? ` 처리 위탁: ${form.settings.privacyOutsourcingDetails || "위탁 관련 세부 안내를 폼 작성자에게 확인해 주세요."}`
+                : " 처리 위탁은 현재 설정되지 않았습니다."}
+            </p>
+            <a href="/privacy" target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs font-semibold text-[#0B4D3D] underline underline-offset-2">콕폼 개인정보처리방침 보기</a>
+          </div>
+        </details>
       )}
       {form.settings?.collectEmail && (
-        <section className="overflow-hidden rounded-xl border border-[#B7DCC8] bg-white" aria-labelledby="email-record-title">
-          <div className="flex items-start gap-3 border-b border-[#CDE9D8] bg-[#F1FAF4] px-5 py-4 sm:px-6">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D8F5E8] text-[#0B4D3D]"><Mail size={16} /></span>
+        <section id="cokform-question-_cokform_email" className="rounded-xl border border-[#DDE1D9] bg-white p-5 sm:p-6" aria-labelledby="email-record-title">
+          <div className="mb-4 flex items-start gap-2.5">
+            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#EAF6EF] text-[#0B4D3D]"><Mail size={15} /></span>
             <div>
-              <div id="email-record-title" className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[#0B4D3D]">이 양식은 이메일 주소를 기록합니다 <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-[#0B4D3D] ring-1 ring-[#B7DCC8]">필수</span></div>
-              <p className="mt-1 text-xs leading-5 text-[#355C45]">제출한 이메일 주소는 응답과 함께 기록되며, 폼 작성자만 암호화된 응답에서 확인할 수 있어요.</p>
+              <div id="email-record-title" className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[#17251F]">이메일 주소 <span className="rounded-full bg-[#F1FAF4] px-2 py-0.5 text-[11px] font-bold text-[#0B4D3D]">필수</span></div>
+              <p className="mt-1 text-xs leading-5 text-[#59645E]">작성자만 암호화된 응답에서 확인합니다.</p>
             </div>
           </div>
-          <div id="cokform-question-_cokform_email" className="p-5 sm:p-6">
-            <label htmlFor="cokform-email" className="flex items-center gap-2 text-sm font-medium text-[#17251F]"><Mail size={16} className="text-[#17866D]" /> 이메일 주소</label>
-            <input id="cokform-email" type="email" required autoComplete="email" value={answers._cokform_email || ""} onChange={(e) => handleChange("_cokform_email", e.target.value)} placeholder="you@example.com" className={`mt-3 w-full rounded-lg border bg-[#FFFDF8] px-3 py-3 text-base outline-none focus:border-[#17866D] focus:ring-4 focus:ring-[#D8F5E8] ${errors._cokform_email ? "border-[#B3261E]" : "border-[#C9CEC6]"}`} />
-            {errors._cokform_email && <div className="mt-1 text-xs text-[#B3261E]">유효한 이메일 주소를 입력해주세요.</div>}
-            {form.settings?.responseReceipt && <label className="mt-3 flex items-center gap-2 text-xs text-[#59645E]"><input type="checkbox" checked={Boolean(answers._cokform_receipt)} onChange={(e) => handleChange("_cokform_receipt", e.target.checked)} /> 제출 후 내 응답 사본 받기</label>}
-          </div>
+          <input id="cokform-email" type="email" required autoComplete="email" value={answers._cokform_email || ""} onChange={(e) => handleChange("_cokform_email", e.target.value)} placeholder="you@example.com" className={`w-full rounded-lg border bg-[#FFFDF8] px-3 py-3 text-base outline-none focus:border-[#17866D] focus:ring-4 focus:ring-[#D8F5E8] ${errors._cokform_email ? "border-[#B3261E]" : "border-[#C9CEC6]"}`} />
+          {errors._cokform_email && <div className="mt-1 text-xs text-[#B3261E]">유효한 이메일 주소를 입력해주세요.</div>}
+          {form.settings?.responseReceipt && <label className="mt-3 flex items-center gap-2 text-xs text-[#59645E]"><input type="checkbox" checked={Boolean(answers._cokform_receipt)} onChange={(e) => handleChange("_cokform_receipt", e.target.checked)} /> 제출 후 내 응답 사본 받기</label>}
         </section>
       )}
       {errorItems.length > 0 && (

@@ -122,12 +122,13 @@ export default function DocsPage({ onBack }) {
                 return (
                   <section id={section.id} key={section.id} className="scroll-mt-24">
                     <div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF6EF] text-[#17866D]"><Icon size={20} /></span><div><p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">{section.label}</p><h2 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">{section.title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-[#59645E]">{section.description}</p></div></div>
-                    <div className="mt-5 grid gap-3 md:grid-cols-2">
-                      {section.links.map((link) => (
-                        <article key={link.title} className="rounded-xl border border-[#DDE1D9] bg-[#FFFDF8] p-5 transition hover:border-[#B7DCC8] hover:shadow-[0_8px_20px_rgba(23,37,31,0.06)]">
-                          <h3 className="text-base font-semibold tracking-[-0.02em] text-[#17251F]">{link.title}</h3><p className="mt-2 text-sm leading-6 text-[#59645E]">{link.body}</p>
-                          <a href={link.href} className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#0B4D3D] transition hover:text-[#17866D]">{link.action}<ChevronRight size={15} /></a>
-                        </article>
+                    <div className="mt-5 overflow-hidden rounded-xl border border-[#DDE1D9] bg-[#FFFDF8]">
+                      {section.links.map((link, index) => (
+                        <a key={link.title} href={link.href} className="group flex items-start gap-3 px-4 py-4 transition hover:bg-[#F1FAF4] sm:px-5">
+                          <span className="mt-0.5 font-mono text-xs font-semibold text-[#98A59C]">{String(index + 1).padStart(2, "0")}</span>
+                          <span className="min-w-0 flex-1"><span className="block text-base font-semibold tracking-[-0.02em] text-[#17251F]">{link.title}</span><span className="mt-1 block text-sm leading-6 text-[#59645E]">{link.body}</span><span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-[#0B4D3D] transition group-hover:text-[#17866D]">{link.action}<ChevronRight size={15} /></span></span>
+                          <ChevronRight size={18} className="mt-1 shrink-0 text-[#A2AAA3] transition-transform group-hover:translate-x-0.5" />
+                        </a>
                       ))}
                     </div>
                   </section>

@@ -29,6 +29,8 @@ export default function QuestionEditor({
   onDrop,
   onDragEnd,
   isDragging,
+  isSelected = false,
+  onSelect,
 }) {
   const [dragHandleActive, setDragHandleActive] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -56,7 +58,9 @@ export default function QuestionEditor({
         setDragHandleActive(false);
         onDragEnd?.();
       }}
-      className={`rounded-xl bg-white p-4 sm:p-5 ${ELEV1} ${isDragging ? "opacity-40" : ""}`}
+      onMouseDown={onSelect}
+      onFocusCapture={onSelect}
+      className={`rounded-[18px] bg-white p-4 transition-[box-shadow,border-color,transform] duration-150 sm:p-5 ${ELEV1} ${isDragging ? "opacity-40" : ""} ${isSelected ? "ring-2 ring-[#17866D]/20" : "border border-transparent hover:border-[#DDE1D9] hover:shadow-[0_6px_18px_rgba(23,37,31,0.08)]"}`}
       style={{ borderLeft: `4px solid ${accent}` }}
     >
       <div
@@ -109,8 +113,15 @@ export default function QuestionEditor({
         </div>
       </div>
 
+      {!isSelected && (
+        <button type="button" onClick={onSelect} className="ml-9 mt-1 flex w-[calc(100%-2.25rem)] items-center justify-between gap-3 rounded-lg bg-[#F8F9F4] px-3 py-2 text-left text-xs text-[#59645E] transition hover:bg-[#F0FAF6]">
+          <span className="truncate">{questionSummary(q)}</span>
+          <span className="shrink-0 font-semibold text-[#17866D]">편집</span>
+        </button>
+      )}
+
       {/* type-specific body */}
-      <div className="pl-4 sm:pl-9">
+      <div className={isSelected ? "pl-4 sm:pl-9" : "hidden"}>
         {(q.type === "radio" || q.type === "checkbox" || q.type === "dropdown") && (
           <div className="space-y-2">
             {q.options.map((opt, i) => (
@@ -308,7 +319,7 @@ export default function QuestionEditor({
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#E7E5DC] pt-3 pl-4 sm:pl-9">
+      <div className={`mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#E7E5DC] pt-3 pl-4 sm:pl-9 ${isSelected ? "" : "hidden"}`}>
         <div className="flex items-center gap-1">
           <IconButton title="복제" onClick={onDuplicate}>
             <Copy size={16} />
@@ -355,4 +366,16 @@ export default function QuestionEditor({
       </div>
     </div>
   );
+}
+
+function questionSummary(q) {
+  if (q.type === "section") return q.description || "섹션 안내를 작성하세요.";
+  if (q.type === "privacy_notice") return "개인정보 처리 안내 · 동의 없이 읽는 안내문";
+  if (q.type === "privacy_consent") return `개인정보 동의 · ${q.purpose || "수집 목적 설정 필요"}`;
+  if (["radio", "checkbox", "dropdown"].includes(q.type)) return `${q.options?.length || 0}개 선택지`;
+  if (q.type === "scale") return `${q.scaleMin} ~ ${q.scaleMax} 점 척도`;
+  if (q.type === "paragraph") return "긴 답변 입력";
+  if (q.type === "date") return "날짜 입력";
+  if (q.type === "time") return "시간 입력";
+  return "짧은 답변 입력";
 }
