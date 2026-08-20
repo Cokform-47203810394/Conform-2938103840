@@ -12,7 +12,7 @@ const COMMANDS = [
 // Lightweight rich-text field: contentEditable + document.execCommand for the four
 // formats Google Forms exposes. Deliberately not a full editor library — this is the
 // smallest thing that gives bold/italic/underline/strikethrough without a dependency.
-export default function RichTextInput({ value, onChange, placeholder, className = "" }) {
+export default function RichTextInput({ value, onChange, placeholder, className = "", editorId }) {
   const ref = useRef(null);
   const [focused, setFocused] = useState(false);
   const lastValue = useRef(value);
@@ -70,6 +70,7 @@ export default function RichTextInput({ value, onChange, placeholder, className 
         }}
         onInput={commit}
         data-placeholder={placeholder}
+        data-cokform-editor={editorId}
         className="outline-none empty:before:text-[#78837C] empty:before:content-[attr(data-placeholder)]"
       />
     </div>

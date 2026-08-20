@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Download,
   Upload,
+  MoreHorizontal,
 } from "lucide-react";
 import QuestionEditor from "../components/QuestionEditor";
 import RichTextInput from "../components/RichTextInput";
@@ -61,6 +62,47 @@ function matchesPublicKey(left, right) {
 function formatVersionDate(value) {
   if (!value) return "저장 시각 없음";
   return new Date(value).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function EmptyFormStarter({ onAddQuestion, onFocusPurpose, onBrowseCopies }) {
+  return (
+    <section className="border-y border-[#DDE1D9] bg-[#F7F6F0] px-4 py-6 sm:px-5">
+      <div className="max-w-xl">
+        <p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">빈 양식 시작</p>
+        <h2 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-[#17251F]">무엇부터 만들까요?</h2>
+        <p className="mt-2 text-sm leading-6 text-[#59645E]">처음부터 자유롭게 만들 수 있어요. 가장 가까운 한 가지부터 시작한 뒤 나머지는 필요할 때 추가하세요.</p>
+      </div>
+      <div className="mt-5 grid gap-2 sm:grid-cols-3">
+        <button type="button" onClick={onAddQuestion} className="border border-[#B7DCC8] bg-[#EAF6EF] px-4 py-3 text-left transition-colors hover:bg-[#D8F5E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]">
+          <span className="block text-sm font-semibold text-[#0B4D3D]">질문 하나 추가</span>
+          <span className="mt-1 block text-xs text-[#355C45]">이름, 연락처처럼 바로 묻기</span>
+        </button>
+        <button type="button" onClick={onFocusPurpose} className="border border-[#DDE1D9] bg-[#FFFDF8] px-4 py-3 text-left transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]">
+          <span className="block text-sm font-semibold text-[#17251F]">목적부터 적기</span>
+          <span className="mt-1 block text-xs text-[#59645E]">응답자에게 먼저 안내하기</span>
+        </button>
+        <button type="button" onClick={onBrowseCopies} className="border border-[#DDE1D9] bg-transparent px-4 py-3 text-left transition-colors hover:bg-[#EFEEE7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]">
+          <span className="block text-sm font-semibold text-[#17251F]">사본에서 시작</span>
+          <span className="mt-1 block text-xs text-[#59645E]">내가 만든 폼을 복제해 편집하기</span>
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function EditorToolsMenu({ onUndo, onRedo, onVersionHistory, onCopyLink, onCollaborators, onClose, undoDisabled, redoDisabled }) {
+  const itemClass = "flex w-full items-center gap-2 px-2.5 py-2 text-left text-sm text-[#17251F] transition-colors hover:bg-[#EFEEE7] disabled:cursor-not-allowed disabled:opacity-40";
+  return (
+    <div className="-mx-1 -my-1 min-w-[10.5rem] py-1">
+      <p className="px-2.5 pb-1 text-[11px] font-bold tracking-[0.08em] text-[#78837C]">더보기</p>
+      <button type="button" disabled={undoDisabled} onClick={() => { onUndo(); onClose(); }} className={itemClass}><Undo2 size={15} /> 실행 취소</button>
+      <button type="button" disabled={redoDisabled} onClick={() => { onRedo(); onClose(); }} className={itemClass}><Redo2 size={15} /> 다시 실행</button>
+      <div className="my-1 border-t border-[#E7E5DC]" />
+      <button type="button" onClick={() => { onVersionHistory(); onClose(); }} className={itemClass}><History size={15} /> 버전 기록</button>
+      <button type="button" onClick={() => { onCopyLink(); onClose(); }} className={itemClass}><LinkIcon size={15} /> 링크 복사</button>
+      <button type="button" onClick={() => { onCollaborators(); onClose(); }} className={itemClass}><UserPlus size={15} /> 공동작업자</button>
+    </div>
+  );
 }
 
 function versionReasonLabel(reason) {
@@ -473,6 +515,12 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setSelectedQuestionId(question.id);
   };
 
+  const focusFormPurpose = () => {
+    window.requestAnimationFrame(() => {
+      document.querySelector('[data-cokform-editor="description"]')?.focus();
+    });
+  };
+
   // ---- drag reorder (native HTML5 DnD, no extra dependency) ----
   const [dragIndex, setDragIndex] = useState(null);
   const handleDrop = (index) => (e) => {
@@ -578,6 +626,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   // ---- share / theme / collaborators ----
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
@@ -788,21 +837,25 @@ export default function FormEditorPage({ formId, user, onBack }) {
             <IconButton title="미리보기" onClick={openPreview}>
               <Eye size={18} />
             </IconButton>
-            <IconButton title="실행 취소" onClick={undo} disabled={past.length === 0}>
-              <Undo2 size={18} />
-            </IconButton>
-            <IconButton title="다시 실행" onClick={redo} disabled={future.length === 0}>
-              <Redo2 size={18} />
-            </IconButton>
-            <IconButton title="버전 기록" onClick={openVersionHistory}>
-              <History size={18} />
-            </IconButton>
-            <IconButton title="링크 복사" onClick={copyLink}>
-              <LinkIcon size={18} />
-            </IconButton>
-            <IconButton title="공동작업자" onClick={() => setCollabOpen(true)}>
-              <UserPlus size={18} />
-            </IconButton>
+            <div className="relative">
+              <IconButton title="더보기" onClick={() => { setPaletteOpen(false); setToolsOpen((v) => !v); }}>
+                <MoreHorizontal size={19} />
+              </IconButton>
+              {toolsOpen && (
+                <Popover onClose={() => setToolsOpen(false)} width="w-48">
+                  <EditorToolsMenu
+                    onUndo={undo}
+                    onRedo={redo}
+                    onVersionHistory={openVersionHistory}
+                    onCopyLink={copyLink}
+                    onCollaborators={() => setCollabOpen(true)}
+                    onClose={() => setToolsOpen(false)}
+                    undoDisabled={past.length === 0}
+                    redoDisabled={future.length === 0}
+                  />
+                </Popover>
+              )}
+            </div>
             <AuthControl user={user} showLogout={false} />
             <button
               onClick={openShare}
@@ -814,12 +867,25 @@ export default function FormEditorPage({ formId, user, onBack }) {
           </div>
         </div>
         <div className="flex items-center justify-between gap-1 border-t border-[#F0EEE6] px-3 py-1.5 sm:hidden">
-          <IconButton title="테마 색상" onClick={() => setPaletteOpen((v) => !v)}><Palette size={17} /></IconButton>
+          <IconButton title="테마 색상" onClick={() => { setToolsOpen(false); setPaletteOpen((v) => !v); }}><Palette size={17} /></IconButton>
           <IconButton title="미리보기" onClick={openPreview}><Eye size={17} /></IconButton>
-          <IconButton title="실행 취소" onClick={undo} disabled={past.length === 0}><Undo2 size={17} /></IconButton>
-          <IconButton title="다시 실행" onClick={redo} disabled={future.length === 0}><Redo2 size={17} /></IconButton>
-          <IconButton title="버전 기록" onClick={openVersionHistory}><History size={17} /></IconButton>
-          <IconButton title="링크 복사" onClick={copyLink}><LinkIcon size={17} /></IconButton>
+          <div className="relative">
+            <IconButton title="더보기" onClick={() => { setPaletteOpen(false); setToolsOpen((v) => !v); }}><MoreHorizontal size={18} /></IconButton>
+            {toolsOpen && (
+              <Popover onClose={() => setToolsOpen(false)} width="w-48">
+                <EditorToolsMenu
+                  onUndo={undo}
+                  onRedo={redo}
+                  onVersionHistory={openVersionHistory}
+                  onCopyLink={copyLink}
+                  onCollaborators={() => setCollabOpen(true)}
+                  onClose={() => setToolsOpen(false)}
+                  undoDisabled={past.length === 0}
+                  redoDisabled={future.length === 0}
+                />
+              </Popover>
+            )}
+          </div>
           <button type="button" onClick={openShare} className="ml-1 flex-1 rounded-full px-3 py-2 text-xs font-semibold text-white" style={{ backgroundColor: accent }}>공유</button>
         </div>
         {paletteOpen && (
@@ -870,12 +936,13 @@ export default function FormEditorPage({ formId, user, onBack }) {
           <>
             {tab === "edit" && (
               <div className="space-y-3 sm:space-y-4">
-                <QuickAddToolbar onAdd={addQuestion} />
+                {form.questions.length > 0 && <QuickAddToolbar onAdd={addQuestion} />}
                 <div className="rounded-xl border-t-8 bg-white p-4 sm:p-5" style={{ borderTopColor: accent, boxShadow: "0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)" }}>
                   <RichTextInput
                     value={form.description}
                     onChange={(html) => updateForm((f) => ({ ...f, description: html }))}
                     placeholder="이 폼으로 무엇을 알고 싶은지 적어보세요"
+                    editorId="description"
                     className="min-h-[2.5rem] w-full text-base text-[#59645E] sm:text-sm"
                   />
                   <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EEE6] pt-3">
@@ -905,6 +972,15 @@ export default function FormEditorPage({ formId, user, onBack }) {
                   </div>
                   <p className="mt-2 text-[11px] leading-5 text-[#78837C]">업로드 이미지는 최대 2MB이며 폼 데이터에 함께 저장돼요. 민감한 원본 이미지는 넣지 마세요.</p>
                 </div>
+
+                {form.questions.length === 0 && (
+                  <EmptyFormStarter
+                    accent={accent}
+                    onAddQuestion={() => addQuestion("short")}
+                    onFocusPurpose={focusFormPurpose}
+                    onBrowseCopies={onBack}
+                  />
+                )}
 
                 {form.questions.map((q, i) => (
                   <QuestionEditor
