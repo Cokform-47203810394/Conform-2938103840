@@ -6,7 +6,7 @@ import FormThumbnail from "../components/FormThumbnail";
 import { Modal } from "../components/Overlay";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
 import { listForms, listParticipatedForms, listOwnerNotifications, markOwnerNotificationsRead, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
-import { MD, TYPE_COLORS, ELEV1, ELEV1_HOVER } from "../theme";
+import { MD, ELEV1, ELEV1_HOVER } from "../theme";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
 import { getResponseWindowState } from "../lib/responseWindow";
 
@@ -471,28 +471,29 @@ function MetricCard({ label, value, suffix = "", icon }) {
 }
 
 function TemplateCard({ template: t, onCreate, busy, creating }) {
-  const previewQuestions = t.blank ? [] : t.build().questions;
-  const primaryQuestion = previewQuestions.find((question) => !["privacy_notice", "privacy_consent"].includes(question.type));
-  const accent = TYPE_COLORS[primaryQuestion?.type] || TYPE_COLORS.radio;
+  // 카드 렌더링에 필요한 정보만 만든다. 실제 생성 시에도 handleCreate에서 새 폼을 별도로 만든다.
+  const previewQuestions = t.blank ? [] : (t.build()?.questions || []);
+  const questionCount = previewQuestions.filter((question) => !["section", "privacy_notice"].includes(question.type)).length;
+  const hasPrivacyGuide = previewQuestions.some((question) => ["privacy_notice", "privacy_consent"].includes(question.type));
 
   return (
     <button
       onClick={() => onCreate(t)}
       disabled={busy}
-      className={`group relative w-[min(40vw,148px)] shrink-0 snap-start overflow-hidden rounded-lg bg-white text-left transition-all sm:w-[148px] ${ELEV1_HOVER} ${
+      className={`group relative flex min-h-[142px] w-[min(58vw,188px)] shrink-0 snap-start flex-col justify-between rounded-[18px] border border-[#DDE1D9] bg-[#FFFDF8] p-4 text-left transition-all sm:w-[188px] ${ELEV1_HOVER} ${
         creating ? "opacity-60" : ""
       }`}
     >
-      <div className="flex h-[104px] items-center justify-center border-b border-[#DDE1D9] bg-[#F5F3EC] sm:h-[118px]">
-        {t.blank ? (
-          <span className="relative flex h-9 w-9 items-center justify-center">
-            <Plus size={34} strokeWidth={2.5} style={{ color: MD.primary }} />
-          </span>
-        ) : (
-          <FormThumbnail questions={previewQuestions} accent={accent} />
-        )}
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <span className="text-[15px] font-semibold leading-5 tracking-[-0.02em] text-[#17251F]">{t.label}</span>
+          {t.blank ? <Plus size={21} strokeWidth={2.3} className="shrink-0" style={{ color: MD.primary }} /> : <ChevronRight size={18} className="mt-0.5 shrink-0 text-[#17866D] transition-transform group-hover:translate-x-0.5" />}
+        </div>
+        {t.segment && <p className="mt-2 text-xs leading-5 text-[#59645E]">{t.segment}</p>}
       </div>
-      <div className="px-3 py-3"><div className="text-sm font-semibold text-[#17251F]">{t.label}</div>{t.segment && <div className="mt-1 text-[11px] font-medium text-[#78837C]">{t.segment}</div>}</div>
+      <div className="mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-medium text-[#78837C]">
+        {t.blank ? <span>처음부터 구성</span> : <><span>문항 {questionCount}개</span>{hasPrivacyGuide && <><span className="text-[#B8C5BA]">·</span><span>개인정보 안내</span></>}</>}
+      </div>
     </button>
   );
 }
