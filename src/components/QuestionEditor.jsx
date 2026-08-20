@@ -78,38 +78,50 @@ export default function QuestionEditor({
         >
           Q{String(index + 1).padStart(2, "0")}
         </span>
-        <RichTextInput
-          value={q.title}
-          onChange={(html) => update({ title: html })}
-          placeholder="질문"
-          className={`${FIELD} min-w-[100px] flex-1 font-medium`}
-        />
+        {isSelected ? (
+          <RichTextInput
+            value={q.title}
+            onChange={(html) => update({ title: html })}
+            placeholder="질문"
+            className={`${FIELD} min-w-[100px] flex-1 font-medium`}
+          />
+        ) : (
+          <button type="button" onClick={onSelect} className="min-w-[100px] flex-1 truncate text-left text-sm font-medium text-[#17251F]">
+            {String(q.title || "").replace(/<[^>]+>/g, "").trim() || "제목 없는 질문"}
+          </button>
+        )}
         <div className="flex w-full items-center gap-1.5 sm:w-auto">
           <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
-          <select
-            value={q.type}
-            onChange={(e) => {
-              const nextType = e.target.value;
-              const fresh = defaultQuestion(nextType);
-              update({ type: nextType, ...fresh, id: q.id, title: q.title, required: q.required });
-            }}
-            className="w-full shrink-0 rounded-md border border-[#C9CEC6] bg-white px-2 py-2 text-base text-[#17251F] outline-none focus:border-[#17866D] sm:w-auto sm:py-1.5 sm:text-sm"
-          >
-            <optgroup label="일반 문항">
-              {QUESTION_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="개인정보 보호">
-              {PRIVACY_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </optgroup>
-          </select>
+          {isSelected ? (
+            <select
+              value={q.type}
+              onChange={(e) => {
+                const nextType = e.target.value;
+                const fresh = defaultQuestion(nextType);
+                update({ type: nextType, ...fresh, id: q.id, title: q.title, required: q.required });
+              }}
+              className="w-full shrink-0 rounded-md border border-[#C9CEC6] bg-white px-2 py-2 text-base text-[#17251F] outline-none focus:border-[#17866D] sm:w-auto sm:py-1.5 sm:text-sm"
+            >
+              <optgroup label="일반 문항">
+                {QUESTION_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="개인정보 보호">
+                {PRIVACY_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+          ) : (
+            <button type="button" onClick={onSelect} className="rounded-md bg-[#F5F3EC] px-2 py-1.5 text-xs font-medium text-[#59645E]">
+              {questionTypeLabel(q.type)}
+            </button>
+          )}
         </div>
       </div>
 
@@ -378,4 +390,9 @@ function questionSummary(q) {
   if (q.type === "date") return "날짜 입력";
   if (q.type === "time") return "시간 입력";
   return "짧은 답변 입력";
+}
+
+function questionTypeLabel(type) {
+  const allTypes = [...QUESTION_TYPES, ...PRIVACY_TYPES];
+  return allTypes.find((item) => item.value === type)?.label || "질문";
 }
