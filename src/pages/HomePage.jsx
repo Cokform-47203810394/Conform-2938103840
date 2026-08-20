@@ -6,7 +6,7 @@ import FormThumbnail from "../components/FormThumbnail";
 import { Modal } from "../components/Overlay";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
 import { listForms, listParticipatedForms, listOwnerNotifications, markOwnerNotificationsRead, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
-import { MD, ELEV1, ELEV1_HOVER } from "../theme";
+import { MD } from "../theme";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
 import { getResponseWindowState } from "../lib/responseWindow";
 
@@ -298,13 +298,13 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
               <div><div className="text-xs font-bold tracking-[0.08em] text-[#17866D]">내 폼</div><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">지금 운영 중</h2></div>
               <div className="hidden items-center gap-1 text-xs text-[#78837C] sm:flex"><BarChart3 size={14} /> 답변 내용은 포함하지 않음</div>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 border-y border-[#DDE1D9] sm:grid-cols-4">
               <MetricCard label="만든 폼" value={totals.forms} icon={<BarChart3 size={17} />} />
               <MetricCard label="전체 조회" value={totals.views} suffix="명" icon={<Eye size={17} />} />
               <MetricCard label="전체 응답" value={totals.responses} suffix="건" icon={<CheckCircle2 size={17} />} />
               <MetricCard label="응답 받는 폼" value={totals.active} suffix="개" icon={<ChevronRight size={17} />} />
             </div>
-            <div className="mt-3 rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] px-4 py-3 text-xs leading-5 text-[#59645E]">여기에는 조회와 응답 수만 표시됩니다. 답변 내용은 열리지 않습니다.</div>
+            <div className="mt-3 border-l-2 border-[#A8CABB] bg-[#EFEEE7] px-3 py-2.5 text-xs leading-5 text-[#59645E]">여기에는 조회와 응답 수만 표시됩니다. 답변 내용은 열리지 않습니다.</div>
           </section>
         )}
 
@@ -340,15 +340,15 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             {filtered.map((f) => (
               <div
                 key={f.id}
-                className={`group relative overflow-hidden rounded-[18px] border border-[#DDE1D9] bg-[#FFFDF8] transition-all ${ELEV1_HOVER}`}
+                className="group relative border-t-2 border-[#B8C5BA] bg-transparent transition-colors duration-150 hover:border-[#17866D]"
               >
                 <button onClick={() => onOpenForm(f.id)} className="block w-full text-left">
-                  <div className="h-[112px] overflow-hidden border-b border-[#DDE1D9] bg-[#F5F3EC] sm:h-[128px]">
+                  <div className="h-[112px] overflow-hidden rounded-[10px] border border-[#DDE1D9] bg-[#F5F3EC] sm:h-[128px]">
                     {sanitizeImageSource(f.coverImage?.src)
                       ? <img src={sanitizeImageSource(f.coverImage.src)} alt="" className="h-full w-full object-cover" />
                       : <FormThumbnail questions={f.questions || []} />}
                   </div>
-                  <div className="px-3 pb-2.5 pt-2.5">
+                  <div className="px-0 pb-2 pt-3">
                     <div className="truncate text-sm font-semibold text-[#17251F]">{f.title}</div>
                     <div className="mt-1 flex items-center gap-2 text-[11px] text-[#78837C]"><span className={`inline-flex items-center gap-1 ${formResponseState(f) === "open" ? "text-[#17866D]" : "text-[#B3261E]"}`}><span className={`h-1.5 w-1.5 rounded-full ${formResponseState(f) === "open" ? "bg-[#17866D]" : "bg-[#B3261E]"}`} />{formResponseLabel(f)}</span><span>조회 {f.viewCount || 0}</span><span>응답 {f.responseCount || 0}</span></div>
                     <div className="mt-1 text-xs text-[#78837C]">마지막으로 {formatRelative(f.updatedAt)} 손봤어요</div>
@@ -403,17 +403,12 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             {participatedForms.length === 0 ? (
               <div className="rounded-[20px] border border-dashed border-[#B8C5BA] bg-[#FFFDF8]/70 px-5 py-9 text-sm text-[#59645E]">아직 참여한 폼이 없어요. 공개 링크에서 응답을 제출하면 여기에 표시됩니다.</div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="divide-y divide-[#DDE1D9] border-y border-[#DDE1D9]">
                 {participatedForms.map((form) => (
-                  <button key={form.id} type="button" onClick={() => openParticipatedForm(form.id)} className={`group rounded-[18px] border border-[#DDE1D9] bg-[#FFFDF8] p-4 text-left transition ${ELEV1_HOVER}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF6EF] text-[#17866D]"><CheckCircle2 size={18} /></div>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-semibold text-[#17251F]">{form.title}</div>
-                        <div className="mt-1 text-xs text-[#78837C]">문항 {form.questionCount || 0}개 · {formatRelative(form.lastParticipatedAt)} 참여</div>
-                        <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#0B4D3D]">공개 폼 다시 보기 <ChevronRight size={14} /></div>
-                      </div>
-                    </div>
+                  <button key={form.id} type="button" onClick={() => openParticipatedForm(form.id)} className="group flex w-full items-start gap-3 px-1 py-4 text-left transition-colors hover:bg-[#EFEEE7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EAF6EF] text-[#17866D]"><CheckCircle2 size={16} /></div>
+                    <div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold text-[#17251F]">{form.title}</div><div className="mt-1 text-xs text-[#78837C]">문항 {form.questionCount || 0}개 · {formatRelative(form.lastParticipatedAt)} 참여</div></div>
+                    <span className="mt-1 inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[#0B4D3D]">다시 보기 <ChevronRight size={14} /></span>
                   </button>
                 ))}
               </div>
@@ -492,7 +487,7 @@ function matchScore(title = "", keyword = "") {
 }
 
 function MetricCard({ label, value, suffix = "", icon }) {
-  return <div className="rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-4 shadow-[0_2px_8px_rgba(23,37,31,0.06)]"><div className="mb-3 flex items-center justify-between text-[#17866D]"><span className="text-xs font-semibold text-[#78837C]">{label}</span>{icon}</div><div className="text-2xl font-semibold tracking-[-0.04em] text-[#17251F]">{value.toLocaleString("ko-KR")}<span className="ml-1 text-xs font-medium text-[#78837C]">{suffix}</span></div></div>;
+  return <div className="border-l border-[#DDE1D9] px-3 py-4 first:border-l-0 sm:px-4"><div className="flex items-center justify-between gap-2 text-[#17866D]"><span className="text-xs font-semibold text-[#78837C]">{label}</span>{icon}</div><div className="mt-4 text-2xl font-semibold tracking-[-0.04em] text-[#17251F]">{value.toLocaleString("ko-KR")}<span className="ml-1 text-xs font-medium text-[#78837C]">{suffix}</span></div></div>;
 }
 
 function TemplateCarousel({ id, templates, onCreate, busy, creating }) {
@@ -570,7 +565,7 @@ function TemplateCarousel({ id, templates, onCreate, busy, creating }) {
             if (scrollFrameRef.current) window.cancelAnimationFrame(scrollFrameRef.current);
             scrollFrameRef.current = window.requestAnimationFrame(updateActiveIndex);
           }}
-          className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-3 pr-10 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4"
+          className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth border-y border-[#DDE1D9] pb-0 pr-10 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="템플릿 목록"
         >
           {templates.map((template) => <TemplateCard key={template.key} template={template} onCreate={onCreate} busy={busy} creating={creating === template.key} />)}
@@ -584,6 +579,7 @@ function TemplateCarousel({ id, templates, onCreate, busy, creating }) {
 
 function TemplateCard({ template: t, onCreate, busy, creating }) {
   // 카드 렌더링에 필요한 정보만 만든다. 실제 생성 시에도 handleCreate에서 새 폼을 별도로 만든다.
+  const accent = templateAccent(t.key);
   const previewQuestions = t.blank ? [] : (t.build()?.questions || []);
   const questionCount = previewQuestions.filter((question) => !["section", "privacy_notice"].includes(question.type)).length;
   const hasPrivacyGuide = previewQuestions.some((question) => ["privacy_notice", "privacy_consent"].includes(question.type));
@@ -593,9 +589,10 @@ function TemplateCard({ template: t, onCreate, busy, creating }) {
       onClick={() => onCreate(t)}
       disabled={busy}
       data-template-card
-      className={`group relative flex min-h-[148px] w-[min(72vw,208px)] shrink-0 snap-start flex-col justify-between rounded-[18px] border border-[#DDE1D9] bg-[#FFFDF8] p-4 text-left transition-all sm:w-[205px] ${ELEV1_HOVER} ${
-        creating ? "opacity-60" : ""
-      }`}
+      className={`group relative flex min-h-[142px] w-[min(70vw,214px)] shrink-0 snap-start flex-col justify-between border-r border-t-2 border-[#DDE1D9] p-4 text-left transition-[background-color,border-color] duration-150 hover:bg-[#FFFDF8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D] sm:w-[210px] ${
+        t.blank ? "border-l border-l-[#DDE1D9] bg-[#EAF6EF]" : "bg-transparent"
+      } ${creating ? "opacity-60" : ""}`}
+      style={{ borderTopColor: t.blank ? MD.primary : accent }}
     >
       <div>
         <div className="flex items-start justify-between gap-3">
@@ -603,10 +600,28 @@ function TemplateCard({ template: t, onCreate, busy, creating }) {
           {t.blank ? <Plus size={21} strokeWidth={2.3} className="shrink-0" style={{ color: MD.primary }} /> : <ChevronRight size={18} className="mt-0.5 shrink-0 text-[#17866D] transition-transform group-hover:translate-x-0.5" />}
         </div>
         {t.segment && <p className="mt-2 text-xs leading-5 text-[#59645E]">{t.segment}</p>}
+        {!t.blank && <span className="mt-4 inline-flex w-fit border-b border-[#DDE1D9] pb-1 text-[11px] font-semibold text-[#59645E] transition-colors group-hover:border-[#17866D] group-hover:text-[#0B4D3D]">열어서 바꾸기</span>}
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-medium text-[#78837C]">
         {t.blank ? <span>처음부터 구성</span> : <><span>문항 {questionCount}개</span>{hasPrivacyGuide && <><span className="text-[#B8C5BA]">·</span><span>개인정보 안내</span></>}</>}
       </div>
     </button>
   );
+}
+
+function templateAccent(key) {
+  const accents = {
+    consultation_request: "#4E7BB7",
+    reservation_request: "#8B6B35",
+    program_application: "#17866D",
+    attendance_check: "#4F9A70",
+    quote_request: "#D25561",
+    job_application: "#7B6FD0",
+    customer_satisfaction: "#E18B35",
+    privacy_agreement: "#17866D",
+    education_feedback: "#4E7BB7",
+    internal_feedback: "#D25561",
+    group_order: "#8B6B35",
+  };
+  return accents[key] || "#17866D";
 }
