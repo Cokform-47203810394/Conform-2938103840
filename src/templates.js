@@ -41,9 +41,9 @@ export const TEMPLATES = [
     blank: true,
     segment: "직접 만들기",
     build: () => ({
-      title: "제목 없는 설문지",
-      description: "폼 목적과 응답자에게 필요한 안내를 적어주세요.",
-      questions: [section("기본 정보", "가장 먼저 받을 내용을 안내하세요."), defaultQuestion("radio")],
+      title: "제목 없는 양식",
+      description: "",
+      questions: [],
     }),
   },
   {

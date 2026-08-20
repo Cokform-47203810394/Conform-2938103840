@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronRight, X, Mail } from "lucide-react";
+import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronLeft, ChevronRight, Pause, Play, X, Mail } from "lucide-react";
 import AuthControl from "../components/AuthControl";
 import { signInWithGoogle } from "../lib/auth";
 import FormThumbnail from "../components/FormThumbnail";
@@ -153,6 +153,22 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
     if (newId) refresh();
   };
 
+  const handleDuplicateAndOpen = async () => {
+    if (!user) {
+      await signInWithGoogle();
+      return;
+    }
+    const source = [...forms].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0];
+    if (!source) return;
+    setCreating("copy");
+    try {
+      const newId = await duplicateFormDoc(source.id);
+      if (newId) onOpenForm(newId);
+    } finally {
+      setCreating(null);
+    }
+  };
+
   const requestDelete = (id, title) => {
     setOpenMenuId(null);
     setDeleteTarget({ id, title });
@@ -245,27 +261,36 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
         ) : null}
 
         {/* 업무 시작 양식 */}
-        <p className="mb-2 text-xs font-bold tracking-[0.08em] text-[#17866D]">빠르게 시작</p>
-        <h1 className="cok-display mb-2">무엇을 만들까요?</h1>
-        <p className="mb-6 max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">가장 가까운 양식을 고른 뒤 필요한 질문만 남기면 됩니다.</p>
-        <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
-        <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
-          {TEMPLATES.map((t) => (
-            <TemplateCard key={t.key} template={t} onCreate={handleCreate} busy={creating !== null} creating={creating === t.key} />
-          ))}
-        </div>
+        <section className="mb-10 border-b border-[#DDE1D9] pb-7 sm:mb-12 sm:pb-9">
+          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+            <div>
+              <p className="mb-2 text-xs font-bold tracking-[0.08em] text-[#17866D]">빠르게 시작</p>
+              <h1 className="cok-display mb-2">무엇을 만들까요?</h1>
+              <p className="max-w-2xl text-sm leading-6 text-[#59645E] sm:text-base">템플릿은 출발점일 뿐이에요. 질문, 순서, 조건, 디자인, 응답 기간을 내 방식으로 바꿔서 쓰세요.</p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <button type="button" onClick={() => handleCreate(TEMPLATES[0])} disabled={creating !== null} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#17866D] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#0F705B] active:scale-[0.97] disabled:cursor-wait disabled:opacity-60"><Plus size={17} /> 빈 양식으로 시작</button>
+              {forms.length > 0 && <button type="button" onClick={handleDuplicateAndOpen} disabled={creating !== null} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#B7DCC8] bg-[#FFFDF8] px-4 py-2.5 text-sm font-semibold text-[#0B4D3D] transition hover:bg-[#EAF6EF] active:scale-[0.97] disabled:cursor-wait disabled:opacity-60"><Copy size={16} /> 내 폼 사본으로 시작</button>}
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#59645E]"><span className="rounded-full bg-[#EAF6EF] px-3 py-1.5">질문 유형 직접 선택</span><span className="rounded-full bg-[#EAF6EF] px-3 py-1.5">선택에 따른 질문 표시</span><span className="rounded-full bg-[#EAF6EF] px-3 py-1.5">색상·표지·응답 기간 설정</span></div>
+        </section>
 
-        {/* 업무별 템플릿 */}
-        <div className="mb-2 flex items-center gap-2">
-          <p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">업무별 템플릿</p>
-        </div>
-        <p className="mb-4 text-sm leading-6 text-[#59645E]">채용, 교육, 만족도 조사처럼 질문이 많은 업무를 위한 양식입니다.</p>
-        <div className="mb-3 flex items-center gap-1 text-xs font-medium text-[#78837C] sm:hidden"><span>옆으로 넘겨 더 보기</span><ChevronRight size={14} /></div>
-        <div className="mb-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 pr-3 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5">
-          {PREMIUM_TEMPLATES.map((t) => (
-            <TemplateCard key={t.key} template={t} onCreate={handleCreate} busy={creating !== null} creating={creating === t.key} />
-          ))}
-        </div>
+        <section className="mb-12">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div><p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">기본 템플릿</p><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">바로 시작할 업무</h2></div>
+            <span className="hidden text-xs text-[#78837C] sm:block">자동으로 넘기거나 직접 끌어서 볼 수 있어요</span>
+          </div>
+          <TemplateCarousel id="quick-templates" templates={TEMPLATES} onCreate={handleCreate} busy={creating !== null} creating={creating} />
+        </section>
+
+        <section className="mb-12">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div><p className="text-xs font-bold tracking-[0.08em] text-[#17866D]">업무별 템플릿</p><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">조금 더 갖춰진 양식</h2></div>
+            <span className="hidden text-xs text-[#78837C] sm:block">필요 없는 질문은 바로 지울 수 있어요</span>
+          </div>
+          <TemplateCarousel id="work-templates" templates={PREMIUM_TEMPLATES} onCreate={handleCreate} busy={creating !== null} creating={creating} />
+        </section>
 
         {!query.trim() && totals.forms > 0 && (
           <section className="mb-12">
@@ -470,6 +495,93 @@ function MetricCard({ label, value, suffix = "", icon }) {
   return <div className="rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-4 shadow-[0_2px_8px_rgba(23,37,31,0.06)]"><div className="mb-3 flex items-center justify-between text-[#17866D]"><span className="text-xs font-semibold text-[#78837C]">{label}</span>{icon}</div><div className="text-2xl font-semibold tracking-[-0.04em] text-[#17251F]">{value.toLocaleString("ko-KR")}<span className="ml-1 text-xs font-medium text-[#78837C]">{suffix}</span></div></div>;
 }
 
+function TemplateCarousel({ id, templates, onCreate, busy, creating }) {
+  const railRef = useRef(null);
+  const scrollFrameRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [autoPlay, setAutoPlay] = useState(true);
+
+  const updateActiveIndex = () => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const cards = [...rail.querySelectorAll("[data-template-card]")];
+    if (!cards.length) return;
+    const railCenter = rail.scrollLeft + rail.clientWidth / 2;
+    let nearest = 0;
+    let distance = Number.POSITIVE_INFINITY;
+    cards.forEach((card, index) => {
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+      const nextDistance = Math.abs(cardCenter - railCenter);
+      if (nextDistance < distance) {
+        distance = nextDistance;
+        nearest = index;
+      }
+    });
+    setActiveIndex(nearest);
+  };
+
+  const moveByCard = (direction) => {
+    const rail = railRef.current;
+    const card = rail?.querySelector("[data-template-card]");
+    if (!rail || !card) return;
+    rail.scrollBy({ left: direction * (card.offsetWidth + 16), behavior: "smooth" });
+  };
+
+  const moveToCard = (index) => {
+    const rail = railRef.current;
+    const cards = rail?.querySelectorAll("[data-template-card]");
+    const card = cards?.[index];
+    if (!rail || !card) return;
+    rail.scrollTo({ left: Math.max(0, card.offsetLeft - 8), behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (!autoPlay || templates.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const timer = window.setInterval(() => {
+      const rail = railRef.current;
+      const cards = rail?.querySelectorAll("[data-template-card]");
+      if (!rail || !cards?.length) return;
+      const nextIndex = activeIndex >= cards.length - 1 ? 0 : activeIndex + 1;
+      rail.scrollTo({ left: nextIndex === 0 ? 0 : Math.max(0, cards[nextIndex].offsetLeft - 8), behavior: "smooth" });
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, [activeIndex, autoPlay, templates.length]);
+
+  return (
+    <div className="relative">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2" aria-label={`템플릿 ${activeIndex + 1} / ${templates.length}`}>
+          <span className="font-mono text-xs font-semibold text-[#0B4D3D]">{String(activeIndex + 1).padStart(2, "0")} / {String(templates.length).padStart(2, "0")}</span>
+          <div className="flex gap-1.5" aria-hidden="true">
+            {templates.map((template, index) => <span key={template.key} className={`h-1.5 rounded-full transition-all duration-200 ${index === activeIndex ? "w-5 bg-[#17866D]" : "w-1.5 bg-[#C9CEC6]"}`} />)}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button type="button" onClick={() => setAutoPlay((value) => !value)} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#DDE1D9] bg-[#FFFDF8] px-3 text-xs font-semibold text-[#59645E] transition hover:border-[#17866D] hover:text-[#0B4D3D]" aria-label={autoPlay ? "자동 넘김 멈추기" : "자동 넘김 시작하기"}>{autoPlay ? <Pause size={14} /> : <Play size={14} fill="currentColor" />}<span className="hidden sm:inline">{autoPlay ? "자동 넘김" : "자동 멈춤"}</span></button>
+          <button type="button" onClick={() => moveByCard(-1)} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#DDE1D9] bg-[#FFFDF8] text-[#355C45] transition hover:border-[#17866D] hover:bg-[#EAF6EF] active:scale-[0.97]" aria-label="이전 템플릿"><ChevronLeft size={18} /></button>
+          <button type="button" onClick={() => moveByCard(1)} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#DDE1D9] bg-[#FFFDF8] text-[#355C45] transition hover:border-[#17866D] hover:bg-[#EAF6EF] active:scale-[0.97]" aria-label="다음 템플릿"><ChevronRight size={18} /></button>
+        </div>
+      </div>
+      <div className="relative">
+        <div
+          id={id}
+          ref={railRef}
+          onScroll={() => {
+            if (scrollFrameRef.current) window.cancelAnimationFrame(scrollFrameRef.current);
+            scrollFrameRef.current = window.requestAnimationFrame(updateActiveIndex);
+          }}
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-3 pr-10 [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4"
+          aria-label="템플릿 목록"
+        >
+          {templates.map((template) => <TemplateCard key={template.key} template={template} onCreate={onCreate} busy={busy} creating={creating === template.key} />)}
+        </div>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-[#F5F3EC] to-transparent" />
+      </div>
+      <div className="mt-1 flex items-center justify-between gap-3 sm:hidden"><span className="text-xs text-[#78837C]">카드를 끌거나 버튼으로 넘겨 보세요</span><button type="button" onClick={() => moveToCard((activeIndex + 1) % templates.length)} className="text-xs font-semibold text-[#0B4D3D]">다음 보기</button></div>
+    </div>
+  );
+}
+
 function TemplateCard({ template: t, onCreate, busy, creating }) {
   // 카드 렌더링에 필요한 정보만 만든다. 실제 생성 시에도 handleCreate에서 새 폼을 별도로 만든다.
   const previewQuestions = t.blank ? [] : (t.build()?.questions || []);
@@ -480,7 +592,8 @@ function TemplateCard({ template: t, onCreate, busy, creating }) {
     <button
       onClick={() => onCreate(t)}
       disabled={busy}
-      className={`group relative flex min-h-[142px] w-[min(58vw,188px)] shrink-0 snap-start flex-col justify-between rounded-[18px] border border-[#DDE1D9] bg-[#FFFDF8] p-4 text-left transition-all sm:w-[188px] ${ELEV1_HOVER} ${
+      data-template-card
+      className={`group relative flex min-h-[148px] w-[min(72vw,208px)] shrink-0 snap-start flex-col justify-between rounded-[18px] border border-[#DDE1D9] bg-[#FFFDF8] p-4 text-left transition-all sm:w-[205px] ${ELEV1_HOVER} ${
         creating ? "opacity-60" : ""
       }`}
     >
