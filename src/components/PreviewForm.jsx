@@ -3,6 +3,7 @@ import { Check, Mail } from "lucide-react";
 import QuestionField from "./QuestionField";
 import { ELEV1, ELEV1_HOVER, MD } from "../theme";
 import { sanitizeImageSource, sanitizeRichText } from "../lib/sanitizeRichText";
+import MarkdownContent from "./MarkdownContent";
 
 function isQuestionVisible(question, answers) {
   const condition = question.visibilityCondition;
@@ -14,6 +15,18 @@ function isQuestionVisible(question, answers) {
 export default function PreviewForm({ form, onSubmit, accent, previewMode = false }) {
   const color = accent || MD.primary;
   const descriptionImageSrc = sanitizeImageSource(form.descriptionImage?.src);
+  const descriptionStyle = form.descriptionStyle || {};
+  const descriptionTypography = {
+    fontFamily: descriptionStyle.fontFamily === "serif"
+      ? 'Georgia, "Times New Roman", serif'
+      : descriptionStyle.fontFamily === "mono"
+        ? 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
+        : 'Pretendard Variable, Pretendard, system-ui, sans-serif',
+    fontWeight: descriptionStyle.fontWeight || "400",
+    textAlign: descriptionStyle.textAlign || "left",
+  };
+  const descriptionImageWidth = descriptionStyle.imageWidth === "small" ? "max-w-sm" : descriptionStyle.imageWidth === "medium" ? "max-w-xl" : "max-w-none";
+  const descriptionImageAlign = descriptionStyle.imageAlign === "left" ? "mr-auto" : descriptionStyle.imageAlign === "right" ? "ml-auto" : "mx-auto";
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -139,17 +152,27 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
     <div className="space-y-4">
       <div className={`rounded-xl border-t-8 bg-white p-5 sm:p-6 ${ELEV1}`} style={{ borderTopColor: color }}>
         <h1 className="break-words text-xl font-normal text-[#17251F] sm:text-2xl">{form.title}</h1>
-        {form.description && (
-          <p
-            className="mt-2 whitespace-pre-wrap text-sm text-[#59645E]"
+        {form.description && (form.descriptionFormat === "markdown" ? (
+          <MarkdownContent
+            content={form.description}
+            className="mt-2 text-sm text-[#59645E]"
+            style={descriptionTypography}
+            image={descriptionImageSrc ? { src: descriptionImageSrc, alt: form.descriptionImage?.alt } : null}
+            imagePosition={descriptionStyle.imageAlign || "center"}
+            imageWidth={descriptionStyle.imageWidth || "full"}
+          />
+        ) : (
+          <div
+            className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#59645E]"
+            style={descriptionTypography}
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(form.description) }}
           />
-        )}
-        {descriptionImageSrc && (
+        ))}
+        {descriptionImageSrc && form.descriptionFormat !== "markdown" && (
           <img
             src={descriptionImageSrc}
             alt={form.descriptionImage.alt || "설명 이미지"}
-            className="mt-4 max-h-72 w-full rounded-lg object-cover"
+            className={`mt-4 max-h-72 w-full rounded-lg object-cover ${descriptionImageWidth} ${descriptionImageAlign}`}
           />
         )}
       </div>

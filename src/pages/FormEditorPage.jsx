@@ -40,7 +40,8 @@ import {
   setupFormKeyVault,
   unlockFormKeyVault,
 } from "../lib/secureResponses";
-import { sanitizeImageSource } from "../lib/sanitizeRichText";
+import { richTextToPlain, sanitizeImageSource } from "../lib/sanitizeRichText";
+import MarkdownContent from "../components/MarkdownContent";
 import { createResponsePasswordVerifier } from "../lib/responseAccess";
 import { fromDateTimeLocalValue, getResponseWindowMessage, getResponseWindowState, toDateTimeLocalValue } from "../lib/responseWindow";
 import { analyzePrivacyRisk, PRIVACY_AUDIT_LEVEL } from "../lib/privacyAudit";
@@ -119,6 +120,7 @@ function normalizeForm(value) {
     ...fallback,
     ...next,
     settings: { ...fallback.settings, ...(next.settings || {}) },
+    descriptionStyle: { ...fallback.descriptionStyle, ...(next.descriptionStyle || {}) },
     questions: Array.isArray(next.questions) ? next.questions : fallback.questions,
     collaborators: Array.isArray(next.collaborators) ? next.collaborators : [],
   };
@@ -823,6 +825,10 @@ export default function FormEditorPage({ formId, user, onBack }) {
   };
 
   const canViewResponses = Boolean(user?.id);
+  const updateDescriptionStyle = (patch) => updateForm((current) => ({
+    ...current,
+    descriptionStyle: { ...(current.descriptionStyle || {}), ...patch },
+  }));
   const tabs = [
     { id: "edit", label: "흐름" },
     ...(canViewResponses ? [{ id: "responses", label: "답변", badge: responses.length }] : []),
@@ -1017,13 +1023,41 @@ export default function FormEditorPage({ formId, user, onBack }) {
               <div className="space-y-3 sm:space-y-4">
                 {form.questions.length > 0 && <QuickAddToolbar onAdd={addQuestion} />}
                 <div className="rounded-xl border-t-8 bg-white p-4 sm:p-5" style={{ borderTopColor: accent, boxShadow: "0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)" }}>
-                  <RichTextInput
-                    value={form.description}
-                    onChange={(html) => updateForm((f) => ({ ...f, description: html }))}
-                    placeholder="이 폼으로 무엇을 알고 싶은지 적어보세요"
-                    editorId="description"
-                    className="min-h-[2.5rem] w-full text-base text-[#59645E] sm:text-sm"
-                  />
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-[#F0EEE6] pb-3">
+                    <div>
+                      <p className="text-sm font-medium text-[#17251F]">폼 설명</p>
+                      <p className="mt-0.5 text-[11px] text-[#78837C]">줄바꿈은 그대로 유지됩니다. Discord식 Markdown도 바로 쓸 수 있어요.</p>
+                    </div>
+                    <div className="inline-flex rounded-lg bg-[#F1F0EA] p-1 text-xs">
+                      <button type="button" onClick={() => updateForm((current) => ({ ...current, descriptionFormat: "rich" }))} className={`rounded-md px-3 py-1.5 transition ${form.descriptionFormat !== "markdown" ? "bg-white text-[#0B4D3D] shadow-sm" : "text-[#59645E] hover:text-[#17251F]"}`}>서식</button>
+                      <button type="button" onClick={() => updateForm((current) => ({ ...current, descriptionFormat: "markdown", description: current.descriptionFormat === "markdown" ? current.description : richTextToPlain(current.description) }))} className={`rounded-md px-3 py-1.5 transition ${form.descriptionFormat === "markdown" ? "bg-white text-[#0B4D3D] shadow-sm" : "text-[#59645E] hover:text-[#17251F]"}`}>Markdown</button>
+                    </div>
+                  </div>
+                  {form.descriptionFormat === "markdown" ? (
+                    <div>
+                      <textarea
+                        value={form.description || ""}
+                        onChange={(event) => updateForm((current) => ({ ...current, description: event.target.value }))}
+                        rows={7}
+                        spellCheck
+                        placeholder={"# 모집 안내\\n**필수 확인**\\n- 지원 팀을 선택하세요\\n> 민감정보는 적지 마세요\\n[작업물](https://example.com)"}
+                        className="w-full rounded-lg border border-[#C9CEC6] bg-[#FBFCF9] px-3 py-3 font-mono text-sm leading-6 text-[#17251F] outline-none focus:border-[#17866D] focus:ring-4 focus:ring-[#D8F5E8]"
+                      />
+                      <p className="mt-2 text-[11px] leading-5 text-[#78837C]">지원: # 제목 · **굵게** · *기울임* · __밑줄__ · ~~취소선~~ · ||스포일러|| · `코드` · 목록 · 인용 · 링크 · 이미지 · 코드블록</p>
+                      <div className="mt-3 border-l-2 border-[#B7DCC8] bg-[#F8F9F4] px-3 py-2.5">
+                        <p className="mb-1.5 text-[11px] font-semibold tracking-[0.06em] text-[#17866D]">실시간 미리보기</p>
+                        <MarkdownContent content={form.description} className="text-sm text-[#59645E]" image={form.descriptionImage} imagePosition={form.descriptionStyle?.imageAlign || "center"} imageWidth={form.descriptionStyle?.imageWidth || "full"} />
+                      </div>
+                    </div>
+                  ) : (
+                    <RichTextInput
+                      value={form.description}
+                      onChange={(html) => updateForm((current) => ({ ...current, description: html }))}
+                      placeholder="이 폼으로 무엇을 알고 싶은지 적어보세요"
+                      editorId="description"
+                      className="min-h-[2.5rem] w-full text-base text-[#59645E] sm:text-sm"
+                    />
+                  )}
                   <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EEE6] pt-3">
                     <label className="cursor-pointer rounded-full border border-[#C9CEC6] bg-[#FFFDF8] px-3 py-1.5 text-xs font-semibold text-[#59645E] hover:border-[#17866D] hover:bg-[#F1FAF4]">
                       설명 이미지 넣기
@@ -1039,16 +1073,22 @@ export default function FormEditorPage({ formId, user, onBack }) {
                       <>
                         <input
                           value={form.descriptionImage.alt || ""}
-                          onChange={(e) => updateForm((f) => ({ ...f, descriptionImage: { ...f.descriptionImage, alt: e.target.value } }))}
+                          onChange={(e) => updateForm((current) => ({ ...current, descriptionImage: { ...current.descriptionImage, alt: e.target.value } }))}
                           placeholder="대체텍스트"
                           className="min-w-[9rem] rounded-full border border-[#C9CEC6] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#17251F] outline-none focus:border-[#17866D]"
                         />
-                        <button type="button" onClick={() => updateForm((f) => ({ ...f, descriptionImage: null }))} className="rounded-full px-3 py-1.5 text-xs font-semibold text-[#B3261E] hover:bg-[#FBE4E0]">
+                        <button type="button" onClick={() => updateForm((current) => ({ ...current, descriptionImage: null }))} className="rounded-full px-3 py-1.5 text-xs font-semibold text-[#B3261E] hover:bg-[#FBE4E0]">
                           이미지 삭제
                         </button>
                       </>
                     )}
                   </div>
+                  <div className="mt-3 grid gap-2 border-t border-[#F0EEE6] pt-3 sm:grid-cols-3">
+                    <label className="text-xs text-[#59645E]">글꼴<select value={form.descriptionStyle?.fontFamily || "sans"} onChange={(event) => updateDescriptionStyle({ fontFamily: event.target.value })} className="mt-1 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]"><option value="sans">기본 고딕</option><option value="serif">명조</option><option value="mono">고정폭</option></select></label>
+                    <label className="text-xs text-[#59645E]">글자 두께<select value={form.descriptionStyle?.fontWeight || "400"} onChange={(event) => updateDescriptionStyle({ fontWeight: event.target.value })} className="mt-1 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]"><option value="400">보통</option><option value="500">중간</option><option value="600">반굵게</option><option value="700">굵게</option></select></label>
+                    <label className="text-xs text-[#59645E]">글 정렬<select value={form.descriptionStyle?.textAlign || "left"} onChange={(event) => updateDescriptionStyle({ textAlign: event.target.value })} className="mt-1 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></label>
+                  </div>
+                  {form.descriptionImage?.src && <div className="mt-2 grid gap-2 sm:grid-cols-2"><label className="text-xs text-[#59645E]">이미지 위치<select value={form.descriptionStyle?.imageAlign || "center"} onChange={(event) => updateDescriptionStyle({ imageAlign: event.target.value })} className="mt-1 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></label><label className="text-xs text-[#59645E]">이미지 폭<select value={form.descriptionStyle?.imageWidth || "full"} onChange={(event) => updateDescriptionStyle({ imageWidth: event.target.value })} className="mt-1 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]"><option value="small">작게</option><option value="medium">중간</option><option value="full">전체 폭</option></select></label></div>}
                   <p className="mt-2 text-[11px] leading-5 text-[#78837C]">업로드 이미지는 최대 2MB이며 폼 데이터에 함께 저장돼요. 민감한 원본 이미지는 넣지 마세요.</p>
                 </div>
 

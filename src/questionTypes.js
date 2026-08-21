@@ -45,7 +45,7 @@ export function defaultQuestion(type = "short") {
     return { ...base, scaleMin: 1, scaleMax: 5, scaleMinLabel: "", scaleMaxLabel: "" };
   }
   if (type === "section") {
-    return { ...base, title: "새 섹션", description: "이 섹션에서 받을 내용을 안내하세요.", required: false };
+    return { ...base, title: "새 섹션", description: "이 섹션에서 받을 내용을 안내하세요.", descriptionFormat: "plain", required: false };
   }
   if (type === "privacy_consent") {
     return {
@@ -76,6 +76,14 @@ export function emptyForm() {
   return {
     title: "제목 없는 설문지",
     description: "",
+    descriptionFormat: "rich",
+    descriptionStyle: {
+      fontFamily: "sans",
+      fontWeight: "400",
+      textAlign: "left",
+      imageAlign: "center",
+      imageWidth: "full",
+    },
     descriptionImage: null,
     questions: [defaultQuestion("radio")],
     accentColor: null, // null = 기본 M3 퍼플

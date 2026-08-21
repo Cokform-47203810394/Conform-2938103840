@@ -1,6 +1,7 @@
 import { ShieldCheck, Info } from "lucide-react";
 import { MD, NAVER_GREEN, TYPE_COLORS, ELEV1, FIELD } from "../theme";
 import { sanitizeRichText } from "../lib/sanitizeRichText";
+import MarkdownContent from "./MarkdownContent";
 
 export default function QuestionField({ q, value, error, onChange }) {
   const set = (v) => onChange(q.id, v);
@@ -26,7 +27,7 @@ export default function QuestionField({ q, value, error, onChange }) {
       <section className="rounded-xl border border-[#B7DCC8] bg-[#F1FAF4] px-4 py-4 sm:px-5">
         <div className="text-[11px] font-semibold tracking-wide text-[#0B4D3D]">섹션</div>
         <h2 className="mt-1 text-lg font-semibold text-[#17251F]" dangerouslySetInnerHTML={{ __html: sanitizeRichText(q.title) }} />
-        {q.description && <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-[#355C45]">{q.description}</p>}
+        {q.description && (q.descriptionFormat === "markdown" ? <MarkdownContent content={q.description} className="mt-1.5 text-sm text-[#355C45]" /> : <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-[#355C45]">{q.description}</p>)}
       </section>
     );
   }

@@ -210,8 +210,9 @@ export default function QuestionEditor({
 
         {q.type === "section" && (
           <div className="rounded-lg border border-[#B7DCC8] bg-[#F1FAF4] p-3">
-            <div className="text-xs font-semibold text-[#0B4D3D]">섹션 안내</div>
-            <textarea value={q.description || ""} onChange={(event) => update({ description: event.target.value })} rows={2} placeholder="이 섹션에서 작성할 내용을 안내하세요." className="mt-2 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D]" />
+            <div className="flex flex-wrap items-center justify-between gap-2"><div className="text-xs font-semibold text-[#0B4D3D]">섹션 안내</div><div className="inline-flex rounded-md bg-white/70 p-0.5 text-[11px]"><button type="button" onClick={() => update({ descriptionFormat: "plain" })} className={`rounded px-2 py-1 ${q.descriptionFormat !== "markdown" ? "bg-white text-[#0B4D3D] shadow-sm" : "text-[#59645E]"}`}>일반</button><button type="button" onClick={() => update({ descriptionFormat: "markdown" })} className={`rounded px-2 py-1 ${q.descriptionFormat === "markdown" ? "bg-white text-[#0B4D3D] shadow-sm" : "text-[#59645E]"}`}>Markdown</button></div></div>
+            <textarea value={q.description || ""} onChange={(event) => update({ description: event.target.value })} rows={q.descriptionFormat === "markdown" ? 5 : 2} placeholder={q.descriptionFormat === "markdown" ? "## 안내\n- 준비물을 확인하세요\n> 유의사항" : "이 섹션에서 작성할 내용을 안내하세요."} className={`mt-2 w-full rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-sm text-[#17251F] outline-none focus:border-[#17866D] ${q.descriptionFormat === "markdown" ? "font-mono leading-6" : ""}`} />
+            {q.descriptionFormat === "markdown" && <p className="mt-1.5 text-[11px] leading-5 text-[#59645E]"># 제목 · **굵게** · 목록 · 인용 · 링크 · 코드 · 줄바꿈을 지원합니다.</p>}
           </div>
         )}
         {q.type === "short" && (

@@ -6,8 +6,22 @@ const ALLOWED_TAGS = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR"
 export function sanitizeRichText(html) {
   if (!html) return "";
   const doc = new DOMParser().parseFromString(html, "text/html");
+  normalizeEditorLineBreaks(doc);
   clean(doc.body);
   return doc.body.innerHTML;
+}
+
+// Browsers commonly turn Enter in a contentEditable area into <div> or <p> blocks.
+// Those are not allowed public-form markup, but simply unwrapping them merged every
+// line into one sentence. Convert their boundaries to explicit <br> before sanitizing.
+function normalizeEditorLineBreaks(doc) {
+  const blocks = [...doc.body.querySelectorAll("div, p")].reverse();
+  blocks.forEach((block) => {
+    const fragment = doc.createDocumentFragment();
+    while (block.firstChild) fragment.appendChild(block.firstChild);
+    if (block.nextSibling) fragment.appendChild(doc.createElement("br"));
+    block.replaceWith(fragment);
+  });
 }
 
 function clean(node) {
