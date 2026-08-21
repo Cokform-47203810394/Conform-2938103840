@@ -12,6 +12,7 @@ const ResourcesPage = lazy(() => import("./pages/ResourcesPage"));
 const InternationalTransferPage = lazy(() => import("./pages/InternationalTransferPage"));
 const ServiceRestrictionsPage = lazy(() => import("./pages/ServiceRestrictionsPage"));
 const BusinessInfoPage = lazy(() => import("./pages/BusinessInfoPage"));
+const AfterHoursPage = lazy(() => import("./pages/AfterHoursPage"));
 import AuthControl from "./components/AuthControl";
 import { subscribeAuth } from "./lib/auth";
 import { ArrowLeft } from "lucide-react";
@@ -26,7 +27,7 @@ function UnknownRoutePage() {
 }
 
 function getQueryMode() {
-  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false, unknown: false };
+  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false, afterHours: false, unknown: false };
   const params = new URLSearchParams(window.location.search);
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
   return {
@@ -40,14 +41,15 @@ function getQueryMode() {
     internationalTransfer: pathname === "/international-transfer",
     serviceRestrictions: pathname === "/service-restrictions",
     businessInfo: pathname === "/business-info",
-    unknown: pathname !== "/" && !["/privacy", "/terms", "/sitemap", "/docs", "/resources", "/international-transfer", "/service-restrictions", "/business-info"].includes(pathname) && !pathname.startsWith("/docs/"),
+    afterHours: pathname === "/after-hours",
+    unknown: pathname !== "/" && !["/privacy", "/terms", "/sitemap", "/docs", "/resources", "/international-transfer", "/service-restrictions", "/business-info", "/after-hours"].includes(pathname) && !pathname.startsWith("/docs/"),
   };
 }
 
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const { respond: respondFormId, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo, unknown } = getQueryMode();
+  const { respond: respondFormId, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo, afterHours, unknown } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
   if (privacy) return <Suspense fallback={<PageLoading />}><PrivacyPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (terms) return <Suspense fallback={<PageLoading />}><TermsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
@@ -58,6 +60,7 @@ export default function App() {
   if (internationalTransfer) return <Suspense fallback={<PageLoading />}><InternationalTransferPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (serviceRestrictions) return <Suspense fallback={<PageLoading />}><ServiceRestrictionsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (businessInfo) return <Suspense fallback={<PageLoading />}><BusinessInfoPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
+  if (afterHours) return <Suspense fallback={<PageLoading />}><AfterHoursPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (unknown) return <UnknownRoutePage />;
   return <Builder />;
 }

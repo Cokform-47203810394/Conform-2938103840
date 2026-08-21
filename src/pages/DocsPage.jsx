@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowUpRight, BookOpen, ChevronRight, FileOutput, LockKeyhole, Scale, Search, ShieldCheck, Wrench } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, BookOpen, ChevronRight, FileOutput, LockKeyhole, Scale, Search, ShieldCheck, Sparkles, Wrench } from "lucide-react";
 
 const sections = [
   {
@@ -56,6 +56,16 @@ const sections = [
       { title: "브랜드 리소스 사용 가이드", body: "공식 로고, 심볼, 색상, 사용 원칙과 형식·해상도 선택 기준을 확인합니다.", href: "/docs/brand-guide", action: "브랜드 가이드 보기" },
       { title: "개인정보 국외이전 안내", body: "국내 저장 구조와 선택 연동에서 발생할 수 있는 해외 처리를 구분해 안내합니다.", href: "/international-transfer", action: "국외이전 안내 보기" },
       { title: "서비스 이용제한 정책", body: "금지행위, 비례적 조치, 통지·이의제기·보안 제보 기준을 안내합니다.", href: "/service-restrictions", action: "이용제한 정책 보기" },
+    ],
+  },
+  {
+    id: "after-hours",
+    label: "비공식 실험실",
+    title: "After Hours 이스터에그",
+    description: "폼과 응답 데이터에는 손대지 않는 60개의 발견형 시각·작업 실험을 소개합니다.",
+    icon: Sparkles,
+    links: [
+      { title: "비공식 이스터에그 60", body: "발동 방법, 각 실험의 효과, 이 기기에서 설정을 해제하는 방법을 전체 목록으로 확인합니다.", href: "/after-hours", action: "비공식 실험실 열기" },
     ],
   },
   {

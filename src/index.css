@@ -110,3 +110,59 @@ button {
     @apply inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-[#DDE1D9] bg-white px-2.5 py-2 text-xs font-medium text-[#59645E] transition-colors duration-150 hover:border-[#B7DCC8] hover:bg-[#F0FAF6] hover:text-[#0B4D3D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#17866D]/40 disabled:cursor-wait disabled:opacity-55;
   }
 }
+
+/* 비공식 실험실: 현재 기기에만 적용되는 비파괴 시각 설정. */
+html[data-cok-palette="palette-mint"] body { background: #eef7f2; }
+html[data-cok-palette="palette-paper"] body { background: #f8f2e7; }
+html[data-cok-palette="palette-sea"] body { background: #edf7f6; }
+html[data-cok-palette="palette-clay"] body { background: #fbf0e9; }
+html[data-cok-palette="palette-ink"] body { background: #e8ece9; filter: contrast(1.07); }
+html[data-cok-palette="palette-ginkgo"] body { background: #fbf8e9; }
+html[data-cok-palette="palette-dusk"] body { background: #f1eff7; }
+html[data-cok-palette="palette-forest"] body { background: #edf2eb; }
+html[data-cok-palette="palette-pebble"] body { background: #f0f1ee; }
+html[data-cok-palette="palette-signal"] body { background: #faf7e9; }
+
+html[data-cok-reading="reading-large"] body { font-size: 17px; }
+html[data-cok-reading="reading-compact"] body { font-size: 14px; }
+html[data-cok-reading="reading-calm"] body { letter-spacing: 0.012em; }
+html[data-cok-reading="reading-focus"] :focus-visible { outline: 3px solid #17866d !important; outline-offset: 3px; }
+html[data-cok-reading="reading-serif"] p:not(.font-sans) { font-family: "Noto Serif KR", "Batang", serif; }
+html[data-cok-reading="reading-mono"] .text-xs { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+html[data-cok-reading="reading-contrast"] { filter: contrast(1.1); }
+html[data-cok-reading="reading-soft"] p { line-height: 1.85; }
+html[data-cok-reading="reading-marker"] h1, html[data-cok-reading="reading-marker"] h2 { border-left: 3px solid #17866d; padding-left: .5rem; }
+html[data-cok-reading="reading-quiet"] .text-xs { opacity: .74; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-cok-motion="motion-gentle"] .cok-lab-panel { animation: cok-lab-breathe 3s ease-in-out infinite; }
+  html[data-cok-motion="motion-float"] .cok-lab-panel { animation: cok-lab-float 2.4s ease-in-out infinite; }
+  html[data-cok-motion="motion-glow"] .cok-lab-panel { box-shadow: 0 0 0 1px #b7dcc8, 0 18px 55px rgba(23, 134, 109, .18); }
+  html[data-cok-motion="motion-snap"] button { transition-duration: 90ms !important; }
+  html[data-cok-motion="motion-ripple"] button:active { transform: scale(.97); }
+  html[data-cok-motion="motion-blink"] .cok-lab-panel header > div:first-child { animation: cok-lab-blink 1.2s steps(2, jump-none) infinite; }
+  html[data-cok-motion="motion-slide"] .cok-lab-panel { animation: cok-lab-enter .22s cubic-bezier(.23, 1, .32, 1); }
+  html[data-cok-motion="motion-bounce"] [aria-pressed="true"] { animation: cok-lab-bounce .25s cubic-bezier(.23, 1, .32, 1); }
+  html[data-cok-motion="motion-pulse"] .cok-lab-panel header > div:first-child { animation: cok-lab-pulse 1.8s ease-in-out infinite; }
+  html[data-cok-play="play-firefly"] .cok-lab-panel { background-image: radial-gradient(circle at 15% 12%, rgba(216, 237, 89, .55) 0 2px, transparent 3px), radial-gradient(circle at 85% 78%, rgba(23, 134, 109, .32) 0 2px, transparent 3px); }
+  html[data-cok-play="play-dots"] .cok-lab-panel { background-image: radial-gradient(#b7dcc8 1px, transparent 1px); background-size: 14px 14px; }
+  html[data-cok-play="play-wave"] .cok-lab-panel { background-image: repeating-radial-gradient(ellipse at bottom, transparent 0 12px, rgba(23, 134, 109, .09) 13px 14px); }
+  html[data-cok-play="play-orbit"] .cok-lab-panel header > div:first-child { outline: 1px dashed #17866d; outline-offset: 4px; }
+  html[data-cok-play="play-star"] .cok-lab-panel header > div:first-child::after { content: "✦"; position: absolute; margin: -20px 0 0 28px; color: #d0a50a; }
+  html[data-cok-play="play-ticket"] .cok-lab-panel header { border-bottom-style: dashed; }
+  html[data-cok-play="play-sprout"] .cok-lab-panel header > div:first-child { border-radius: 55% 45% 55% 45%; }
+  html[data-cok-play="play-confetti"] .cok-lab-panel { background-image: linear-gradient(120deg, transparent 20%, rgba(216, 237, 89, .23) 20% 21%, transparent 21% 45%, rgba(23, 134, 109, .13) 45% 46%, transparent 46%); }
+  html[data-cok-play="play-stamp"] .cok-lab-panel header::after { content: "FOUND"; margin-left: auto; color: #17866d; font-size: 10px; font-weight: 800; letter-spacing: .12em; transform: rotate(-8deg); }
+  html[data-cok-play="play-secret"] .cok-lab-panel header::after { content: "오늘도 필요한 것만 콕"; margin-left: auto; color: #17866d; font-size: 11px; font-weight: 600; }
+}
+
+@keyframes cok-lab-breathe { 50% { transform: translateY(-2px); } }
+@keyframes cok-lab-float { 50% { transform: translateY(-5px); } }
+@keyframes cok-lab-blink { 50% { opacity: .45; } }
+@keyframes cok-lab-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes cok-lab-bounce { 50% { transform: scale(1.02); } }
+@keyframes cok-lab-pulse { 50% { box-shadow: 0 0 0 7px rgba(23, 134, 109, .12); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cok-lab-panel, .cok-lab-panel * { animation: none !important; transition-duration: 0ms !important; }
+}
