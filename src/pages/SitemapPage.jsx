@@ -7,8 +7,8 @@ const groups = [
     label: "서비스",
     items: [
       { title: "폼 만들기", description: "개인정보 보호형 폼을 만들고 공유합니다.", href: "/" },
-      { title: "보안과 응답 암호화", description: "응답이 암호화되어 저장되는 방식을 확인합니다.", href: "/security", icon: ShieldCheck },
-      { title: "자주 묻는 질문", description: "키 관리, 응답 운영, 개인정보 고지의 기본을 확인합니다.", href: "/faq", icon: MessageCircleQuestion },
+      { title: "보안과 응답 암호화", description: "응답이 암호화되어 저장되는 방식을 확인합니다.", href: "/docs/e2ee-and-key-management", icon: ShieldCheck },
+      { title: "문제 해결", description: "키 관리, 응답 운영, 개인정보 고지에서 자주 막히는 지점을 확인합니다.", href: "/docs/troubleshooting", icon: MessageCircleQuestion },
       { title: "사용 가이드", description: "폼 만들기, 응답 운영, 암호화 키 관리, 개인정보 수집 운영을 확인합니다.", href: "/docs", icon: BookOpen },
       { title: "브랜드 리소스", description: "공식 로고·심볼·색상·사용 원칙과 브랜드 문의 경로를 확인합니다.", href: "/resources", icon: Palette },
       { title: "브랜드 사용 가이드", description: "파일 형식·해상도 선택과 공식 표기·사용 원칙을 이 사이트에서 확인합니다.", href: "/docs/brand-guide", icon: Palette },

@@ -10,7 +10,7 @@ const sections = [
     icon: BookOpen,
     links: [
       { title: "폼 만들기와 공유", body: "질문 구성, 개인키 금고 생성, 운영 설정, 공개 링크 점검을 순서대로 안내합니다.", href: "/docs/create-and-share", action: "폼 만들기 가이드 보기" },
-      { title: "응답자에게 보이는 화면", body: "공개 링크는 로그인 없이 열립니다. 공유 전 미리보기에서 질문, 고지, 마감 상태를 확인하세요.", href: "/faq", action: "응답 화면 확인하기" },
+      { title: "응답자에게 보이는 화면", body: "공개 링크는 로그인 없이 열립니다. 공유 전 미리보기에서 질문, 고지, 마감 상태를 확인하세요.", href: "/docs/create-and-share", action: "응답 화면 확인하기" },
     ],
   },
   {
@@ -21,7 +21,7 @@ const sections = [
     icon: FileOutput,
     links: [
       { title: "응답 운영과 내보내기", body: "응답 확인, 수동 마감·재개, 내보내기 파일의 용도와 전체 삭제 전 점검을 다룹니다.", href: "/docs/responses-and-exports", action: "내보내기 방법 보기" },
-      { title: "응답 기간과 마감", body: "시작·마감 시각을 설정하거나 즉시 마감·재개해 공개 제출 상태를 제어합니다.", href: "/faq", action: "마감 설정 확인하기" },
+      { title: "응답 기간과 마감", body: "시작·마감 시각을 설정하거나 즉시 마감·재개해 공개 제출 상태를 제어합니다.", href: "/docs/responses-and-exports", action: "마감 설정 확인하기" },
     ],
   },
   {
@@ -32,7 +32,7 @@ const sections = [
     icon: ShieldCheck,
     links: [
       { title: "종단간 암호화와 키 관리", body: "보안 경계, 복구 비밀번호, 암호화 키 백업, 전체 복구 번들, 기기 교체 절차를 정리했습니다.", href: "/docs/e2ee-and-key-management", action: "키 관리 방법 보기" },
-      { title: "복구 비밀번호를 잊었을 때", body: "Cokform은 복구 비밀번호를 재설정하거나 개인키를 대신 보관하지 않습니다. 키 백업과 복구 번들을 확인하세요.", href: "/faq", action: "복구 방법 확인하기" },
+      { title: "복구 비밀번호를 잊었을 때", body: "Cokform은 복구 비밀번호를 재설정하거나 개인키를 대신 보관하지 않습니다. 키 백업과 복구 번들을 확인하세요.", href: "/docs/e2ee-and-key-management", action: "복구 방법 확인하기" },
     ],
   },
   {
@@ -66,7 +66,7 @@ const sections = [
     icon: Wrench,
     links: [
       { title: "문제 해결", body: "문제가 발생했을 때 확인할 순서와 지원 요청에 필요한 안전한 정보 범위를 정리했습니다.", href: "/docs/troubleshooting", action: "문제 해결 순서 보기" },
-      { title: "자주 묻는 질문", body: "키 관리, 응답 운영, 개인정보 고지의 핵심 질문을 빠르게 확인합니다.", href: "/faq", action: "자주 묻는 질문 보기" },
+      { title: "문제 해결 핵심", body: "키 관리, 응답 운영, 개인정보 고지에서 자주 막히는 지점을 빠르게 확인합니다.", href: "/docs/troubleshooting", action: "문제 해결 보기" },
     ],
   },
 ];
@@ -137,7 +137,7 @@ export default function DocsPage({ onBack }) {
               {!visibleSections.length && <section className="rounded-xl border border-dashed border-[#C9CEC6] bg-[#FFFDF8] p-8 text-center"><p className="font-semibold">“{query}” 관련 문서를 찾지 못했어요.</p><p className="mt-2 text-sm text-[#78837C]">검색어를 줄이거나 문제 해결 문서를 먼저 확인해보세요.</p><button type="button" onClick={() => setQuery("")} className="mt-4 rounded-xl bg-[#0F5B46] px-4 py-2 text-sm font-semibold text-white">검색 초기화</button></section>}
             </div>
 
-            <section className="mt-12 border-t border-[#DDE1D9] pt-7"><h2 className="text-xl font-bold tracking-[-0.04em] text-[#17251F]">도움이 더 필요하신가요?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-[#59645E]">문의에는 발생 시각, 사용한 기능, 화면의 오류 문구, 브라우저 환경만 정리해 주세요. 복구 비밀번호, 키 백업, 응답 원문은 보내지 마세요.</p><div className="mt-4 flex flex-wrap gap-3"><a href="/faq" className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F5B46] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0B4D3D]">자주 묻는 질문 <ChevronRight size={15} /></a><a href="mailto:seoharo0111@gmail.com" className="inline-flex items-center gap-1.5 rounded-xl border border-[#B7DCC8] bg-[#FFFDF8] px-4 py-2.5 text-sm font-semibold text-[#0B4D3D] transition hover:bg-[#EAF6EF]">문의하기 <ArrowUpRight size={15} /></a></div></section>
+            <section className="mt-12 border-t border-[#DDE1D9] pt-7"><h2 className="text-xl font-bold tracking-[-0.04em] text-[#17251F]">도움이 더 필요하신가요?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-[#59645E]">문의에는 발생 시각, 사용한 기능, 화면의 오류 문구, 브라우저 환경만 정리해 주세요. 복구 비밀번호, 키 백업, 응답 원문은 보내지 마세요.</p><div className="mt-4 flex flex-wrap gap-3"><a href="/docs/troubleshooting" className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F5B46] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0B4D3D]">문제 해결 보기 <ChevronRight size={15} /></a><a href="mailto:seoharo0111@gmail.com" className="inline-flex items-center gap-1.5 rounded-xl border border-[#B7DCC8] bg-[#FFFDF8] px-4 py-2.5 text-sm font-semibold text-[#0B4D3D] transition hover:bg-[#EAF6EF]">문의하기 <ArrowUpRight size={15} /></a></div></section>
           </div>
         </div>
       </div>

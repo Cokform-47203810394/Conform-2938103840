@@ -220,7 +220,7 @@ const guides = {
       },
     ],
     related: [
-      ["자주 묻는 질문", "/faq"],
+      ["문제 해결", "/docs/troubleshooting"],
       ["개인키 금고와 복구", "/docs/e2ee-and-key-management"],
       ["응답 운영과 내보내기", "/docs/responses-and-exports"],
     ],

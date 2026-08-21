@@ -447,9 +447,9 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
               <div className="mt-3 flex flex-col items-start gap-2.5 text-sm">
                 <a href="/" className="transition hover:text-[#D8ED59]">폼 만들기</a>
                 <a href="/docs" className="transition hover:text-[#D8ED59]">사용 가이드</a>
-                <a href="/security" className="transition hover:text-[#D8ED59]">응답 암호화</a>
+                <a href="/docs/e2ee-and-key-management" className="transition hover:text-[#D8ED59]">응답 암호화</a>
                 <a href="/resources" className="transition hover:text-[#D8ED59]">브랜드 리소스</a>
-                <a href="/faq" className="transition hover:text-[#D8ED59]">자주 묻는 질문</a>
+                <a href="/docs/troubleshooting" className="transition hover:text-[#D8ED59]">문제 해결</a>
               </div>
             </nav>
 
