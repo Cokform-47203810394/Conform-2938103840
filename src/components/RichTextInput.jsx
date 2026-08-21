@@ -15,14 +15,21 @@ const COMMANDS = [
 export default function RichTextInput({ value, onChange, placeholder, className = "", editorId }) {
   const ref = useRef(null);
   const [focused, setFocused] = useState(false);
-  const lastValue = useRef(value);
+  const lastValue = useRef(value || "");
+  const hasHydrated = useRef(false);
 
   useEffect(() => {
-    // only push external value changes in (e.g. switching questions) — never while the
-    // user is actively typing, or the cursor would jump to the start on every keystroke
-    if (ref.current && value !== lastValue.current && document.activeElement !== ref.current) {
-      ref.current.innerHTML = sanitizeRichText(value);
-      lastValue.current = value;
+    if (!ref.current) return;
+
+    const nextValue = sanitizeRichText(value || "");
+    // A contentEditable node is empty on every fresh mount. This happens when an
+    // author switches the editor tab or changes the selected question. Always hydrate
+    // once on mount, then keep a focused field under the author's control so typing
+    // never jumps or gets overwritten by its own autosave render.
+    if (!hasHydrated.current || (nextValue !== lastValue.current && document.activeElement !== ref.current)) {
+      ref.current.innerHTML = nextValue;
+      lastValue.current = nextValue;
+      hasHydrated.current = true;
     }
   }, [value]);
 
@@ -48,8 +55,8 @@ export default function RichTextInput({ value, onChange, placeholder, className 
               type="button"
               title={label}
               // mousedown (not click) so this fires before the field's onBlur steals focus
-              onMouseDown={(e) => {
-                e.preventDefault();
+              onMouseDown={(event) => {
+                event.preventDefault();
                 applyFormat(cmd);
               }}
               className="flex h-7 w-7 items-center justify-center rounded text-white hover:bg-white/20"
@@ -65,8 +72,8 @@ export default function RichTextInput({ value, onChange, placeholder, className 
         suppressContentEditableWarning
         onFocus={() => setFocused(true)}
         onBlur={() => {
-          setFocused(false);
           commit();
+          setFocused(false);
         }}
         onInput={commit}
         data-placeholder={placeholder}

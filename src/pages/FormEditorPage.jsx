@@ -146,6 +146,8 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const keyBackupInputRef = useRef(null);
   const recoveryBundleInputRef = useRef(null);
   const saveTimer = useRef(null);
+  const pendingSaveRef = useRef(null);
+  const saveInFlightRef = useRef(false);
   const versionTimer = useRef(null);
   const lastVersionFingerprint = useRef("");
   const loadedRef = useRef(false);
@@ -343,7 +345,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const updateForm = useCallback((updater) => {
     setForm((prev) => {
       if (!applyingHistory.current && loadedRef.current) {
-        if (pendingSnapshot.current === null) pendingSnapshot.current = normalizeForm(form);
+        // Keep the actual previous state, not the callback's closed-over render.
+        // Rapid contentEditable input can otherwise make undo snapshots stale.
+        if (pendingSnapshot.current === null) pendingSnapshot.current = normalizeForm(prev);
         if (historyTimer.current) clearTimeout(historyTimer.current);
         historyTimer.current = setTimeout(() => {
           setPast((p) => [...p.slice(-49), pendingSnapshot.current]);
@@ -351,9 +355,30 @@ export default function FormEditorPage({ formId, user, onBack }) {
           pendingSnapshot.current = null;
         }, 600);
       }
-      return typeof updater === "function" ? updater(prev) : updater;
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      // Keep an immediate authoritative snapshot for blur-and-navigate paths.
+      formRef.current = next;
+      return next;
     });
-  }, [form]);
+  }, []);
+
+  const flushActiveRichText = useCallback(() => {
+    const active = document.activeElement;
+    // React does not guarantee an onBlur event when a contentEditable subtree is
+    // unmounted by an editor-tab or selected-question change. Blur it first so its
+    // final HTML reaches form state before the next screen replaces the node.
+    if (active instanceof HTMLElement && active.isContentEditable) active.blur();
+  }, []);
+
+  const selectQuestion = useCallback((id) => {
+    flushActiveRichText();
+    setSelectedQuestionId(id);
+  }, [flushActiveRichText]);
+
+  const changeEditorTab = useCallback((nextTab) => {
+    flushActiveRichText();
+    setTab(nextTab);
+  }, [flushActiveRichText]);
 
   const undo = () => {
     if (pendingSnapshot.current !== null) {
@@ -426,21 +451,64 @@ export default function FormEditorPage({ formId, user, onBack }) {
     })();
   }, [finishSecureLoad, formId, loadFormStructure]);
 
+  const persistLatestForm = useCallback(async () => {
+    if (saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
+    try {
+      // Serialize writes. A slow older request must finish before the newest queued
+      // snapshot writes, so a late network response can never restore old content.
+      while (pendingSaveRef.current) {
+        const nextForm = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        setSaveState("saving");
+        const didSave = await saveFormDoc(formId, { form: nextForm });
+        if (!didSave) throw new Error("save_failed");
+      }
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    } finally {
+      saveInFlightRef.current = false;
+      // A change can happen after the final while-condition and before the flag
+      // resets. Run that last queued change immediately instead of dropping it.
+      if (pendingSaveRef.current) void persistLatestForm();
+    }
+  }, [formId]);
+
   useEffect(() => {
     if (!loaded) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      setSaveState("saving");
-      try {
-        const didSave = await saveFormDoc(formId, { form });
-        if (!didSave) throw new Error("save_failed");
-        setSaveState("saved");
-      } catch {
-        setSaveState("error");
-      }
+    saveTimer.current = setTimeout(() => {
+      pendingSaveRef.current = form;
+      void persistLatestForm();
     }, 400);
     return () => clearTimeout(saveTimer.current);
-  }, [form, loaded, formId]);
+  }, [form, loaded, persistLatestForm]);
+
+  const saveImmediately = useCallback(async () => {
+    if (!loadedRef.current) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    pendingSaveRef.current = normalizeForm(formRef.current);
+    await persistLatestForm();
+  }, [persistLatestForm]);
+
+  useEffect(() => {
+    const flushOnPageExit = () => {
+      flushActiveRichText();
+      // State is already mirrored to formRef on every edit, so this request does
+      // not depend on the 400 ms autosave timer surviving a tab/page change.
+      void saveImmediately();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flushOnPageExit();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", flushOnPageExit);
+    return () => {
+      window.removeEventListener("pagehide", flushOnPageExit);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [flushActiveRichText, saveImmediately]);
 
   useEffect(() => {
     if (!loaded || !form.publicKey) return undefined;
@@ -489,6 +557,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setConfirmAction({ kind: "question", id, title: "질문 삭제", description: "이 질문을 삭제합니다. 저장 후에도 버전 기록에서 이전 상태를 확인할 수 있어요." });
   };
   const duplicateQuestion = (id) => {
+    flushActiveRichText();
     const copyId = uid();
     updateForm((f) => {
       const idx = f.questions.findIndex((q) => q.id === id);
@@ -510,6 +579,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     });
   };
   const addQuestion = (type = "short") => {
+    flushActiveRichText();
     const question = defaultQuestion(type);
     updateForm((f) => ({ ...f, questions: [...f.questions, question] }));
     setSelectedQuestionId(question.id);
@@ -658,6 +728,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   );
 
   const openPreview = () => {
+    flushActiveRichText();
     setPaletteOpen(false);
     setPreviewOpen(true);
   };
@@ -681,6 +752,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   }, [paletteOpen]);
 
   const openShare = () => {
+    flushActiveRichText();
     if (!form.publicKey) {
       setKeyVaultOpen(true);
       setToast("공개하기 전 개인키 금고를 만들고 응답 암호화를 설정해주세요.");
@@ -695,6 +767,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   };
 
   const copyLink = async () => {
+    flushActiveRichText();
     if (!form.publicKey) {
       setKeyVaultOpen(true);
       setToast("암호화 키를 만든 뒤에만 공개 링크를 복사할 수 있어요.");
@@ -766,7 +839,13 @@ export default function FormEditorPage({ formId, user, onBack }) {
       {/* top app bar */}
       <div className={`relative sticky top-0 z-10 border-b border-[#DDE1D9] bg-[#FFFDF8]/95 backdrop-blur ${ELEV1}`}>
         <div className="mx-auto flex max-w-4xl items-center gap-1 px-3 py-3 sm:px-4">
-          <IconButton title="홈으로" onClick={onBack}>
+          <IconButton title="홈으로" onClick={() => {
+            flushActiveRichText();
+            window.setTimeout(async () => {
+              await saveImmediately();
+              onBack?.();
+            }, 0);
+          }}>
             <ArrowLeft size={18} />
           </IconButton>
           <img
@@ -913,7 +992,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
                   setKeyVaultOpen(true);
                   return;
                 }
-                setTab(t.id);
+                changeEditorTab(t.id);
               }}
               className={`flex min-w-0 flex-1 items-center justify-center gap-1 border-b-2 px-1 py-2.5 text-xs font-medium transition-colors sm:flex-none sm:gap-1.5 sm:text-sm ${
                 tab === t.id ? "text-[#0B4D3D]" : "border-transparent text-[#78837C] hover:text-[#17251F]"
@@ -978,7 +1057,13 @@ export default function FormEditorPage({ formId, user, onBack }) {
                     accent={accent}
                     onAddQuestion={() => addQuestion("short")}
                     onFocusPurpose={focusFormPurpose}
-                    onBrowseCopies={onBack}
+                    onBrowseCopies={() => {
+                      flushActiveRichText();
+                      window.setTimeout(async () => {
+                        await saveImmediately();
+                        onBack?.();
+                      }, 0);
+                    }}
                   />
                 )}
 
@@ -998,7 +1083,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
                     onDragEnd={() => setDragIndex(null)}
                     isDragging={dragIndex === i}
                     isSelected={selectedQuestionId === q.id}
-                    onSelect={() => setSelectedQuestionId(q.id)}
+                    onSelect={() => selectQuestion(q.id)}
                   />
                 ))}
 
