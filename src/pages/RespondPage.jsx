@@ -38,17 +38,28 @@ class RespondPageErrorBoundary extends Component {
 
 function RespondPageContent({ formId }) {
   const [doc, setDoc] = useState(undefined); // undefined = loading, null = not found
+  const [loadError, setLoadError] = useState("");
   const [alreadyResponded, setAlreadyResponded] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [responsePassword, setResponsePassword] = useState("");
   const [passwordUnlocked, setPasswordUnlocked] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
-  useEffect(() => {
-    getFormDoc(formId).then((d) => {
+  const loadForm = async () => {
+    setLoadError("");
+    setDoc(undefined);
+    try {
+      const d = await getFormDoc(formId);
       setDoc(d || null);
-      if (d) recordFormView(formId);
-    });
+      if (d) void recordFormView(formId);
+    } catch {
+      setLoadError("양식을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.");
+      setDoc(null);
+    }
+  };
+
+  useEffect(() => {
+    void loadForm();
     setAlreadyResponded(Boolean(localStorage.getItem(`form-builder:responded:${formId}`)));
   }, [formId]);
 
@@ -58,7 +69,10 @@ function RespondPageContent({ formId }) {
   if (doc === null) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4 text-center text-sm text-[#78837C]">
-        존재하지 않거나 삭제된 설문지예요.
+        <div className="max-w-sm">
+          <p>{loadError || "존재하지 않거나 삭제된 설문지예요."}</p>
+          {loadError && <button type="button" onClick={() => void loadForm()} className="mt-4 rounded-full bg-[#17866D] px-4 py-2 text-sm font-semibold text-white">다시 시도</button>}
+        </div>
       </div>
     );
   }
@@ -71,7 +85,13 @@ function RespondPageContent({ formId }) {
   const passwordProtected = Boolean(form.settings?.responsePassword?.hash);
 
   const unlockPasswordProtectedForm = async () => {
-    const valid = await verifyResponsePassword(form.settings?.responsePassword, responsePassword);
+    let valid = false;
+    try {
+      valid = await verifyResponsePassword(form.settings?.responsePassword, responsePassword);
+    } catch {
+      setPasswordError("비밀번호를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
     if (!valid) {
       setPasswordError("비밀번호가 맞지 않아요. 다시 확인해 주세요.");
       return;
@@ -82,7 +102,13 @@ function RespondPageContent({ formId }) {
 
   const handleSubmit = async (answers, botCheck) => {
     setSubmitError("");
-    const result = await submitResponse(formId, answers, form.publicKey, form.settings, botCheck, responsePassword);
+    let result;
+    try {
+      result = await submitResponse(formId, answers, form.publicKey, form.settings, botCheck, responsePassword);
+    } catch {
+      setSubmitError("응답을 저장하지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.");
+      return false;
+    }
     if (!result.ok) {
       const windowMessage = result.reason && result.reason !== "duplicate" ? getResponseWindowMessage(result.reason, form.settings) : "";
       const securityMessage = {

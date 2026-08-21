@@ -21,8 +21,12 @@ function PageLoading() {
   return <div className="flex min-h-screen items-center justify-center bg-[#F5F3EC] text-sm text-[#78837C]">불러오는 중…</div>;
 }
 
+function UnknownRoutePage() {
+  return <main className="flex min-h-screen items-center justify-center bg-[#F5F3EC] px-4 text-center"><section className="max-w-sm rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-6"><p className="text-xs font-semibold tracking-[0.08em] text-[#17866D]">COKFORM</p><h1 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[#17251F]">찾는 페이지가 없어요</h1><p className="mt-2 text-sm leading-6 text-[#59645E]">주소를 다시 확인하거나 콕폼 홈에서 필요한 페이지를 찾아주세요.</p><a href="/" className="mt-5 inline-flex rounded-full bg-[#17866D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0F705B]">홈으로</a></section></main>;
+}
+
 function getQueryMode() {
-  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false };
+  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false, unknown: false };
   const params = new URLSearchParams(window.location.search);
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
   return {
@@ -36,13 +40,14 @@ function getQueryMode() {
     internationalTransfer: pathname === "/international-transfer",
     serviceRestrictions: pathname === "/service-restrictions",
     businessInfo: pathname === "/business-info",
+    unknown: pathname !== "/" && !["/privacy", "/terms", "/sitemap", "/docs", "/resources", "/international-transfer", "/service-restrictions", "/business-info"].includes(pathname) && !pathname.startsWith("/docs/"),
   };
 }
 
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const { respond: respondFormId, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo } = getQueryMode();
+  const { respond: respondFormId, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo, unknown } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
   if (privacy) return <Suspense fallback={<PageLoading />}><PrivacyPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (terms) return <Suspense fallback={<PageLoading />}><TermsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
@@ -53,6 +58,7 @@ export default function App() {
   if (internationalTransfer) return <Suspense fallback={<PageLoading />}><InternationalTransferPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (serviceRestrictions) return <Suspense fallback={<PageLoading />}><ServiceRestrictionsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (businessInfo) return <Suspense fallback={<PageLoading />}><BusinessInfoPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
+  if (unknown) return <UnknownRoutePage />;
   return <Builder />;
 }
 

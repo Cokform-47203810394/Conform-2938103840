@@ -41,6 +41,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
   const [participatedForms, setParticipatedForms] = useState([]);
   const [responseNotifications, setResponseNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("updated"); // 'updated' | 'title'
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -55,11 +56,17 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
 
   const refresh = async () => {
     setLoading(true);
-    const [created, participated, notifications] = await Promise.all([listForms(), listParticipatedForms(), listOwnerNotifications()]);
-    setForms(created);
-    setParticipatedForms(participated);
-    setResponseNotifications(notifications);
-    setLoading(false);
+    setLoadError("");
+    try {
+      const [created, participated, notifications] = await Promise.all([listForms(), listParticipatedForms(), listOwnerNotifications()]);
+      setForms(created || []);
+      setParticipatedForms(participated || []);
+      setResponseNotifications(notifications || []);
+    } catch {
+      setLoadError("폼 목록을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -251,6 +258,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
       </div>
 
       <div className="mx-auto max-w-6xl px-3 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-7 sm:px-6 sm:py-10">
+        {loadError && <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#F0C4BE] bg-[#FFF6F5] px-4 py-3 text-sm text-[#8C1D18]"><span>{loadError}</span><button type="button" onClick={refresh} className="rounded-full border border-[#D85B4A] px-3 py-1.5 text-xs font-semibold text-[#8C1D18] hover:bg-[#FBE4E0]">다시 시도</button></div>}
         {!authReady ? (
           <div className="mb-6 rounded-2xl border border-[#C9CEC6] bg-[#FFFDF8] px-4 py-3 text-sm text-[#59645E]">로그인 상태를 확인하는 중…</div>
         ) : !user ? (

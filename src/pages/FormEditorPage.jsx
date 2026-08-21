@@ -864,9 +864,15 @@ export default function FormEditorPage({ formId, user, onBack }) {
             onChange={(e) => updateForm((f) => ({ ...f, title: e.target.value }))}
             className="min-w-0 flex-1 bg-transparent text-base font-semibold tracking-[-0.03em] text-[#17251F] outline-none sm:text-lg"
           />
-          <span aria-live="polite" className={`hidden shrink-0 text-[11px] sm:inline ${saveState === "error" ? "text-[#B3261E]" : "text-[#78837C]"}`}>
-            {saveState === "saving" ? "저장 중…" : saveState === "error" ? "저장 실패" : "저장됨"}
-          </span>
+          {saveState === "error" ? (
+            <button type="button" onClick={() => void saveImmediately()} className="shrink-0 rounded-full border border-[#D85B4A] px-2.5 py-1 text-[11px] font-semibold text-[#B3261E] hover:bg-[#FBE4E0]">
+              저장 실패 · 다시 시도
+            </button>
+          ) : (
+            <span aria-live="polite" className="shrink-0 text-[11px] text-[#78837C]">
+              {saveState === "saving" ? "저장 중…" : "저장됨"}
+            </span>
+          )}
           <IconButton title={form.starred ? "즐겨찾기 해제" : "즐겨찾기"} onClick={() => updateForm((f) => ({ ...f, starred: !f.starred }))}>
             <Star size={18} fill={form.starred ? accent : "none"} color={form.starred ? accent : "currentColor"} />
           </IconButton>

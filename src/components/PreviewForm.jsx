@@ -152,7 +152,7 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
     <div className="space-y-4">
       <div className={`rounded-xl border-t-8 bg-white p-5 sm:p-6 ${ELEV1}`} style={{ borderTopColor: color }}>
         <h1 className="break-words text-xl font-normal text-[#17251F] sm:text-2xl">{form.title}</h1>
-        {form.description && (form.descriptionFormat === "markdown" ? (
+        {(form.description || (descriptionImageSrc && form.descriptionFormat === "markdown")) && (form.descriptionFormat === "markdown" ? (
           <MarkdownContent
             content={form.description}
             className="mt-2 text-sm text-[#59645E]"
