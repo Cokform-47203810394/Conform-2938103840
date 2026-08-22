@@ -114,6 +114,40 @@ function versionReasonLabel(reason) {
   return "자동 저장";
 }
 
+const EDITOR_DRAFT_PREFIX = "cokform:editor:draft:";
+
+function readEditorDraft(formId) {
+  try {
+    const raw = sessionStorage.getItem(`${EDITOR_DRAFT_PREFIX}${formId}`);
+    const draft = raw ? JSON.parse(raw) : null;
+    return draft?.version === 1 && draft?.form && typeof draft.form === "object" ? draft : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeEditorDraft(formId, form) {
+  try {
+    sessionStorage.setItem(`${EDITOR_DRAFT_PREFIX}${formId}`, JSON.stringify({ version: 1, savedAt: Date.now(), form }));
+  } catch {
+    // Draft mirroring is a recovery layer; normal server autosave remains available.
+  }
+}
+
+function clearEditorDraftIfMatching(formId, savedForm) {
+  try {
+    const draft = readEditorDraft(formId);
+    if (draft && JSON.stringify(draft.form) === JSON.stringify(savedForm)) sessionStorage.removeItem(`${EDITOR_DRAFT_PREFIX}${formId}`);
+  } catch {
+    // A stale recovery draft is safer than discarding unsaved author changes.
+  }
+}
+
+function applyEditorDraft(formId, form) {
+  const draft = readEditorDraft(formId);
+  return draft ? normalizeForm(draft.form) : form;
+}
+
 function normalizeForm(value) {
   const fallback = emptyForm();
   const next = value || {};
@@ -172,7 +206,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   const finishSecureLoad = useCallback(async (keyPair) => {
     const doc = await getFormDoc(formId);
-    let nextForm = normalizeForm(doc?.form);
+    let nextForm = applyEditorDraft(formId, normalizeForm(doc?.form));
     if (nextForm.publicKey && !matchesPublicKey(nextForm.publicKey, keyPair.publicJwk)) {
       lockFormKeyVault(formId);
       throw new Error("이 기기의 개인키가 이 폼의 암호화 키와 일치하지 않습니다. 새 금고를 만들지 말고 기존 암호화 키 백업 또는 전체 복구 번들을 가져와 주세요.");
@@ -199,7 +233,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   const loadFormStructure = useCallback(async () => {
     const doc = await getFormDoc(formId);
-    const nextForm = normalizeForm(doc?.form);
+    const nextForm = applyEditorDraft(formId, normalizeForm(doc?.form));
     formRef.current = nextForm;
     setForm(nextForm);
     // A locked vault must never expose decrypted responses or version contents.
@@ -478,6 +512,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
         setSaveState("saving");
         const didSave = await saveFormDoc(formId, { form: nextForm });
         if (!didSave) throw new Error("save_failed");
+        clearEditorDraftIfMatching(formId, nextForm);
       }
       setSaveState("saved");
     } catch {
@@ -492,6 +527,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   useEffect(() => {
     if (!loaded) return;
+    // Mirror the exact current form before the 400 ms network debounce. This is
+    // tab-only metadata, never decrypted response data or a private-key export.
+    writeEditorDraft(formId, form);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       pendingSaveRef.current = form;
@@ -510,6 +548,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   useEffect(() => {
     const flushOnPageExit = () => {
       flushActiveRichText();
+      writeEditorDraft(formId, normalizeForm(formRef.current));
       // State is already mirrored to formRef on every edit, so this request does
       // not depend on the 400 ms autosave timer surviving a tab/page change.
       void saveImmediately();
@@ -523,7 +562,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
       window.removeEventListener("pagehide", flushOnPageExit);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [flushActiveRichText, saveImmediately]);
+  }, [flushActiveRichText, formId, saveImmediately]);
 
   useEffect(() => {
     if (!loaded || !form.publicKey) return undefined;
