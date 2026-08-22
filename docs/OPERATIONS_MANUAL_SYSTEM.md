@@ -2,8 +2,12 @@
 
 이 문서는 콕폼을 **대표 혼자, 새 협업자와 함께, 또는 담당자가 바뀐 뒤에도** 운영할 수 있게 만든 진입점이다. 모든 문서를 처음부터 읽을 필요는 없다. 먼저 현재 역할과 상황을 고르고, 아래 순서대로 연다.
 
+> 새 세션·새 AI·새 컴퓨터에서 시작하면 먼저 [AI·운영자 시작 안내서](./AI_AND_OPERATOR_START_HERE.md)와 [최신 마스터 컨텍스트](./MASTER_CONTEXT_COKFORM_CURRENT.md)를 읽는다. 이 문서는 그 다음에 2,000개 세부 매뉴얼을 찾는 용도다.
+
 | 먼저 할 일 | 열 파일 | 언제 쓰나 |
 |---|---|---|
+| 현재 상태와 이식 경계 확인 | [최신 마스터 컨텍스트](./MASTER_CONTEXT_COKFORM_CURRENT.md) | 새 세션·새 AI·새 컴퓨터에서 시작할 때 |
+| 역할·상황 진입 안내 | [AI·운영자 시작 안내서](./AI_AND_OPERATOR_START_HERE.md) | 무엇부터 읽고 실행할지 모를 때 |
 | 절대 원칙 확인 | [핵심 플레이북](./operations-manuals/00-core-playbooks.md) | 배포·키·응답·개인정보·장애를 다룰 때 |
 | 역할별 판단 확인 | [역할별 실전 플레이북](./operations-manuals-source/01-role-playbooks.md) | 창업가, 기획, 개발, 보안, 지원 등 역할을 맡을 때 |
 | 실제 작업 순서 확인 | [핵심 실행 체크리스트](./operations-manuals-source/02-critical-checklists.md) | 배포, 복구, 제출 장애, 컨시어지, 개인정보 처리 |

@@ -2,6 +2,19 @@
 
 ## Current local history
 ```text
+[33mf58c542[m fix: preserve editor draft across updates
+[33m7760066[m fix: restore active editor after refresh
+[33mf041aea[m fix: clarify Google Drive permission failures
+[33m195ed4f[m fix: hide irrelevant conditional questions in responses
+[33m7779b6c[m feat: allow description image above text
+[33m0a214a4[m feat: add after-hours easter egg lab
+[33m5add53b[m fix: harden form loading and editing flows
+[33m4dee8f3[m fix: revalidate deployment assets
+[33m047e751[m fix: recover stale editor chunks after deploy
+[33mb6658dd[m feat: add markdown form content editor
+[33mad8d855[m fix: route help links to existing docs
+[33m3688240[m fix: preserve rich text across editor navigation
+[33mc6fe626[m docs: add portable project handover package
 [33m4c174fb[m docs: add 2000 independent operations manuals
 [33m9fb98d8[m docs: freeze feature expansion for validation
 [33m66556de[m feat: unify respondent response records
@@ -19,33 +32,31 @@
 [33m5dca38b[m fix: restore stable home rendering
 [33m86930fa[m refactor: make template selection feel more human
 [33mb9c8dcc[m docs: record business information page verification
-[33m8d37593[m feat: add public business information page
-[33m63c87db[m docs: record public document route and policy audit
-[33mf398928[m docs: clarify retention, policy links and terms changes
-[33m889dbcc[m docs: record floating panel dismissal QA
-[33mc6a6d36[m fix: dismiss floating panels on outside click and escape
-[33m50de97c[m fix: guide existing encrypted forms to key recovery
-[33m09b2719[m fix: block mismatched key vault setup for existing forms
-[33m2b77ce9[m fix: replace mandatory captcha with low-friction submit guard
-[33m573de7e[m fix: add retry action for Turnstile failures
-[33mc5bca0a[m fix: consolidate duplicate privacy audit warnings
-[33mc02b069[m feat: add quick links for missing form fields
-[33m5e45911[m fix: add global rendering error recovery
-[33maace61a[m feat: add in-editor live form preview
 ```
 
 ## Current status
 ```text
-[31m??[m docs/MASTER_CONTEXT_COKFORM_2026-08-20.md
-[31m??[m docs/transfer/
-[31m??[m scripts/generate_transfer_inventory.py
-[31m??[m scripts/verify_transfer_inventory.py
+ [31mM[m docs/OPERATIONS_MANUAL_SYSTEM.md
+ [31mM[m scripts/generate_transfer_inventory.py
+[31m??[m docs/AI_AND_OPERATOR_START_HERE.md
+[31m??[m docs/MASTER_CONTEXT_COKFORM_CURRENT.md
+[31m??[m docs/google-oauth-403-investigation-2026-08-22.md
+[31m??[m docs/mobile-rofolder-form-check.json
+[31m??[m docs/mobile-rofolder-form-check.md
+[31m??[m docs/mobile-rofolder-form-check.png
+[31m??[m docs/transfer-inventory-raw.txt
+[31m??[m scripts/build_rofolder_question_update.mjs
+[31m??[m scripts/create_handover_archive.py
+[31m??[m scripts/test_mobile_all_rofolder_teams.mjs
+[31m??[m scripts/test_mobile_rofolder_form.mjs
+[31m??[m tmp_rofolder_question_update_input.json
+[31m??[m tmp_rofolder_team_questions.json
 ```
 
 ## Current remotes
 ```text
-origin	 (fetch)
-origin	 (push)
+origin	https://github.com/Cokform-47203810394/Conform-2938103840.git (fetch)
+origin	https://github.com/Cokform-47203810394/Conform-2938103840.git (push)
 ```
 
 This snapshot intentionally does not include tokens, credentials, or remote URLs with embedded credentials.

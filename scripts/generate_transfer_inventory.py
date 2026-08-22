@@ -100,7 +100,7 @@ def run() -> None:
         })
 
     with INVENTORY.open("w", encoding="utf-8", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=["path", "category", "bytes", "sha256"])
+        writer = csv.DictWriter(file, fieldnames=["path", "category", "bytes", "sha256"], lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -114,7 +114,7 @@ def run() -> None:
         "",
         "## Current status",
         "```text",
-        git_output(["git", "status", "--short"]).rstrip() or "clean",
+        git_output(["git", "status", "--short", "--", ".", ":(exclude)docs/transfer"]).rstrip() or "clean",
         "```",
         "",
         "## Current remotes",

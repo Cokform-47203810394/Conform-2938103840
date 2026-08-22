@@ -1,6 +1,6 @@
 # Cokform 이식·복구·계속 작업 절차
 
-이 문서는 `Cokform_transfer_package_2026-08-21.zip`을 새 컴퓨터, 새 작업 디렉터리, 또는 새 AI 세션에 옮긴 뒤 안전하게 이어서 작업하는 순서다.
+이 문서는 `Cokform_handover_YYYY-MM-DD.zip`을 새 컴퓨터, 새 작업 디렉터리, 또는 새 AI 세션에 옮긴 뒤 안전하게 이어서 작업하는 순서다.
 
 > 이 패키지에는 코드와 문서는 들어 있지만, 실제 OAuth 비밀값·GitHub/Cloudflare/Supabase 자격증명·브라우저 세션·개인키·복구 파일·사용자 응답은 들어 있지 않다. 새 환경에서 서비스를 연결할 때는 각 대시보드 또는 사용자 본인이 보관한 비밀값을 사용한다.
 
@@ -16,13 +16,14 @@ python3 scripts/verify_transfer_inventory.py
 
 ## 2. 먼저 읽을 문서
 
-1. `docs/MASTER_CONTEXT_COKFORM_2026-08-20.md`
-2. `docs/OPERATIONS_MANUAL_SYSTEM.md`
-3. `docs/validation-freeze-and-readiness-2026-08.md`
-4. `docs/transfer/CONVERSATION_AND_DECISION_RECORD.md`
-5. `docs/transfer/GIT_HISTORY.txt`
+1. `docs/AI_AND_OPERATOR_START_HERE.md`
+2. `docs/MASTER_CONTEXT_COKFORM_CURRENT.md`
+3. `docs/OPERATIONS_MANUAL_SYSTEM.md`
+4. `docs/validation-freeze-and-readiness-2026-08.md`
+5. `docs/transfer/SESSION_CONTINUITY_2026-08-22.md`
+6. `docs/transfer/GIT_HISTORY.txt`
 
-이 다섯 문서는 제품의 현재 상태, 금지선, 다음 우선순위, 원격 동기화 문제를 설명한다.
+이 문서들은 제품의 현재 상태, 금지선, 최근 변경, 다음 우선순위, 원격 동기화 상태를 설명한다.
 
 ## 3. 개발 환경 복구
 
@@ -82,10 +83,11 @@ GitHub 인증이 실패하면 개인 액세스 토큰을 문서에 붙이지 않
 
 ```text
 Cokform 프로젝트를 이어서 작업한다.
-먼저 docs/MASTER_CONTEXT_COKFORM_2026-08-20.md,
+먼저 docs/AI_AND_OPERATOR_START_HERE.md,
+docs/MASTER_CONTEXT_COKFORM_CURRENT.md,
 docs/OPERATIONS_MANUAL_SYSTEM.md,
 docs/validation-freeze-and-readiness-2026-08.md,
-docs/transfer/CONVERSATION_AND_DECISION_RECORD.md를 읽어라.
+docs/transfer/SESSION_CONTINUITY_2026-08-22.md를 읽어라.
 
 개인키·복구 비밀번호·키 백업·응답 원문·토큰을 요청하거나 기록하지 마라.
 현재는 기능 동결 상태다. 테스트·복구·측정·컨시어지 검증 외의 새 기능을 추가하지 마라.
