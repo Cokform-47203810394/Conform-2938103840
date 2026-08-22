@@ -5,6 +5,94 @@ const LEGACY_ENVELOPE_VERSION = 1;
 const VAULT_VERSION = 1;
 const PBKDF2_ITERATIONS = 600_000;
 const memoryPrivateKeys = new Map();
+const SESSION_UNLOCK_PREFIX = "cokform:e2ee:session-unlock:";
+const SESSION_UNLOCK_DB = "cokform-e2ee-session-keys";
+const SESSION_UNLOCK_STORE = "keys";
+
+function readSessionValue(key) {
+  try {
+    return sessionStorage.getItem(key) || null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionValue(key, value) {
+  try {
+    if (value) sessionStorage.setItem(key, value);
+    else sessionStorage.removeItem(key);
+  } catch {
+    // Session restore is optional. The encrypted vault remains the source of truth.
+  }
+}
+
+function openSessionKeyDatabase() {
+  if (!globalThis.indexedDB) return Promise.resolve(null);
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(SESSION_UNLOCK_DB, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(SESSION_UNLOCK_STORE)) request.result.createObjectStore(SESSION_UNLOCK_STORE, { keyPath: "id" });
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("session_key_store_open_failed"));
+  });
+}
+
+function readSessionKeyRecord(db, id) {
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(SESSION_UNLOCK_STORE, "readonly").objectStore(SESSION_UNLOCK_STORE).get(id);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error || new Error("session_key_store_read_failed"));
+  });
+}
+
+function writeSessionKeyRecord(db, record) {
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(SESSION_UNLOCK_STORE, "readwrite").objectStore(SESSION_UNLOCK_STORE).put(record);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error || new Error("session_key_store_write_failed"));
+  });
+}
+
+function deleteSessionKeyRecord(db, id) {
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(SESSION_UNLOCK_STORE, "readwrite").objectStore(SESSION_UNLOCK_STORE).delete(id);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error || new Error("session_key_store_delete_failed"));
+  });
+}
+
+function newSessionKeyHandle() {
+  return crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function rememberSessionPrivateKey(formId, privateKey, publicJwk) {
+  const sessionKey = `${SESSION_UNLOCK_PREFIX}${formId}`;
+  const handle = readSessionValue(sessionKey) || newSessionKeyHandle();
+  writeSessionValue(sessionKey, handle);
+  const db = await openSessionKeyDatabase();
+  if (!db) return;
+  try {
+    // CryptoKey is non-extractable. Only this origin and this browser session handle can use it.
+    await writeSessionKeyRecord(db, { id: handle, formId, privateKey, publicJwk, createdAt: Date.now() });
+  } finally {
+    db.close();
+  }
+}
+
+async function forgetSessionPrivateKey(formId) {
+  const sessionKey = `${SESSION_UNLOCK_PREFIX}${formId}`;
+  const handle = readSessionValue(sessionKey);
+  writeSessionValue(sessionKey, null);
+  if (!handle) return;
+  const db = await openSessionKeyDatabase();
+  if (!db) return;
+  try {
+    await deleteSessionKeyRecord(db, handle);
+  } finally {
+    db.close();
+  }
+}
 
 function assertCrypto() {
   if (!globalThis.crypto?.subtle) {
@@ -178,8 +266,35 @@ export function isFormKeyUnlocked(formId) {
   return memoryPrivateKeys.has(formId);
 }
 
+export async function restoreFormKeyVaultSession(formId) {
+  const cached = memoryPrivateKeys.get(formId);
+  if (cached) return { privateKey: cached.privateKey, publicJwk: cached.publicJwk };
+  const sessionKey = `${SESSION_UNLOCK_PREFIX}${formId}`;
+  const handle = readSessionValue(sessionKey);
+  if (!handle) return null;
+  try {
+    const db = await openSessionKeyDatabase();
+    if (!db) return null;
+    let record;
+    try {
+      record = await readSessionKeyRecord(db, handle);
+    } finally {
+      db.close();
+    }
+    if (!record || record.formId !== formId || !record.privateKey || !record.publicJwk) {
+      writeSessionValue(sessionKey, null);
+      return null;
+    }
+    memoryPrivateKeys.set(formId, { privateKey: record.privateKey, publicJwk: record.publicJwk });
+    return { privateKey: record.privateKey, publicJwk: record.publicJwk };
+  } catch {
+    return null;
+  }
+}
+
 export function lockFormKeyVault(formId) {
   memoryPrivateKeys.delete(formId);
+  void forgetSessionPrivateKey(formId).catch(() => {});
 }
 
 /**
@@ -205,8 +320,10 @@ export async function setupFormKeyVault(formId, passphrase) {
   localStorage.setItem(`${KEY_VAULT_PREFIX}${formId}`, JSON.stringify(vault));
   localStorage.removeItem(`${LEGACY_PRIVATE_KEY_PREFIX}${formId}`);
   const privateKey = await importPrivateKey(privateJwk);
+  const publicJwk = publicJwkFromPrivate(privateJwk);
   cachePrivateKey(formId, privateJwk, privateKey);
-  return { privateKey, publicJwk: publicJwkFromPrivate(privateJwk) };
+  await rememberSessionPrivateKey(formId, privateKey, publicJwk).catch(() => {});
+  return { privateKey, publicJwk };
 }
 
 export async function unlockFormKeyVault(formId, passphrase) {
@@ -217,8 +334,10 @@ export async function unlockFormKeyVault(formId, passphrase) {
   if (!vault) throw keyError("key_vault_missing", "이 기기에 복구 가능한 개인키가 없습니다. 암호화된 키 백업을 가져와 주세요.");
   const privateJwk = await unwrapPrivateJwk(formId, vault, passphrase);
   const privateKey = await importPrivateKey(privateJwk);
+  const publicJwk = publicJwkFromPrivate(privateJwk);
   cachePrivateKey(formId, privateJwk, privateKey);
-  return { privateKey, publicJwk: publicJwkFromPrivate(privateJwk) };
+  await rememberSessionPrivateKey(formId, privateKey, publicJwk).catch(() => {});
+  return { privateKey, publicJwk };
 }
 
 export async function changeFormKeyVaultPassphrase(formId, currentPassphrase, nextPassphrase) {
@@ -228,8 +347,10 @@ export async function changeFormKeyVaultPassphrase(formId, currentPassphrase, ne
   const nextVault = await wrapPrivateJwk(formId, privateJwk, nextPassphrase);
   localStorage.setItem(`${KEY_VAULT_PREFIX}${formId}`, JSON.stringify(nextVault));
   const privateKey = await importPrivateKey(privateJwk);
+  const publicJwk = publicJwkFromPrivate(privateJwk);
   cachePrivateKey(formId, privateJwk, privateKey);
-  return { privateKey, publicJwk: publicJwkFromPrivate(privateJwk) };
+  await rememberSessionPrivateKey(formId, privateKey, publicJwk).catch(() => {});
+  return { privateKey, publicJwk };
 }
 
 /**
@@ -258,7 +379,7 @@ export function importEncryptedKeyBackup(backup) {
   }
   localStorage.setItem(`${KEY_VAULT_PREFIX}${backup.formId}`, JSON.stringify(vault));
   localStorage.removeItem(`${LEGACY_PRIVATE_KEY_PREFIX}${backup.formId}`);
-  memoryPrivateKeys.delete(backup.formId);
+  lockFormKeyVault(backup.formId);
   return backup.formId;
 }
 

@@ -26,6 +26,26 @@ function UnknownRoutePage() {
   return <main className="flex min-h-screen items-center justify-center bg-[#F5F3EC] px-4 text-center"><section className="max-w-sm rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] p-6"><p className="text-xs font-semibold tracking-[0.08em] text-[#17866D]">COKFORM</p><h1 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[#17251F]">찾는 페이지가 없어요</h1><p className="mt-2 text-sm leading-6 text-[#59645E]">주소를 다시 확인하거나 콕폼 홈에서 필요한 페이지를 찾아주세요.</p><a href="/" className="mt-5 inline-flex rounded-full bg-[#17866D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0F705B]">홈으로</a></section></main>;
 }
 
+const EDITOR_RETURN_FORM_KEY = "cokform:editor:return-form";
+const WORKSPACE_RETURN_FORM_KEY = "cokform:workspace:return-form";
+
+function readSessionFormId(key) {
+  try {
+    return sessionStorage.getItem(key) || null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionFormId(key, formId) {
+  try {
+    if (formId) sessionStorage.setItem(key, formId);
+    else sessionStorage.removeItem(key);
+  } catch {
+    // Session restoration is a convenience only. It must never block editing.
+  }
+}
+
 function getQueryMode() {
   if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false, afterHours: false, unknown: false };
   const params = new URLSearchParams(window.location.search);
@@ -67,9 +87,11 @@ export default function App() {
 
 function Builder() {
   // view: 'home' | 'editor' | 'settings'
-  const workspaceReturnForm = typeof window !== "undefined" ? sessionStorage.getItem("cokform:workspace:return-form") : null;
-  const [view, setView] = useState(() => workspaceReturnForm ? "editor" : "home");
-  const [currentFormId, setCurrentFormId] = useState(() => workspaceReturnForm || null);
+  const workspaceReturnForm = typeof window !== "undefined" ? readSessionFormId(WORKSPACE_RETURN_FORM_KEY) : null;
+  const editorReturnForm = typeof window !== "undefined" ? readSessionFormId(EDITOR_RETURN_FORM_KEY) : null;
+  const initialFormId = workspaceReturnForm || editorReturnForm;
+  const [view, setView] = useState(() => initialFormId ? "editor" : "home");
+  const [currentFormId, setCurrentFormId] = useState(() => initialFormId || null);
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
 
@@ -82,7 +104,7 @@ function Builder() {
   }, []);
 
   useEffect(() => {
-    if (authReady && user && currentFormId) sessionStorage.removeItem("cokform:workspace:return-form");
+    if (authReady && user && currentFormId) writeSessionFormId(WORKSPACE_RETURN_FORM_KEY, null);
   }, [authReady, currentFormId, user]);
 
   if (view === "editor" && currentFormId) {
@@ -105,7 +127,11 @@ function Builder() {
         <FormEditorPage
           formId={currentFormId}
           user={user}
-          onBack={() => { setCurrentFormId(null); setView("home"); }}
+          onBack={() => {
+            writeSessionFormId(EDITOR_RETURN_FORM_KEY, null);
+            setCurrentFormId(null);
+            setView("home");
+          }}
         />
       </Suspense>
     );
@@ -137,6 +163,7 @@ function Builder() {
   return (
     <HomePage
       onOpenForm={(id) => {
+        writeSessionFormId(EDITOR_RETURN_FORM_KEY, id);
         setCurrentFormId(id);
         setView("editor");
       }}

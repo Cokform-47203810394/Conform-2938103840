@@ -37,6 +37,7 @@ import {
   importRecoveryBundleKeyVault,
   openEncryptedFormRecoveryBundle,
   lockFormKeyVault,
+  restoreFormKeyVaultSession,
   setupFormKeyVault,
   unlockFormKeyVault,
 } from "../lib/secureResponses";
@@ -426,9 +427,21 @@ export default function FormEditorPage({ formId, user, onBack }) {
     historyTimer.current = null;
     versionTimer.current = null;
     (async () => {
-      const state = getFormKeyVaultState(formId);
+      const restoredKeyPair = await restoreFormKeyVaultSession(formId);
+      const state = restoredKeyPair ? "unlocked" : getFormKeyVaultState(formId);
       setKeyVaultState(state);
       setKeyVaultError("");
+      if (restoredKeyPair) {
+        try {
+          await finishSecureLoad(restoredKeyPair);
+        } catch (error) {
+          lockFormKeyVault(formId);
+          setKeyVaultError(error?.message || "이 탭의 개인키 세션을 복원하지 못했습니다.");
+          setKeyVaultState(getFormKeyVaultState(formId));
+          setKeyVaultOpen(true);
+        }
+        return;
+      }
       if (state !== "unlocked") {
         // Form structure is not response plaintext. Let owners keep editing
         // while the vault remains locked; only response and history views
