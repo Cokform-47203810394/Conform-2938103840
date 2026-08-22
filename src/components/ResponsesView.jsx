@@ -151,8 +151,12 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
       setDriveUrl(uploaded.webViewLink || "");
       recordExport(target === "sheets" ? "google_sheets" : `drive_${target}`, "google_drive");
     } catch (error) {
-      if (error?.status === 401 || error?.status === 403) {
-        setExportNotice("Google Drive 권한이 만료됐어요. 내보내기 메뉴의 ‘Google Drive 연결’을 눌러 다시 허용해 주세요.");
+      if (error?.status === 401) {
+        setExportNotice("Google Drive 로그인 세션이 만료됐어요. 내보내기 메뉴의 ‘Google Drive 연결’을 눌러 다시 허용해 주세요.");
+      } else if (error?.status === 403 && ["accessNotConfigured", "SERVICE_DISABLED"].includes(error?.reason)) {
+        setExportNotice("이 OAuth 프로젝트에서 Google Drive API가 아직 켜지지 않았어요. Google Cloud Console > API 및 서비스 > 라이브러리에서 ‘Google Drive API’를 활성화한 뒤 다시 시도해 주세요.");
+      } else if (error?.status === 403) {
+        setExportNotice("Google Drive가 파일 생성 권한을 거부했어요. OAuth 동의 화면의 테스트 사용자와 Google Drive API 상태를 확인한 뒤 ‘Google Drive 연결’을 다시 눌러 주세요.");
       } else {
         setExportNotice("내보내기 파일을 Google Drive로 보내지 못했어요. 네트워크와 Google 연결 상태를 확인해 주세요.");
       }

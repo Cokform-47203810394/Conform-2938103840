@@ -41,8 +41,16 @@ export async function uploadGoogleDriveFile(accessToken, { blob, name, mimeType,
     body,
   });
   if (!response.ok) {
-    const error = new Error(`drive_upload_${response.status}`);
+    const rawBody = await response.text();
+    let detail = {};
+    try {
+      detail = JSON.parse(rawBody)?.error || {};
+    } catch {
+      detail = {};
+    }
+    const error = new Error(detail.message || `drive_upload_${response.status}`);
     error.status = response.status;
+    error.reason = detail.errors?.[0]?.reason || detail.status || "";
     throw error;
   }
   return response.json();
