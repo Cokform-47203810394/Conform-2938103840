@@ -56,12 +56,16 @@ jobs:
           trap 'rm -rf "$backup_dir"' EXIT
           backup_stamp="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
 
-          # Supabase's documented order is roles → schema → data.
+          # The default CLI dump deliberately excludes Supabase-managed auth.
+          # Keep only Auth table data (not the managed Auth schema) so a clean
+          # replacement project can retain existing user UUIDs and form ownership.
+          # Restore order is roles → public schema → auth data → public data.
           supabase db dump --db-url "$SUPABASE_DB_URL" --file "$backup_dir/roles.sql" --role-only
           supabase db dump --db-url "$SUPABASE_DB_URL" --file "$backup_dir/schema.sql"
+          supabase db dump --db-url "$SUPABASE_DB_URL" --file "$backup_dir/auth-data.sql" --data-only --use-copy --schema auth
           supabase db dump --db-url "$SUPABASE_DB_URL" --file "$backup_dir/data.sql" --data-only --use-copy
 
-          tar -C "$backup_dir" -czf "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz" roles.sql schema.sql data.sql
+          tar -C "$backup_dir" -czf "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz" roles.sql schema.sql auth-data.sql data.sql
           age --recipient "$BACKUP_AGE_RECIPIENT" --output "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz.age" "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz"
           rm -f "$RUNNER_TEMP/cokform-supabase-${backup_stamp}.tar.gz"
           (
