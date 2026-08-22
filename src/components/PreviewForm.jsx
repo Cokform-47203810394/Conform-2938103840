@@ -4,13 +4,7 @@ import QuestionField from "./QuestionField";
 import { ELEV1, ELEV1_HOVER, MD } from "../theme";
 import { sanitizeImageSource, sanitizeRichText } from "../lib/sanitizeRichText";
 import MarkdownContent from "./MarkdownContent";
-
-function isQuestionVisible(question, answers) {
-  const condition = question.visibilityCondition;
-  if (!condition?.questionId) return true;
-  const sourceValue = answers[condition.questionId];
-  return Array.isArray(sourceValue) ? sourceValue.includes(condition.value) : sourceValue === condition.value;
-}
+import { isQuestionVisibleForAnswers } from "../lib/conditionalQuestions";
 
 export default function PreviewForm({ form, onSubmit, accent, previewMode = false }) {
   const color = accent || MD.primary;
@@ -68,7 +62,7 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
     }
 
     form.questions.forEach((q) => {
-      if (q.type === "privacy_notice" || q.type === "section" || !isQuestionVisible(q, answers)) return; // 안내 전용, 응답값 없음
+      if (q.type === "privacy_notice" || q.type === "section" || !isQuestionVisibleForAnswers(q, answers)) return; // 안내 전용, 응답값 없음
 
       if (q.type === "privacy_consent") {
         const v = answers[q.id];
@@ -100,7 +94,7 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
 
     setSubmitting(true);
     try {
-      const visibleQuestionIds = new Set(form.questions.filter((question) => isQuestionVisible(question, answers)).map((question) => question.id));
+      const visibleQuestionIds = new Set(form.questions.filter((question) => isQuestionVisibleForAnswers(question, answers)).map((question) => question.id));
       const submittedAnswers = Object.fromEntries(Object.entries(answers).filter(([id]) => id.startsWith("_cokform_") || visibleQuestionIds.has(id)));
       const completed = await onSubmit(submittedAnswers, previewMode ? {} : { startedAt: startedAtRef.current, website });
       if (completed !== false) setSubmitted(true);
@@ -246,7 +240,7 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
           </div>
         </div>
       )}
-      {form.questions.filter((q) => isQuestionVisible(q, answers)).map((q) => (
+      {form.questions.filter((q) => isQuestionVisibleForAnswers(q, answers)).map((q) => (
         <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={handleChange} />
       ))}
       {previewMode ? (

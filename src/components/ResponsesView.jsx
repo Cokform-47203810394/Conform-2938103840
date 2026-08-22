@@ -4,6 +4,7 @@ import { createCsvBlob, createExcelBlob, createSummaryPngBlob, downloadCsv, down
 import { getGoogleDriveAccessToken, requestGoogleDriveAccess, uploadGoogleDriveFile } from "../lib/googleDriveExport";
 import { TYPE_LABEL } from "../questionTypes";
 import { richTextToPlain } from "../lib/sanitizeRichText";
+import { isResponseQuestion, visibleResponseQuestions } from "../lib/conditionalQuestions";
 
 function exportFileName(form, suffix) {
   const title = (form.title || "cokform").replace(/[\\/:*?"<>|]/g, "-").slice(0, 80) || "cokform";
@@ -74,7 +75,7 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
   const [statusFilter, setStatusFilter] = useState("all");
 
   const responseQuestions = useMemo(
-    () => form.questions.filter((question) => question.type !== "privacy_notice" && question.type !== "section"),
+    () => form.questions.filter(isResponseQuestion),
     [form.questions],
   );
 
@@ -252,7 +253,7 @@ export default function ResponsesView({ form, formId, responses, onClear, onDele
                 </div>
 
                 <dl className="mt-4 grid gap-x-8 border-t border-[#E7E5DC] pt-3 sm:grid-cols-2">
-                  {responseQuestions.map((question) => (
+                  {visibleResponseQuestions(form, response.answers).map((question) => (
                     <div key={question.id} className="border-b border-[#F0EEE6] py-3 last:border-b-0 sm:[&:nth-last-child(2):nth-child(odd)]:border-b-0">
                       <dt className="text-[11px] font-normal text-[#78837C]">{richTextToPlain(question.title) || "제목 없는 질문"} <span className="ml-1 text-[#A2AAA3]">{TYPE_LABEL[question.type]}</span></dt>
                       <dd className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-6 text-[#17251F]">{formatAnswer(response.answers?.[question.id])}</dd>
