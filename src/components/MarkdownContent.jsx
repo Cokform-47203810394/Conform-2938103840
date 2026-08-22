@@ -54,7 +54,7 @@ function MarkdownImage({ alt, source, align = "center", width = "full" }) {
 // This intentionally renders Markdown as React nodes rather than accepting HTML.
 // Raw HTML stays plain text, so public form descriptions cannot inject scripts,
 // attributes, iframes, or unexpected URL schemes.
-export default function MarkdownContent({ content, className = "", style, image, imagePosition = "center", imageWidth = "full" }) {
+export default function MarkdownContent({ content, className = "", style, image, imagePosition = "center", imageWidth = "full", imagePlacement = "below" }) {
   const lines = String(content || "").replace(/\r\n/g, "\n").split("\n");
   const blocks = [];
   let index = 0;
@@ -147,8 +147,9 @@ export default function MarkdownContent({ content, className = "", style, image,
 
   return (
     <div className={`break-words leading-6 ${className}`} style={style}>
+      {image?.src && imagePlacement === "above" && <MarkdownImage alt={image.alt} source={image.src} align={imagePosition} width={imageWidth} />}
       {blocks}
-      {image?.src && <MarkdownImage alt={image.alt} source={image.src} align={imagePosition} width={imageWidth} />}
+      {image?.src && imagePlacement !== "above" && <MarkdownImage alt={image.alt} source={image.src} align={imagePosition} width={imageWidth} />}
     </div>
   );
 }

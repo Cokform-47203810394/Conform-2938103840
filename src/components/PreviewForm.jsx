@@ -27,6 +27,7 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
   };
   const descriptionImageWidth = descriptionStyle.imageWidth === "small" ? "max-w-sm" : descriptionStyle.imageWidth === "medium" ? "max-w-xl" : "max-w-none";
   const descriptionImageAlign = descriptionStyle.imageAlign === "left" ? "mr-auto" : descriptionStyle.imageAlign === "right" ? "ml-auto" : "mx-auto";
+  const descriptionImagePlacement = descriptionStyle.imagePlacement === "above" ? "above" : "below";
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -152,7 +153,14 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
     <div className="space-y-4">
       <div className={`rounded-xl border-t-8 bg-white p-5 sm:p-6 ${ELEV1}`} style={{ borderTopColor: color }}>
         <h1 className="break-words text-xl font-normal text-[#17251F] sm:text-2xl">{form.title}</h1>
-        {(form.description || (descriptionImageSrc && form.descriptionFormat === "markdown")) && (form.descriptionFormat === "markdown" ? (
+        {descriptionImageSrc && form.descriptionFormat !== "markdown" && descriptionImagePlacement === "above" && (
+          <img
+            src={descriptionImageSrc}
+            alt={form.descriptionImage.alt || "설명 이미지"}
+            className={`mb-4 max-h-72 w-full rounded-lg object-cover ${descriptionImageWidth} ${descriptionImageAlign}`}
+          />
+        )}
+        {(form.description || descriptionImageSrc) && (form.descriptionFormat === "markdown" ? (
           <MarkdownContent
             content={form.description}
             className="mt-2 text-sm text-[#59645E]"
@@ -160,15 +168,16 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
             image={descriptionImageSrc ? { src: descriptionImageSrc, alt: form.descriptionImage?.alt } : null}
             imagePosition={descriptionStyle.imageAlign || "center"}
             imageWidth={descriptionStyle.imageWidth || "full"}
+            imagePlacement={descriptionImagePlacement}
           />
-        ) : (
+        ) : form.description ? (
           <div
             className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#59645E]"
             style={descriptionTypography}
             dangerouslySetInnerHTML={{ __html: sanitizeRichText(form.description) }}
           />
-        ))}
-        {descriptionImageSrc && form.descriptionFormat !== "markdown" && (
+        ) : null)}
+        {descriptionImageSrc && form.descriptionFormat !== "markdown" && descriptionImagePlacement !== "above" && (
           <img
             src={descriptionImageSrc}
             alt={form.descriptionImage.alt || "설명 이미지"}

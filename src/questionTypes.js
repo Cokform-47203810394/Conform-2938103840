@@ -83,6 +83,7 @@ export function emptyForm() {
       textAlign: "left",
       imageAlign: "center",
       imageWidth: "full",
+      imagePlacement: "below",
     },
     descriptionImage: null,
     questions: [defaultQuestion("radio")],
