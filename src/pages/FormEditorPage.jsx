@@ -110,6 +110,7 @@ function EditorToolsMenu({ onUndo, onRedo, onVersionHistory, onCopyLink, onColla
 function versionReasonLabel(reason) {
   if (reason === "initial") return "처음 저장";
   if (reason === "before_restore") return "복원 전 자동 보관";
+  if (reason === "before_large_reduction") return "대규모 삭제 전 자동 보관";
   if (reason === "restore") return "이전 버전 복원";
   return "자동 저장";
 }
@@ -190,6 +191,14 @@ function findRecoveryCandidate(currentForm, versions) {
     .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime())[0] || null;
 }
 
+function isLargeQuestionReduction(previousForm, nextForm) {
+  const previousCount = questionCount(previousForm);
+  const nextCount = questionCount(nextForm);
+  // Normal editing should stay frictionless. This only protects a destructive
+  // drop such as an accidental stale draft replacing a multi-question form.
+  return previousCount >= 3 && nextCount < previousCount && nextCount <= Math.floor(previousCount / 2);
+}
+
 function normalizeForm(value) {
   const fallback = emptyForm();
   const next = value || {};
@@ -233,6 +242,8 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const loadedRef = useRef(false);
   const formRef = useRef(form);
   const serverFormFingerprintRef = useRef("");
+  const lastPersistedFormRef = useRef(null);
+  const reductionBackupFingerprintRef = useRef("");
 
   useEffect(() => {
     formRef.current = form;
@@ -259,6 +270,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     }
     if (!nextForm.publicKey) nextForm = { ...nextForm, publicKey: keyPair.publicJwk };
     formRef.current = nextForm;
+    lastPersistedFormRef.current = normalizeForm(doc?.form);
     setForm(nextForm);
     setResponses(doc?.responses || []);
     lastVersionFingerprint.current = JSON.stringify(nextForm);
@@ -288,6 +300,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     const nextForm = resolved.form;
     serverFormFingerprintRef.current = resolved.serverFingerprint;
     formRef.current = nextForm;
+    lastPersistedFormRef.current = normalizeForm(doc?.form);
     setForm(nextForm);
     // A locked vault must never expose decrypted responses or version contents.
     setResponses([]);
@@ -564,9 +577,19 @@ export default function FormEditorPage({ formId, user, onBack }) {
         const nextForm = pendingSaveRef.current;
         pendingSaveRef.current = null;
         setSaveState("saving");
+        const previousForm = lastPersistedFormRef.current;
+        if (previousForm?.publicKey && isLargeQuestionReduction(previousForm, nextForm)) {
+          const previousFingerprint = formFingerprint(previousForm);
+          if (reductionBackupFingerprintRef.current !== previousFingerprint) {
+            const backedUp = await saveFormVersion(formId, previousForm, "before_large_reduction");
+            if (!backedUp) throw new Error("reduction_backup_failed");
+            reductionBackupFingerprintRef.current = previousFingerprint;
+          }
+        }
         const didSave = await saveFormDoc(formId, { form: nextForm });
         if (!didSave) throw new Error("save_failed");
         clearEditorDraftIfMatching(formId, nextForm);
+        lastPersistedFormRef.current = nextForm;
         serverFormFingerprintRef.current = formFingerprint(nextForm);
       }
       setSaveState("saved");
@@ -766,6 +789,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
           return;
         }
         formRef.current = restored;
+        lastPersistedFormRef.current = restored;
         lastVersionFingerprint.current = JSON.stringify(restored);
         setForm(restored);
         await saveFormVersion(formId, restored, "restore");
