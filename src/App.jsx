@@ -29,6 +29,27 @@ function UnknownRoutePage() {
 const EDITOR_RETURN_FORM_KEY = "cokform:editor:return-form";
 const WORKSPACE_RETURN_FORM_KEY = "cokform:workspace:return-form";
 
+function readOAuthProblem() {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const error = params.get("error");
+  const description = params.get("error_description") || "";
+  if (!error) return null;
+  const lowered = description.toLowerCase();
+  if (lowered.includes("state") || lowered.includes("code verifier")) {
+    return "로그인 연결이 중간에 끊겼어요. Google 로그인은 시작한 같은 브라우저 탭에서 끝까지 진행한 뒤 다시 시도해 주세요.";
+  }
+  if (error === "access_denied") {
+    return "Google에서 권한을 허용하지 않았어요. 사용하는 Google 계정이 허용된 테스트 사용자인지 확인한 뒤 다시 시도해 주세요.";
+  }
+  return "로그인을 완료하지 못했어요. 잠시 후 같은 브라우저 탭에서 다시 시도해 주세요.";
+}
+
+function OAuthProblemNotice({ message, onDismiss }) {
+  if (!message) return null;
+  return <div role="alert" className="mx-auto mb-4 flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-xl border border-[#F0C4BE] bg-[#FFF6F5] px-4 py-3 text-sm text-[#8C1D18]"><span>{message}</span><div className="flex items-center gap-2"><button type="button" onClick={signInWithGoogle} className="rounded-full border border-[#D85B4A] bg-white px-3 py-1.5 text-xs font-semibold text-[#8C1D18] hover:bg-[#FBE4E0]">다시 로그인</button><button type="button" onClick={onDismiss} className="rounded-full px-2 py-1 text-xs font-semibold text-[#8C1D18] hover:bg-[#FBE4E0]">닫기</button></div></div>;
+}
+
 function readSessionFormId(key) {
   try {
     return sessionStorage.getItem(key) || null;
@@ -94,6 +115,7 @@ function Builder() {
   const [currentFormId, setCurrentFormId] = useState(() => initialFormId || null);
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [oauthProblem, setOauthProblem] = useState(() => readOAuthProblem());
 
   useEffect(() => {
     const unsubscribe = subscribeAuth((nextUser) => {
@@ -102,6 +124,12 @@ function Builder() {
     });
     return unsubscribe;
   }, []);
+
+  const dismissOAuthProblem = () => {
+    setOauthProblem(null);
+    if (typeof window === "undefined") return;
+    window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.hash}`);
+  };
 
   useEffect(() => {
     if (authReady && user && currentFormId) writeSessionFormId(WORKSPACE_RETURN_FORM_KEY, null);
@@ -161,7 +189,9 @@ function Builder() {
   }
 
   return (
-    <HomePage
+    <>
+      <div className="bg-[#F5F3EC] px-3 pt-3 sm:px-6"><OAuthProblemNotice message={oauthProblem} onDismiss={dismissOAuthProblem} /></div>
+      <HomePage
       onOpenForm={(id) => {
         writeSessionFormId(EDITOR_RETURN_FORM_KEY, id);
         setCurrentFormId(id);
@@ -170,6 +200,7 @@ function Builder() {
       user={user}
       authReady={authReady}
       onOpenSettings={() => setView("settings")}
-    />
+      />
+    </>
   );
 }
