@@ -179,6 +179,17 @@ function resolveEditorForm(formId, remoteForm) {
   return { form: serverForm, serverFingerprint };
 }
 
+function questionCount(form) {
+  return Array.isArray(form?.questions) ? form.questions.length : 0;
+}
+
+function findRecoveryCandidate(currentForm, versions) {
+  const currentCount = questionCount(currentForm);
+  return (versions || [])
+    .filter((version) => Number(version?.summary?.questionCount ?? questionCount(version?.form)) > currentCount)
+    .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime())[0] || null;
+}
+
 function normalizeForm(value) {
   const fallback = emptyForm();
   const next = value || {};
@@ -204,6 +215,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [versions, setVersions] = useState([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
+  const [recoveryCandidate, setRecoveryCandidate] = useState(null);
   const [keyVaultState, setKeyVaultState] = useState("checking");
   const [keyVaultOpen, setKeyVaultOpen] = useState(false);
   const [keyVaultBusy, setKeyVaultBusy] = useState(false);
@@ -253,9 +265,14 @@ export default function FormEditorPage({ formId, user, onBack }) {
     const loadedVersions = await getFormVersions(formId);
     if (loadedVersions.length) {
       setVersions(loadedVersions);
+      setRecoveryCandidate(findRecoveryCandidate(nextForm, loadedVersions));
     } else {
       const created = await saveFormVersion(formId, nextForm, "initial");
-      if (created) setVersions(await getFormVersions(formId));
+      if (created) {
+        const initialVersions = await getFormVersions(formId);
+        setVersions(initialVersions);
+        setRecoveryCandidate(null);
+      }
     }
     setKeyVaultState("unlocked");
     setKeyVaultError("");
@@ -275,6 +292,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     // A locked vault must never expose decrypted responses or version contents.
     setResponses([]);
     setVersions([]);
+    setRecoveryCandidate(null);
     lastVersionFingerprint.current = JSON.stringify(nextForm);
     loadedRef.current = true;
     setLoaded(true);
@@ -624,7 +642,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
     setHistoryOpen(true);
     setVersionsLoading(true);
     try {
-      setVersions(await getFormVersions(formId));
+      const loadedVersions = await getFormVersions(formId);
+      setVersions(loadedVersions);
+      setRecoveryCandidate(findRecoveryCandidate(formRef.current, loadedVersions));
     } finally {
       setVersionsLoading(false);
     }
@@ -749,7 +769,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
         lastVersionFingerprint.current = JSON.stringify(restored);
         setForm(restored);
         await saveFormVersion(formId, restored, "restore");
-        setVersions(await getFormVersions(formId));
+        const restoredVersions = await getFormVersions(formId);
+        setVersions(restoredVersions);
+        setRecoveryCandidate(null);
         setConfirmAction(null);
         setToast("이전 버전으로 복원했습니다.");
         return;
@@ -1114,6 +1136,17 @@ export default function FormEditorPage({ formId, user, onBack }) {
           <div className="py-16 text-center text-sm text-[#78837C]">불러오는 중…</div>
         ) : (
           <>
+            {recoveryCandidate && keyVaultState === "unlocked" && (
+              <aside className="mb-4 border-l-4 border-[#D59A1A] bg-[#FFF8E7] px-4 py-3 text-sm text-[#5B430B]" role="status">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">이전 저장본에 더 많은 문항이 있어요</p>
+                    <p className="mt-1 text-xs leading-5">현재 {questionCount(form)}문항보다 {recoveryCandidate.summary?.questionCount ?? questionCount(recoveryCandidate.form)}문항인 {formatVersionDate(recoveryCandidate.createdAt)} 저장본을 발견했습니다. 정상 삭제가 아니라면 안전하게 복원할 수 있어요.</p>
+                  </div>
+                  <button type="button" onClick={() => requestVersionRestore(recoveryCandidate)} className="shrink-0 rounded-full border border-[#B98012] bg-white px-3 py-1.5 text-xs font-semibold text-[#6D4A06] hover:bg-[#FFF0C9]">복구 확인</button>
+                </div>
+              </aside>
+            )}
             {tab === "edit" && (
               <div className="space-y-3 sm:space-y-4">
                 {form.questions.length > 0 && <QuickAddToolbar onAdd={addQuestion} />}
