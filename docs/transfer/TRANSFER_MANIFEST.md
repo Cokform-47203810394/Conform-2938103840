@@ -1,8 +1,8 @@
 # Cokform Transfer Manifest
 
-Generated: 2026-08-22T02:17:29.486375+00:00
+Generated: 2026-08-22T02:18:06.192822+00:00
 
-- Included files: **2190**
+- Included files: **2189**
 - Excluded by secret marker: **0**
 - Excluded directories: `.git`, `node_modules`, `dist`, caches, coverage, browser reports.
 - Excluded files: real `.env` files, `.pem`, `.p12`, private keys, credentials and detected secret markers.

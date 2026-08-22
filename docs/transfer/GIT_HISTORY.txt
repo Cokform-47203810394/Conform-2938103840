@@ -2,6 +2,7 @@
 
 ## Current local history
 ```text
+[33m4e63d08[m docs: refresh independent operations handover
 [33mf58c542[m fix: preserve editor draft across updates
 [33m7760066[m fix: restore active editor after refresh
 [33mf041aea[m fix: clarify Google Drive permission failures
@@ -31,26 +32,11 @@
 [33m460dc6e[m refactor: simplify home language and retain render diagnostics
 [33m5dca38b[m fix: restore stable home rendering
 [33m86930fa[m refactor: make template selection feel more human
-[33mb9c8dcc[m docs: record business information page verification
 ```
 
 ## Current status
 ```text
- [31mM[m docs/OPERATIONS_MANUAL_SYSTEM.md
- [31mM[m scripts/generate_transfer_inventory.py
-[31m??[m docs/AI_AND_OPERATOR_START_HERE.md
-[31m??[m docs/MASTER_CONTEXT_COKFORM_CURRENT.md
-[31m??[m docs/google-oauth-403-investigation-2026-08-22.md
-[31m??[m docs/mobile-rofolder-form-check.json
-[31m??[m docs/mobile-rofolder-form-check.md
-[31m??[m docs/mobile-rofolder-form-check.png
-[31m??[m docs/transfer-inventory-raw.txt
-[31m??[m scripts/build_rofolder_question_update.mjs
-[31m??[m scripts/create_handover_archive.py
-[31m??[m scripts/test_mobile_all_rofolder_teams.mjs
-[31m??[m scripts/test_mobile_rofolder_form.mjs
-[31m??[m tmp_rofolder_question_update_input.json
-[31m??[m tmp_rofolder_team_questions.json
+clean
 ```
 
 ## Current remotes
