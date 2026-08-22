@@ -116,19 +116,41 @@ function versionReasonLabel(reason) {
 
 const EDITOR_DRAFT_PREFIX = "cokform:editor:draft:";
 
+function formFingerprint(form) {
+  return JSON.stringify(normalizeForm(form));
+}
+
+function removeEditorDraft(formId) {
+  try {
+    sessionStorage.removeItem(`${EDITOR_DRAFT_PREFIX}${formId}`);
+  } catch {
+    // Session storage is only a best-effort recovery layer.
+  }
+}
+
 function readEditorDraft(formId) {
   try {
     const raw = sessionStorage.getItem(`${EDITOR_DRAFT_PREFIX}${formId}`);
     const draft = raw ? JSON.parse(raw) : null;
-    return draft?.version === 1 && draft?.form && typeof draft.form === "object" ? draft : null;
+    if (draft?.version === 2 && draft?.baseFingerprint && draft?.form && typeof draft.form === "object") return draft;
+    // Version 1 drafts did not prove that they belonged to the currently loaded
+    // server document. Never apply them after the data-loss incident.
+    if (raw) removeEditorDraft(formId);
+    return null;
   } catch {
     return null;
   }
 }
 
-function writeEditorDraft(formId, form) {
+function writeEditorDraft(formId, form, baseFingerprint) {
+  if (!baseFingerprint) return;
   try {
-    sessionStorage.setItem(`${EDITOR_DRAFT_PREFIX}${formId}`, JSON.stringify({ version: 1, savedAt: Date.now(), form }));
+    sessionStorage.setItem(`${EDITOR_DRAFT_PREFIX}${formId}`, JSON.stringify({
+      version: 2,
+      savedAt: Date.now(),
+      baseFingerprint,
+      form,
+    }));
   } catch {
     // Draft mirroring is a recovery layer; normal server autosave remains available.
   }
@@ -137,15 +159,24 @@ function writeEditorDraft(formId, form) {
 function clearEditorDraftIfMatching(formId, savedForm) {
   try {
     const draft = readEditorDraft(formId);
-    if (draft && JSON.stringify(draft.form) === JSON.stringify(savedForm)) sessionStorage.removeItem(`${EDITOR_DRAFT_PREFIX}${formId}`);
+    if (draft && formFingerprint(draft.form) === formFingerprint(savedForm)) removeEditorDraft(formId);
   } catch {
     // A stale recovery draft is safer than discarding unsaved author changes.
   }
 }
 
-function applyEditorDraft(formId, form) {
+function resolveEditorForm(formId, remoteForm) {
+  const serverForm = normalizeForm(remoteForm);
+  const serverFingerprint = formFingerprint(serverForm);
   const draft = readEditorDraft(formId);
-  return draft ? normalizeForm(draft.form) : form;
+  if (!draft) return { form: serverForm, serverFingerprint };
+  if (draft.baseFingerprint === serverFingerprint) {
+    return { form: normalizeForm(draft.form), serverFingerprint };
+  }
+  // The server changed since this tab draft was created. Server data wins; the
+  // stale draft must never overwrite a newer or different form.
+  removeEditorDraft(formId);
+  return { form: serverForm, serverFingerprint };
 }
 
 function normalizeForm(value) {
@@ -189,6 +220,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const lastVersionFingerprint = useRef("");
   const loadedRef = useRef(false);
   const formRef = useRef(form);
+  const serverFormFingerprintRef = useRef("");
 
   useEffect(() => {
     formRef.current = form;
@@ -206,7 +238,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   const finishSecureLoad = useCallback(async (keyPair) => {
     const doc = await getFormDoc(formId);
-    let nextForm = applyEditorDraft(formId, normalizeForm(doc?.form));
+    const resolved = resolveEditorForm(formId, doc?.form);
+    let nextForm = resolved.form;
+    serverFormFingerprintRef.current = resolved.serverFingerprint;
     if (nextForm.publicKey && !matchesPublicKey(nextForm.publicKey, keyPair.publicJwk)) {
       lockFormKeyVault(formId);
       throw new Error("이 기기의 개인키가 이 폼의 암호화 키와 일치하지 않습니다. 새 금고를 만들지 말고 기존 암호화 키 백업 또는 전체 복구 번들을 가져와 주세요.");
@@ -233,7 +267,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   const loadFormStructure = useCallback(async () => {
     const doc = await getFormDoc(formId);
-    const nextForm = applyEditorDraft(formId, normalizeForm(doc?.form));
+    const resolved = resolveEditorForm(formId, doc?.form);
+    const nextForm = resolved.form;
+    serverFormFingerprintRef.current = resolved.serverFingerprint;
     formRef.current = nextForm;
     setForm(nextForm);
     // A locked vault must never expose decrypted responses or version contents.
@@ -513,6 +549,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
         const didSave = await saveFormDoc(formId, { form: nextForm });
         if (!didSave) throw new Error("save_failed");
         clearEditorDraftIfMatching(formId, nextForm);
+        serverFormFingerprintRef.current = formFingerprint(nextForm);
       }
       setSaveState("saved");
     } catch {
@@ -529,7 +566,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
     if (!loaded) return;
     // Mirror the exact current form before the 400 ms network debounce. This is
     // tab-only metadata, never decrypted response data or a private-key export.
-    writeEditorDraft(formId, form);
+    writeEditorDraft(formId, form, serverFormFingerprintRef.current);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       pendingSaveRef.current = form;
@@ -548,7 +585,7 @@ export default function FormEditorPage({ formId, user, onBack }) {
   useEffect(() => {
     const flushOnPageExit = () => {
       flushActiveRichText();
-      writeEditorDraft(formId, normalizeForm(formRef.current));
+      writeEditorDraft(formId, normalizeForm(formRef.current), serverFormFingerprintRef.current);
       // State is already mirrored to formRef on every edit, so this request does
       // not depend on the 400 ms autosave timer surviving a tab/page change.
       void saveImmediately();
