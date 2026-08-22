@@ -17,6 +17,7 @@ const AUDIT_PREFIX = "form-builder:audit";
 const PARTICIPATION_PREFIX = "form-builder:participations";
 const PARTICIPATION_TABLE = "form_participations";
 const NOTIFICATION_TABLE = "form_notifications";
+const TRASH_PREFIX = "form-builder:trash";
 const MAX_LOCAL_VERSIONS = 60;
 
 function readIndexLocal() {
@@ -160,6 +161,7 @@ export async function listForms() {
     const { data, error } = await supabase
       .from(TABLE)
       .select("id, title, updated_at, created_at, data")
+      .is("deleted_at", null)
       .order("updated_at", { ascending: false });
     if (error) return undefined;
     const ids = (data || []).map((row) => row.id);
@@ -187,6 +189,29 @@ export async function listForms() {
   if (remote !== undefined) return remote;
   if (hasSupabaseConfig()) return [];
   return readIndexLocal().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+}
+
+export async function listTrashedForms() {
+  const remote = await trySupabase("휴지통 조회", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return [];
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select("id, title, deleted_at")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false })
+      .limit(30);
+    if (error) return [];
+    return (data || []).map((row) => ({ id: row.id, title: row.title, deletedAt: row.deleted_at }));
+  });
+  if (remote !== undefined) return remote;
+  if (hasSupabaseConfig()) return [];
+  try {
+    const raw = localStorage.getItem(TRASH_PREFIX);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function recordFormView(formId) {
@@ -228,6 +253,7 @@ export async function getFormDoc(id) {
         .from(TABLE)
         .select("data")
         .eq("id", id)
+        .is("deleted_at", null)
         .maybeSingle();
       if (ownerError) return undefined;
 
@@ -301,6 +327,13 @@ export async function saveFormDoc(id, doc) {
   const savedRemotely = await trySupabase("저장", async (supabase) => {
     const { data: authData } = await supabase.auth.getUser();
     if (!authData?.user) return undefined;
+
+    const { data: existing, error: existingError } = await supabase
+      .from(TABLE)
+      .select("deleted_at")
+      .eq("id", id)
+      .maybeSingle();
+    if (existingError || existing?.deleted_at) return undefined;
 
     const { error: formError } = await supabase.from(TABLE).upsert({
       id,
@@ -775,36 +808,89 @@ export async function deleteStoredResponse(formId, responseId) {
   }
 }
 
-export async function deleteFormDoc(id) {
-  const deletedRemotely = await trySupabase("삭제", async (supabase) => {
+export async function moveFormToTrash(id) {
+  const movedRemotely = await trySupabase("휴지통 이동", async (supabase) => {
     const { data: authData } = await supabase.auth.getUser();
     if (!authData?.user) return undefined;
-    const { data: deletedRows, error } = await supabase
+    const now = new Date().toISOString();
+    const { data: movedRows, error } = await supabase
       .from(TABLE)
-      .delete()
+      .update({ deleted_at: now, updated_at: now })
       .eq("id", id)
+      .is("deleted_at", null)
       .select("id");
-    if (error || !deletedRows?.length) return undefined;
-    // form_public and responses reference forms with ON DELETE CASCADE.
-    // Keep this explicit cleanup as a best-effort fallback for older pilot schemas.
-    await supabase.from(PUBLIC_TABLE).delete().eq("id", id);
+    if (error || !movedRows?.length) return undefined;
+    const { error: publicError } = await supabase.from(PUBLIC_TABLE).delete().eq("id", id);
+    if (publicError) {
+      // Best-effort compensation: keep the owner form visible if public shutdown failed.
+      await supabase.from(TABLE).update({ deleted_at: null }).eq("id", id);
+      return undefined;
+    }
     return true;
   });
 
-  if (deletedRemotely) {
-    // The database FK removes account-synced history. Clear this device's convenience metadata too.
-    writeParticipationsLocal(readParticipationsLocal().filter((item) => item.id !== id));
-    return true;
-  }
-
+  if (movedRemotely) return true;
   if (hasSupabaseConfig()) return false;
-  localStorage.removeItem(`${DOC_PREFIX}:${id}`);
-  localStorage.removeItem(`${RESPONSE_PREFIX}:${id}`);
-  localStorage.removeItem(`${VERSION_PREFIX}:${id}`);
-  writeIndexLocal(readIndexLocal().filter((f) => f.id !== id));
-  writeParticipationsLocal(readParticipationsLocal().filter((item) => item.id !== id));
-  return true;
+  try {
+    const raw = localStorage.getItem(`${DOC_PREFIX}:${id}`);
+    const index = readIndexLocal();
+    const item = index.find((form) => form.id === id);
+    if (!raw || !item) return false;
+    const trash = await listTrashedForms();
+    localStorage.setItem(TRASH_PREFIX, JSON.stringify([{ id, title: item.title, deletedAt: new Date().toISOString(), doc: raw }, ...trash].slice(0, 30)));
+    localStorage.removeItem(`${DOC_PREFIX}:${id}`);
+    writeIndexLocal(index.filter((form) => form.id !== id));
+    return true;
+  } catch {
+    return false;
+  }
 }
+
+export async function restoreFormFromTrash(id) {
+  const restoredRemotely = await trySupabase("휴지통 복원", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return undefined;
+    const { data: row, error: loadError } = await supabase
+      .from(TABLE)
+      .select("id, title, data")
+      .eq("id", id)
+      .not("deleted_at", "is", null)
+      .maybeSingle();
+    if (loadError || !row) return undefined;
+    const form = row.data?.form || row.data;
+    const now = new Date().toISOString();
+    const { error: formError } = await supabase.from(TABLE).update({ deleted_at: null, updated_at: now }).eq("id", id);
+    if (formError) return undefined;
+    const { error: publicError } = await supabase.from(PUBLIC_TABLE).upsert({
+      id,
+      title: row.title,
+      data: publicFormData(form),
+      updated_at: now,
+    });
+    if (!publicError) return true;
+    await supabase.from(TABLE).update({ deleted_at: now }).eq("id", id);
+    return undefined;
+  });
+
+  if (restoredRemotely) return true;
+  if (hasSupabaseConfig()) return false;
+  try {
+    const trash = await listTrashedForms();
+    const item = trash.find((form) => form.id === id);
+    if (!item?.doc) return false;
+    localStorage.setItem(`${DOC_PREFIX}:${id}`, item.doc);
+    const parsed = JSON.parse(item.doc);
+    const form = parsed?.form || parsed || {};
+    writeIndexLocal([{ id, title: form.title || item.title || "제목 없는 설문지", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), questions: (form.questions || []).slice(0, 3) }, ...readIndexLocal().filter((formItem) => formItem.id !== id)]);
+    localStorage.setItem(TRASH_PREFIX, JSON.stringify(trash.filter((form) => form.id !== id)));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Compatibility alias: deletion now means recovery-first trash, never immediate cascade deletion.
+export const deleteFormDoc = moveFormToTrash;
 
 export async function duplicateFormDoc(id) {
   const doc = await getFormDoc(id);

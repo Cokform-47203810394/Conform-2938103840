@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronLeft, ChevronRight, Pause, Play, X, Mail } from "lucide-react";
+import { Search, Settings, Plus, MoreVertical, Copy, Trash2, ArchiveRestore, ExternalLink, ArrowUpDown, Bell, Eye, BarChart3, CheckCircle2, ChevronLeft, ChevronRight, Pause, Play, X, Mail } from "lucide-react";
 import AuthControl from "../components/AuthControl";
 import { signInWithGoogle } from "../lib/auth";
 import FormThumbnail from "../components/FormThumbnail";
 import { Modal } from "../components/Overlay";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
-import { listForms, listParticipatedForms, listOwnerNotifications, markOwnerNotificationsRead, saveFormDoc, deleteFormDoc, duplicateFormDoc, newFormId } from "../lib/formsStore";
+import { listForms, listTrashedForms, listParticipatedForms, listOwnerNotifications, markOwnerNotificationsRead, saveFormDoc, moveFormToTrash, restoreFormFromTrash, duplicateFormDoc, newFormId } from "../lib/formsStore";
 import { MD } from "../theme";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
 import { getResponseWindowState } from "../lib/responseWindow";
@@ -38,6 +38,7 @@ function formatRelative(iso) {
 
 export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }) {
   const [forms, setForms] = useState([]);
+  const [trashedForms, setTrashedForms] = useState([]);
   const [participatedForms, setParticipatedForms] = useState([]);
   const [responseNotifications, setResponseNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,13 +54,15 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
   const notificationsPanelRef = useRef(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [restoringTrashId, setRestoringTrashId] = useState(null);
 
   const refresh = async () => {
     setLoading(true);
     setLoadError("");
     try {
-      const [created, participated, notifications] = await Promise.all([listForms(), listParticipatedForms(), listOwnerNotifications()]);
+      const [created, trashed, participated, notifications] = await Promise.all([listForms(), listTrashedForms(), listParticipatedForms(), listOwnerNotifications()]);
       setForms(created || []);
+      setTrashedForms(trashed || []);
       setParticipatedForms(participated || []);
       setResponseNotifications(notifications || []);
     } catch {
@@ -186,18 +189,36 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
     const target = deleteTarget;
     setDeleting(true);
     try {
-      const deleted = await deleteFormDoc(target.id);
+      const deleted = await moveFormToTrash(target.id);
       if (!deleted) {
-        setNotice("삭제하지 못했어요. 로그인 상태와 폼 소유자 권한을 확인해주세요.");
+        setNotice("휴지통으로 옮기지 못했어요. 로그인 상태와 폼 소유자 권한을 확인해주세요.");
         window.setTimeout(() => setNotice(null), 3500);
         return;
       }
       setDeleteTarget(null);
-      setNotice("폼과 응답이 삭제되었습니다.");
-      window.setTimeout(() => setNotice(null), 2500);
+      setNotice("휴지통으로 옮겼어요. 최소 30일 동안 폼·응답·버전을 그대로 복원할 수 있어요.");
+      window.setTimeout(() => setNotice(null), 4000);
       await refresh();
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleRestoreTrash = async (id) => {
+    if (restoringTrashId) return;
+    setRestoringTrashId(id);
+    try {
+      const restored = await restoreFormFromTrash(id);
+      if (!restored) {
+        setNotice("복원하지 못했어요. 로그인 상태와 네트워크를 확인해주세요.");
+        window.setTimeout(() => setNotice(null), 3500);
+        return;
+      }
+      setNotice("폼·암호화 응답·버전을 그대로 복원했어요.");
+      window.setTimeout(() => setNotice(null), 3500);
+      await refresh();
+    } finally {
+      setRestoringTrashId(null);
     }
   };
 
@@ -389,7 +410,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
                       onClick={() => requestDelete(f.id, f.title)}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#B3261E] hover:bg-[#F9DEDC]/60"
                     >
-                      <Trash2 size={14} /> 삭제
+                      <Trash2 size={14} /> 휴지통으로 이동
                     </button>
                   </div>
                 )}
@@ -397,6 +418,23 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
             ))}
           </div>
         ) : null}
+
+        {!query.trim() && !loading && trashedForms.length > 0 && (
+          <section className="mt-10 border-t border-[#DDE1D9] pt-7">
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <div><div className="text-xs font-bold tracking-[0.08em] text-[#9A6A08]">복원 휴지통</div><h2 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#17251F] sm:text-2xl">최근에 옮긴 폼</h2></div>
+              <span className="text-xs text-[#78837C]">최소 30일 언제든 복원</span>
+            </div>
+            <div className="divide-y divide-[#E6DFC9] border-y border-[#E6DFC9] bg-[#FFF9EB]">
+              {trashedForms.map((form) => (
+                <div key={form.id} className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
+                  <div className="min-w-0"><div className="truncate text-sm font-semibold text-[#17251F]">{form.title}</div><div className="mt-1 text-xs text-[#78837C]">{formatRelative(form.deletedAt)} 휴지통으로 이동 · 공개 링크는 닫혀 있어요</div></div>
+                  <button type="button" onClick={() => handleRestoreTrash(form.id)} disabled={restoringTrashId === form.id} className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#B98B24] bg-white px-3 py-1.5 text-xs font-semibold text-[#72500A] transition hover:bg-[#FFF0C9] disabled:cursor-wait disabled:opacity-60"><ArchiveRestore size={14} />{restoringTrashId === form.id ? "복원 중…" : "복원"}</button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {!query.trim() && !loading && participatedForms.length > 0 && (
           <section className="mt-12 border-t border-[#DDE1D9] pt-9">
@@ -432,11 +470,11 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
       )}
 
       {deleteTarget && (
-        <Modal title="폼 삭제" onClose={() => !deleting && setDeleteTarget(null)}>
-          <p className="text-sm leading-6 text-[#59645E]"><strong className="text-[#17251F]">“{deleteTarget.title}”</strong>을 삭제합니다. 폼과 연결된 암호화 응답도 함께 삭제되며, 이 작업은 복원할 수 없습니다.</p>
+        <Modal title="휴지통으로 이동" onClose={() => !deleting && setDeleteTarget(null)}>
+          <p className="text-sm leading-6 text-[#59645E]"><strong className="text-[#17251F]">“{deleteTarget.title}”</strong>의 공개 링크를 지금 닫고 휴지통으로 옮깁니다. 폼·암호화 응답·버전은 그대로 보관되며, <strong className="text-[#17251F]">최소 30일 안에 한 번 눌러 복원할 수 있어요.</strong></p>
           <div className="mt-5 flex justify-end gap-2">
             <button type="button" onClick={() => setDeleteTarget(null)} disabled={deleting} className="rounded-full border border-[#C9CEC6] bg-white px-4 py-2 text-sm font-semibold text-[#59645E] transition-colors hover:bg-[#F5F3EC] disabled:opacity-50">취소</button>
-            <button type="button" onClick={confirmDelete} disabled={deleting} className="rounded-full bg-[#B3261E] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#8C1D18] disabled:cursor-wait disabled:opacity-60">{deleting ? "삭제 중…" : "삭제"}</button>
+            <button type="button" onClick={confirmDelete} disabled={deleting} className="rounded-full bg-[#8A5A00] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#6D4700] disabled:cursor-wait disabled:opacity-60">{deleting ? "이동 중…" : "휴지통으로 이동"}</button>
           </div>
         </Modal>
       )}
