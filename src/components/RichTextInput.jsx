@@ -46,7 +46,7 @@ export default function RichTextInput({ value, onChange, placeholder, className 
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative ${className}`} onMouseDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
       {focused && (
         <div className="absolute -top-10 left-0 z-20 flex items-center gap-0.5 rounded-lg bg-[#17251F] p-1 shadow-lg">
           {COMMANDS.map(({ cmd, icon: Icon, label }) => (
