@@ -58,8 +58,14 @@ export default function QuestionEditor({
         setDragHandleActive(false);
         onDragEnd?.();
       }}
-      onMouseDown={onSelect}
-      onFocusCapture={onSelect}
+      // 이미 선택된 카드 안의 편집 요소가 포커스를 얻을 때 다시 선택 처리하면
+      // flushActiveRichText가 해당 요소를 즉시 blur해 제목을 입력할 수 없게 된다.
+      onMouseDown={() => {
+        if (!isSelected) onSelect?.();
+      }}
+      onFocusCapture={() => {
+        if (!isSelected) onSelect?.();
+      }}
       className={`border-t-2 bg-[#FFFDF8] p-4 transition-[background-color,border-color] duration-150 sm:p-5 ${isDragging ? "opacity-40" : ""} ${isSelected ? "border-x border-b border-[#B7DCC8] bg-white" : "border-x border-b border-transparent hover:border-[#DDE1D9] hover:bg-white"}`}
       style={{ borderTopColor: accent }}
     >
