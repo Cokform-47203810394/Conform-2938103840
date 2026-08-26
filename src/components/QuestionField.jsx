@@ -111,8 +111,12 @@ export default function QuestionField({ q, value, error, onChange }) {
           value={value || ""}
           onChange={(e) => set(e.target.value)}
           rows={3}
+          aria-describedby={q.minLength ? `cokform-minlength-${q.id}` : undefined}
           className={`${FIELD} sm:text-sm`}
         />
+      )}
+      {(["short", "paragraph"].includes(q.type) && Number(q.minLength) > 0) && (
+        <p id={`cokform-minlength-${q.id}`} className="mt-2 text-xs text-[#59645E]">공백 제외 최소 {q.minLength}자 이상 작성해 주세요.</p>
       )}
       {q.type === "radio" && (
         <div>
@@ -207,7 +211,7 @@ export default function QuestionField({ q, value, error, onChange }) {
           className="w-full rounded-md border border-[#C9CEC6] px-2 py-2.5 text-base focus:border-[#17866D] sm:w-auto sm:py-2 sm:text-sm"
         />
       )}
-      {error && <div className="mt-2 text-xs text-[#B3261E]">이 질문은 필수입니다.</div>}
+      {error && <div className="mt-2 text-xs text-[#B3261E]">{error === "min_length" ? `공백 제외 ${q.minLength}자 이상 작성해 주세요.` : "이 질문은 필수입니다."}</div>}
     </div>
   );
 }

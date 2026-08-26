@@ -77,11 +77,20 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
         return;
       }
 
-      if (!q.required) return;
       const v = answers[q.id];
       const empty = v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
-      if (empty) {
+      if (q.required && empty) {
         markError(q.id);
+        return;
+      }
+      if (empty) return;
+
+      // E2EE 응답 본문은 서버가 읽지 않는다. 최소 글자 수는 제출 전에
+      // 브라우저에서만 검사해 무의미한 초단문 응답을 줄인다.
+      const minLength = Math.max(0, Math.min(2000, Number(q.minLength) || 0));
+      const textLength = typeof v === "string" ? v.replace(/\s+/g, "").length : 0;
+      if (minLength > 0 && textLength < minLength) {
+        markError(q.id, "min_length");
       }
     });
 
@@ -119,7 +128,11 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
     return {
       id,
       label: question?.title?.trim() || `질문 ${fallbackIndex > 0 ? fallbackIndex : ""}`.trim(),
-      detail: value === "decline" ? "동의하지 않음을 선택하면 제출할 수 없어요." : "필수 항목입니다.",
+      detail: value === "decline"
+        ? "동의하지 않음을 선택하면 제출할 수 없어요."
+        : value === "min_length"
+          ? `공백 제외 ${question?.minLength}자 이상 작성해 주세요.`
+          : "필수 항목입니다.",
     };
   });
   const requiredErrorCount = errorItems.filter((item) => item.id !== "_security").length;

@@ -224,8 +224,24 @@ export default function QuestionEditor({
         {q.type === "short" && (
           <div className="border-b border-dashed border-[#C9CEC6] pb-1 text-sm text-[#78837C]">단답형 텍스트</div>
         )}
-        {q.type === "paragraph" && (
-          <div className="border-b border-dashed border-[#C9CEC6] pb-1 text-sm text-[#78837C]">장문형 텍스트</div>
+        {(q.type === "short" || q.type === "paragraph") && (
+          <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-[#59645E]">
+            최소 글자 수
+            <input
+              type="number"
+              min="0"
+              max="2000"
+              inputMode="numeric"
+              value={Number(q.minLength) || ""}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                update({ minLength: Number.isFinite(value) ? Math.max(0, Math.min(2000, Math.floor(value))) : 0 });
+              }}
+              placeholder="미설정"
+              className="w-28 rounded-md border border-[#C9CEC6] bg-white px-2 py-1.5 text-base text-[#17251F] outline-none focus:border-[#17866D] sm:py-1 sm:text-sm"
+            />
+            <span className="text-xs text-[#78837C]">공백 제외 · 0이면 미설정</span>
+          </label>
         )}
         {q.type === "date" && <div className="text-sm text-[#78837C]">날짜 선택</div>}
         {q.type === "time" && <div className="text-sm text-[#78837C]">시간 선택</div>}
