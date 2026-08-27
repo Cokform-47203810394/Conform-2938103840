@@ -40,22 +40,22 @@ export default function CokformStatePage({ onBack }) {
     const timer = window.setTimeout(() => controller.abort(), 6000);
     const [databaseResult, gatewayResult] = await Promise.all([
       (async () => {
-        if (!client) return { status: "attention", detail: "공개 저장소 연결 정보를 찾지 못했습니다." };
+        if (!client) return { state: "attention", detail: "공개 저장소 연결 정보를 찾지 못했습니다." };
         const { error } = await client.from("form_public").select("id", { head: true }).limit(1);
         return error
-          ? { status: "attention", detail: "저장소 연결을 확인하지 못했습니다. 잠시 후 다시 확인해 주세요." }
-          : { status: "ok", detail: "공개 폼 메타데이터 연결이 정상입니다." };
+          ? { state: "attention", detail: "저장소 연결을 확인하지 못했습니다. 잠시 후 다시 확인해 주세요." }
+          : { state: "ok", detail: "공개 폼 메타데이터 연결이 정상입니다." };
       })(),
       (async () => {
         const url = getSupabaseConfig().url;
-        if (!url) return { status: "attention", detail: "응답 게이트웨이 연결 정보를 찾지 못했습니다." };
+        if (!url) return { state: "attention", detail: "응답 게이트웨이 연결 정보를 찾지 못했습니다." };
         try {
           const response = await fetch(`${url}/functions/v1/submit-e2ee-response`, { method: "OPTIONS", signal: controller.signal });
           return response.status === 204
-            ? { status: "ok", detail: "제출 전용 게이트웨이가 응답합니다." }
-            : { status: "attention", detail: "게이트웨이 응답을 확인하지 못했습니다. 잠시 후 다시 확인해 주세요." };
+            ? { state: "ok", detail: "제출 전용 게이트웨이가 응답합니다." }
+            : { state: "attention", detail: "게이트웨이 응답을 확인하지 못했습니다. 잠시 후 다시 확인해 주세요." };
         } catch {
-          return { status: "attention", detail: "게이트웨이 연결을 확인하지 못했습니다. 네트워크 상태를 확인해 주세요." };
+          return { state: "attention", detail: "게이트웨이 연결을 확인하지 못했습니다. 네트워크 상태를 확인해 주세요." };
         }
       })(),
     ]);
