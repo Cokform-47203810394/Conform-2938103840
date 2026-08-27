@@ -6,6 +6,7 @@ import { sanitizeImageSource, sanitizeRichText } from "../lib/sanitizeRichText";
 import MarkdownContent from "./MarkdownContent";
 import { isQuestionVisibleForAnswers } from "../lib/conditionalQuestions";
 import { findBlacklistViolation } from "../lib/responseValidation";
+import { clearResponseDraft, formatResponseDraftTime, loadResponseDraft, saveResponseDraft } from "../lib/responseDraft";
 
 export default function PreviewForm({ form, onSubmit, accent, previewMode = false }) {
   const color = accent || MD.primary;
@@ -28,12 +29,38 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [website, setWebsite] = useState("");
+  const [draftSavedAt, setDraftSavedAt] = useState("");
+  const answersRef = useRef({});
   const startedAtRef = useRef(Date.now());
   const errorSummaryRef = useRef(null);
 
+  useEffect(() => {
+    if (previewMode || !form?.id) return;
+    const savedDraft = loadResponseDraft(form.id, form.questions.map((question) => question.id));
+    if (!savedDraft) return;
+    answersRef.current = savedDraft.answers;
+    setAnswers(savedDraft.answers);
+    setDraftSavedAt(savedDraft.savedAt);
+  }, [form?.id, previewMode]);
+
   const handleChange = (qid, value) => {
-    setAnswers((a) => ({ ...a, [qid]: value }));
+    const nextAnswers = { ...answersRef.current, [qid]: value };
+    answersRef.current = nextAnswers;
+    setAnswers(nextAnswers);
     setErrors((e) => ({ ...e, [qid]: false }));
+    if (!previewMode && form?.id) {
+      const savedAt = saveResponseDraft(form.id, nextAnswers);
+      if (savedAt) setDraftSavedAt(savedAt);
+    }
+  };
+
+  const discardDraft = () => {
+    if (!form?.id) return;
+    clearResponseDraft(form.id);
+    answersRef.current = {};
+    setAnswers({});
+    setErrors({});
+    setDraftSavedAt("");
   };
 
   const moveToError = (id) => {
@@ -111,15 +138,18 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
       const visibleQuestionIds = new Set(form.questions.filter((question) => isQuestionVisibleForAnswers(question, answers)).map((question) => question.id));
       const submittedAnswers = Object.fromEntries(Object.entries(answers).filter(([id]) => id.startsWith("_cokform_") || visibleQuestionIds.has(id)));
       const completed = await onSubmit(submittedAnswers, previewMode ? {} : { startedAt: startedAtRef.current, website });
-      if (completed !== false) setSubmitted(true);
+      if (completed !== false) {
+        clearResponseDraft(form.id);
+        setDraftSavedAt("");
+        setSubmitted(true);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   const restart = () => {
-    setAnswers({});
-    setErrors({});
+    discardDraft();
     setWebsite("");
     startedAtRef.current = Date.now();
     setSubmitted(false);
@@ -271,6 +301,12 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
         <div className="absolute -left-[10000px] h-px w-px overflow-hidden" aria-hidden="true">
           <label htmlFor="cokform-website">웹사이트</label>
           <input id="cokform-website" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} />
+        </div>
+      )}
+      {!previewMode && Object.keys(answers).length > 0 && (
+        <div role="status" aria-live="polite" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#CDE9D8] bg-[#F7FCF8] px-3.5 py-3 text-xs leading-5 text-[#355C45]">
+          <span><strong className="text-[#0B4D3D]">이 기기에 임시 저장됨</strong>{draftSavedAt ? ` · ${formatResponseDraftTime(draftSavedAt)}` : ""} · 새로고침해도 이어서 작성할 수 있어요.</span>
+          <button type="button" onClick={discardDraft} className="shrink-0 font-semibold text-[#0B4D3D] underline underline-offset-2 hover:text-[#17866D]">이 기기에서 삭제</button>
         </div>
       )}
       <div className="sticky bottom-0 z-10 -mx-3 bg-gradient-to-t from-[#F5F3EC] via-[#F5F3EC]/95 to-transparent px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-5 sm:static sm:mx-0 sm:bg-none sm:p-0">
