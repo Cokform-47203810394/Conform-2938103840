@@ -38,7 +38,7 @@ export default function CokformStatePage({ onBack }) {
     const client = getSupabaseClient();
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 6000);
-    const [{ status: databaseStatus }, { status: gatewayStatus }] = await Promise.all([
+    const [databaseResult, gatewayResult] = await Promise.all([
       (async () => {
         if (!client) return { status: "attention", detail: "공개 저장소 연결 정보를 찾지 못했습니다." };
         const { error } = await client.from("form_public").select("id", { head: true }).limit(1);
@@ -60,7 +60,7 @@ export default function CokformStatePage({ onBack }) {
       })(),
     ]);
     window.clearTimeout(timer);
-    setChecks((current) => current.map((item) => item.id === "database" ? { ...item, ...databaseStatus } : item.id === "gateway" ? { ...item, ...gatewayStatus } : item));
+    setChecks((current) => current.map((item) => item.id === "database" ? { ...item, ...databaseResult } : item.id === "gateway" ? { ...item, ...gatewayResult } : item));
     setCheckedAt(new Date().toISOString());
     setChecking(false);
   };
