@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Mail } from "lucide-react";
 import QuestionField from "./QuestionField";
 import { ELEV1, ELEV1_HOVER, MD } from "../theme";
