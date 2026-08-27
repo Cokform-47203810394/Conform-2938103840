@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Activity, CheckCircle2, CircleAlert, Database, Globe2, RefreshCw, ShieldCheck } from "lucide-react";
 import { PublicPageShell, DocumentCard } from "../components/PublicPageShell";
 import { getSupabaseClient, getSupabaseConfig } from "../lib/supabaseClient";
