@@ -211,7 +211,7 @@ export default function QuestionField({ q, value, error, onChange }) {
           className="w-full rounded-md border border-[#C9CEC6] px-2 py-2.5 text-base focus:border-[#17866D] sm:w-auto sm:py-2 sm:text-sm"
         />
       )}
-      {error && <div className="mt-2 text-xs text-[#B3261E]">{error === "min_length" ? `공백 제외 ${q.minLength}자 이상 작성해 주세요.` : "이 질문은 필수입니다."}</div>}
+      {error && <div className="mt-2 text-xs text-[#B3261E]" role="alert">{error === "min_length" ? `공백 제외 ${q.minLength}자 이상 작성해 주세요.` : error?.type === "blacklist" ? `“${error.word}”이라는 단어는 포함할 수 없어요!` : "이 질문은 필수입니다."}</div>}
     </div>
   );
 }

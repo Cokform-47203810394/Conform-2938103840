@@ -95,6 +95,9 @@ export function emptyForm() {
       responseReceipt: false,
       ownerResponseNotification: false,
       limitOneResponse: false,
+      // 응답 본문은 E2EE로 전송하기 전에 브라우저에서만 검사한다.
+      blacklistWords: [],
+      blacklistScope: "all",
       maxResponses: null,
       responsePassword: null,
       allowResponseEdit: false,

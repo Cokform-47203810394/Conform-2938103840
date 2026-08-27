@@ -154,6 +154,27 @@ export async function markOwnerNotificationsRead(ids) {
   return saved === true;
 }
 
+export async function deleteOwnerNotification(id) {
+  if (!id) return false;
+  const deleted = await trySupabase("응답 알림 삭제", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return false;
+    const { error } = await supabase.from(NOTIFICATION_TABLE).delete().eq("id", id).eq("owner_id", authData.user.id);
+    return error ? false : true;
+  });
+  return deleted === true;
+}
+
+export async function clearOwnerNotifications() {
+  const deleted = await trySupabase("전체 응답 알림 삭제", async (supabase) => {
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return false;
+    const { error } = await supabase.from(NOTIFICATION_TABLE).delete().eq("owner_id", authData.user.id);
+    return error ? false : true;
+  });
+  return deleted === true;
+}
+
 export async function listForms() {
   const remote = await trySupabase("목록 조회", async (supabase) => {
     const { data: authData } = await supabase.auth.getUser();

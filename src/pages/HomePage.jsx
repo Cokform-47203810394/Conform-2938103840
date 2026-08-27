@@ -5,7 +5,7 @@ import { signInWithGoogle } from "../lib/auth";
 import FormThumbnail from "../components/FormThumbnail";
 import { Modal } from "../components/Overlay";
 import { TEMPLATES, PREMIUM_TEMPLATES } from "../templates";
-import { listForms, listTrashedForms, listParticipatedForms, listOwnerNotifications, markOwnerNotificationsRead, saveFormDoc, moveFormToTrash, restoreFormFromTrash, duplicateFormDoc, newFormId } from "../lib/formsStore";
+import { listForms, listTrashedForms, listParticipatedForms, listOwnerNotifications, markOwnerNotificationsRead, deleteOwnerNotification, clearOwnerNotifications, saveFormDoc, moveFormToTrash, restoreFormFromTrash, duplicateFormDoc, newFormId } from "../lib/formsStore";
 import { MD } from "../theme";
 import { sanitizeImageSource } from "../lib/sanitizeRichText";
 import { getResponseWindowState } from "../lib/responseWindow";
@@ -50,6 +50,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
   const [notice, setNotice] = useState(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [clearingNotifications, setClearingNotifications] = useState(false);
   const searchPanelRef = useRef(null);
   const notificationsPanelRef = useRef(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -143,6 +144,28 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
       setResponseNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, readAt: new Date().toISOString() } : item));
     }
     onOpenForm(notification.formId);
+  };
+
+  const removeNotification = async (event, notification) => {
+    event.stopPropagation();
+    const deleted = await deleteOwnerNotification(notification.id);
+    if (!deleted) {
+      setNotice("알림을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+    setResponseNotifications((current) => current.filter((item) => item.id !== notification.id));
+  };
+
+  const removeAllNotifications = async () => {
+    if (!notifications.length || clearingNotifications) return;
+    setClearingNotifications(true);
+    const deleted = await clearOwnerNotifications();
+    setClearingNotifications(false);
+    if (!deleted) {
+      setNotice("알림을 전체 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+    setResponseNotifications([]);
   };
 
   const handleCreate = async (template) => {
@@ -264,7 +287,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
                 <Bell size={19} />
                 {unreadNotificationCount > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#D85B4A] ring-2 ring-[#FFFDF8]" />}
               </button>
-              {notificationsOpen && <div className="absolute right-0 top-12 z-30 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] shadow-[0_12px_30px_rgba(23,37,31,0.16)]"><div className="flex items-center justify-between border-b border-[#F0EEE6] px-4 py-3"><strong className="text-sm text-[#17251F]">응답 알림</strong><span className="text-xs text-[#78837C]">답변 내용은 표시하지 않아요</span></div>{notifications.length ? notifications.map((notification) => <button key={notification.id} type="button" onClick={() => openNotification(notification)} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[#F0FAF6] ${notification.readAt ? "" : "bg-[#F1FAF4]"}`}><span className="min-w-0"><span className="block truncate text-sm font-semibold text-[#17251F]">{notification.form.title}</span><span className="mt-0.5 block text-xs text-[#78837C]">새 암호화 응답 도착 · {formatRelative(notification.createdAt)}</span></span><ChevronRight size={15} className="shrink-0 text-[#A2AAA3]" /></button>) : <div className="px-4 py-5 text-sm text-[#78837C]">아직 도착한 응답 알림이 없어요.</div>}</div>}
+              {notificationsOpen && <div className="absolute right-0 top-12 z-30 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-[#DDE1D9] bg-[#FFFDF8] shadow-[0_12px_30px_rgba(23,37,31,0.16)]"><div className="flex items-center justify-between gap-3 border-b border-[#F0EEE6] px-4 py-3"><div><strong className="block text-sm text-[#17251F]">응답 알림</strong><span className="mt-0.5 block text-xs text-[#78837C]">답변 내용은 표시하지 않아요</span></div>{notifications.length > 0 && <button type="button" onClick={removeAllNotifications} disabled={clearingNotifications} className="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-[#8C1D18] hover:bg-[#FBE4E0] disabled:opacity-50">{clearingNotifications ? "삭제 중…" : "전체 삭제"}</button>}</div>{notifications.length ? notifications.map((notification) => <div key={notification.id} className={`flex items-stretch border-b border-[#F0EEE6] last:border-b-0 ${notification.readAt ? "" : "bg-[#F1FAF4]"}`}><button type="button" onClick={() => openNotification(notification)} className="flex min-w-0 flex-1 items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[#F0FAF6]"><span className="min-w-0"><span className="block truncate text-sm font-semibold text-[#17251F]">{notification.form.title}</span><span className="mt-0.5 block text-xs text-[#78837C]">새 암호화 응답 도착 · {formatRelative(notification.createdAt)}</span></span><ChevronRight size={15} className="shrink-0 text-[#A2AAA3]" /></button><button type="button" onClick={(event) => removeNotification(event, notification)} aria-label={`${notification.form.title} 알림 삭제`} title="알림 삭제" className="m-1.5 flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-full text-[#78837C] hover:bg-[#FBE4E0] hover:text-[#B3261E]"><Trash2 size={15} /></button></div>) : <div className="px-4 py-5 text-sm text-[#78837C]">아직 도착한 응답 알림이 없어요.</div>}</div>}
             </div>
             <button
               onClick={onOpenSettings}
@@ -496,6 +519,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
                 <a href="/docs/e2ee-and-key-management" className="transition hover:text-[#D8ED59]">응답 암호화</a>
                 <a href="/resources" className="transition hover:text-[#D8ED59]">브랜드 리소스</a>
                 <a href="/docs/troubleshooting" className="transition hover:text-[#D8ED59]">문제 해결</a>
+                <a href="/status" className="transition hover:text-[#D8ED59]">Cokform State</a>
               </div>
             </nav>
 

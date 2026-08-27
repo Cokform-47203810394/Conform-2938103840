@@ -5,6 +5,7 @@ import { ELEV1, ELEV1_HOVER, MD } from "../theme";
 import { sanitizeImageSource, sanitizeRichText } from "../lib/sanitizeRichText";
 import MarkdownContent from "./MarkdownContent";
 import { isQuestionVisibleForAnswers } from "../lib/conditionalQuestions";
+import { findBlacklistViolation } from "../lib/responseValidation";
 
 export default function PreviewForm({ form, onSubmit, accent, previewMode = false }) {
   const color = accent || MD.primary;
@@ -91,7 +92,11 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
       const textLength = typeof v === "string" ? v.replace(/\s+/g, "").length : 0;
       if (minLength > 0 && textLength < minLength) {
         markError(q.id, "min_length");
+        return;
       }
+
+      const forbiddenWord = findBlacklistViolation(v, q, form.settings);
+      if (forbiddenWord) markError(q.id, { type: "blacklist", word: forbiddenWord });
     });
 
 
@@ -132,7 +137,9 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
         ? "동의하지 않음을 선택하면 제출할 수 없어요."
         : value === "min_length"
           ? `공백 제외 ${question?.minLength}자 이상 작성해 주세요.`
-          : "필수 항목입니다.",
+          : value?.type === "blacklist"
+            ? `“${value.word}”이라는 단어는 포함할 수 없어요!`
+            : "필수 항목입니다.",
     };
   });
   const requiredErrorCount = errorItems.filter((item) => item.id !== "_security").length;

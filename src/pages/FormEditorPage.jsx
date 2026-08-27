@@ -46,6 +46,7 @@ import MarkdownContent from "../components/MarkdownContent";
 import { createResponsePasswordVerifier } from "../lib/responseAccess";
 import { fromDateTimeLocalValue, getResponseWindowMessage, getResponseWindowState, toDateTimeLocalValue } from "../lib/responseWindow";
 import { analyzePrivacyRisk, PRIVACY_AUDIT_LEVEL } from "../lib/privacyAudit";
+import { BLACKLIST_LIMITS, normalizeBlacklistWords } from "../lib/responseValidation";
 import { ELEV1, ELEV3, MD, NAVER_GREEN, CHART_PALETTE } from "../theme";
 import AuthControl from "../components/AuthControl";
 import QuickAddToolbar from "../components/QuickAddToolbar";
@@ -1383,6 +1384,55 @@ export default function FormEditorPage({ formId, user, onBack }) {
                         onChange={(v) => updateForm((f) => ({ ...f, settings: { ...f.settings, limitOneResponse: v } }))}
                       />
                     </div>
+                    <section className="border-t border-[#F0EEE6] pt-4" aria-labelledby="blacklist-settings-title">
+                      <div>
+                        <h3 id="blacklist-settings-title" className="text-sm font-medium text-[#17251F]">금칙어 제한</h3>
+                        <p className="mt-1 text-xs leading-5 text-[#78837C]">응답자의 기기에서 제출 전에 검사합니다. 응답 원문은 암호화되므로 서버가 내용을 읽거나 금칙어를 판별하지 않습니다.</p>
+                      </div>
+                      <label className="mt-3 block text-xs font-medium text-[#59645E]">
+                        포함하면 안 되는 단어
+                        <textarea
+                          value={normalizeBlacklistWords(form.settings?.blacklistWords).join("\n")}
+                          onChange={(event) => updateForm((current) => ({
+                            ...current,
+                            settings: { ...current.settings, blacklistWords: normalizeBlacklistWords(event.target.value) },
+                          }))}
+                          rows={3}
+                          maxLength={BLACKLIST_LIMITS.maxWords * (BLACKLIST_LIMITS.maxWordLength + 1)}
+                          placeholder={"한 줄에 하나씩 입력\n예: 욕설\n예: 광고 링크"}
+                          className="mt-1.5 w-full rounded-lg border border-[#C9CEC6] bg-white px-3 py-2 text-sm text-[#17251F] outline-none focus:border-[#17866D]"
+                        />
+                      </label>
+                      <p className="mt-1.5 text-[11px] leading-5 text-[#78837C]">쉼표 또는 줄바꿈으로 구분합니다. 중복을 제외하고 최대 {BLACKLIST_LIMITS.maxWords}개까지 저장됩니다.</p>
+                      <label className="mt-3 block text-xs font-medium text-[#59645E]">
+                        적용 범위
+                        <select
+                          value={form.settings?.blacklistScope || "all"}
+                          onChange={(event) => updateForm((current) => ({ ...current, settings: { ...current.settings, blacklistScope: event.target.value } }))}
+                          className="mt-1.5 w-full rounded-lg border border-[#C9CEC6] bg-white px-3 py-2 text-sm text-[#17251F] outline-none focus:border-[#17866D]"
+                        >
+                          <option value="all">모든 답변에 적용</option>
+                          <option value="text">단답형·장문형에만 적용</option>
+                          <option value="selected">선택한 질문에만 적용</option>
+                        </select>
+                      </label>
+                      {(form.settings?.blacklistScope || "all") === "selected" && (
+                        <fieldset className="mt-3 rounded-lg border border-[#DDE1D9] bg-[#F8F9F4] p-3">
+                          <legend className="px-1 text-xs font-medium text-[#59645E]">제한할 질문</legend>
+                          <div className="mt-1 space-y-2">
+                            {form.questions.filter((question) => !["section", "privacy_notice", "privacy_consent"].includes(question.type)).map((question, questionIndex) => {
+                              const selectedIds = Array.isArray(form.settings?.blacklistQuestionIds) ? form.settings.blacklistQuestionIds : [];
+                              const checked = selectedIds.includes(question.id);
+                              return <label key={question.id} className="flex cursor-pointer items-start gap-2 text-xs leading-5 text-[#355C45]"><input type="checkbox" checked={checked} onChange={() => updateForm((current) => {
+                                const currentIds = Array.isArray(current.settings?.blacklistQuestionIds) ? current.settings.blacklistQuestionIds : [];
+                                const nextIds = checked ? currentIds.filter((id) => id !== question.id) : [...currentIds, question.id];
+                                return { ...current, settings: { ...current.settings, blacklistQuestionIds: nextIds } };
+                              })} className="mt-0.5 h-4 w-4 accent-[#17866D]" /><span className="min-w-0 break-words">Q{questionIndex + 1}. {richTextToPlain(question.title) || "제목 없는 질문"}</span></label>;
+                            })}
+                          </div>
+                        </fieldset>
+                      )}
+                    </section>
                     <div className="border-t border-[#F0EEE6] pt-4">
                       <div className="flex items-center justify-between gap-4">
                         <div>

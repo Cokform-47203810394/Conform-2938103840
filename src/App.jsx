@@ -13,6 +13,7 @@ const InternationalTransferPage = lazy(() => import("./pages/InternationalTransf
 const ServiceRestrictionsPage = lazy(() => import("./pages/ServiceRestrictionsPage"));
 const BusinessInfoPage = lazy(() => import("./pages/BusinessInfoPage"));
 const AfterHoursPage = lazy(() => import("./pages/AfterHoursPage"));
+const CokformStatePage = lazy(() => import("./pages/CokformStatePage"));
 import AuthControl from "./components/AuthControl";
 import { subscribeAuth } from "./lib/auth";
 import { ArrowLeft } from "lucide-react";
@@ -68,7 +69,7 @@ function writeSessionFormId(key, formId) {
 }
 
 function getQueryMode() {
-  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false, afterHours: false, unknown: false };
+  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false, afterHours: false, state: false, unknown: false };
   const params = new URLSearchParams(window.location.search);
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
   return {
@@ -83,14 +84,15 @@ function getQueryMode() {
     serviceRestrictions: pathname === "/service-restrictions",
     businessInfo: pathname === "/business-info",
     afterHours: pathname === "/after-hours",
-    unknown: pathname !== "/" && !["/privacy", "/terms", "/sitemap", "/docs", "/resources", "/international-transfer", "/service-restrictions", "/business-info", "/after-hours"].includes(pathname) && !pathname.startsWith("/docs/"),
+    state: pathname === "/status",
+    unknown: pathname !== "/" && !["/privacy", "/terms", "/sitemap", "/docs", "/resources", "/international-transfer", "/service-restrictions", "/business-info", "/after-hours", "/status"].includes(pathname) && !pathname.startsWith("/docs/"),
   };
 }
 
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const { respond: respondFormId, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo, afterHours, unknown } = getQueryMode();
+  const { respond: respondFormId, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo, afterHours, state, unknown } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
   if (privacy) return <Suspense fallback={<PageLoading />}><PrivacyPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (terms) return <Suspense fallback={<PageLoading />}><TermsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
@@ -102,6 +104,7 @@ export default function App() {
   if (serviceRestrictions) return <Suspense fallback={<PageLoading />}><ServiceRestrictionsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (businessInfo) return <Suspense fallback={<PageLoading />}><BusinessInfoPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (afterHours) return <Suspense fallback={<PageLoading />}><AfterHoursPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
+  if (state) return <Suspense fallback={<PageLoading />}><CokformStatePage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (unknown) return <UnknownRoutePage />;
   return <Builder />;
 }
