@@ -1,6 +1,6 @@
 import { Component, useEffect, useState } from "react";
 import PreviewForm from "../components/PreviewForm";
-import { getFormDoc, submitResponse, recordFormParticipation, recordFormView } from "../lib/formsStore";
+import { getFormDoc, getPublicFormIdBySlug, submitResponse, recordFormParticipation, recordFormView } from "../lib/formsStore";
 import { ELEV1, MD } from "../theme";
 import { getResponseWindowMessage, getResponseWindowState } from "../lib/responseWindow";
 import { verifyResponsePassword } from "../lib/responseAccess";
@@ -36,7 +36,8 @@ class RespondPageErrorBoundary extends Component {
   }
 }
 
-function RespondPageContent({ formId }) {
+function RespondPageContent({ formId: initialFormId, formSlug = "" }) {
+  const [formId, setFormId] = useState(initialFormId || "");
   const [doc, setDoc] = useState(undefined); // undefined = loading, null = not found
   const [loadError, setLoadError] = useState("");
   const [alreadyResponded, setAlreadyResponded] = useState(false);
@@ -49,9 +50,16 @@ function RespondPageContent({ formId }) {
     setLoadError("");
     setDoc(undefined);
     try {
-      const d = await getFormDoc(formId);
+      const resolvedFormId = initialFormId || await getPublicFormIdBySlug(formSlug);
+      if (!resolvedFormId) {
+        setDoc(null);
+        return;
+      }
+      setFormId(resolvedFormId);
+      setAlreadyResponded(Boolean(localStorage.getItem(`form-builder:responded:${resolvedFormId}`)));
+      const d = await getFormDoc(resolvedFormId);
       setDoc(d || null);
-      if (d) void recordFormView(formId);
+      if (d) void recordFormView(resolvedFormId);
     } catch {
       setLoadError("양식을 불러오지 못했어요. 네트워크를 확인한 뒤 다시 시도해 주세요.");
       setDoc(null);
@@ -59,9 +67,9 @@ function RespondPageContent({ formId }) {
   };
 
   useEffect(() => {
+    setFormId(initialFormId || "");
     void loadForm();
-    setAlreadyResponded(Boolean(localStorage.getItem(`form-builder:responded:${formId}`)));
-  }, [formId]);
+  }, [initialFormId, formSlug]);
 
   if (doc === undefined) {
     return <div className="flex min-h-screen items-center justify-center text-sm text-[#78837C]">불러오는 중…</div>;
@@ -169,6 +177,6 @@ function RespondPageContent({ formId }) {
   );
 }
 
-export default function RespondPage({ formId }) {
-  return <RespondPageErrorBoundary><RespondPageContent formId={formId} /></RespondPageErrorBoundary>;
+export default function RespondPage({ formId, formSlug }) {
+  return <RespondPageErrorBoundary><RespondPageContent formId={formId} formSlug={formSlug} /></RespondPageErrorBoundary>;
 }

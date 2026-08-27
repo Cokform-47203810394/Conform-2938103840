@@ -26,8 +26,9 @@ import PreviewForm from "../components/PreviewForm";
 import ResponsesView from "../components/ResponsesView";
 import { IconButton, Toggle } from "../components/Primitives";
 import { Popover, Modal } from "../components/Overlay";
-import { clearResponses as clearStoredResponses, deleteStoredResponse, exportFormRecoveryData, getFormDoc, getFormVersions, recordFormAuditEvent, restoreFormRecoveryData, saveFormDoc, saveFormVersion, submitResponse, updateResponseWorkflow } from "../lib/formsStore";
+import { clearResponses as clearStoredResponses, deleteStoredResponse, exportFormRecoveryData, getFormDoc, getFormVersions, getPublicFormIdBySlug, recordFormAuditEvent, restoreFormRecoveryData, saveFormDoc, saveFormVersion, submitResponse, updateResponseWorkflow } from "../lib/formsStore";
 import { emptyForm, defaultQuestion, uid } from "../questionTypes";
+import { getPublicFormUrl, validatePublicSlug } from "../lib/publicSlug";
 import {
   createEncryptedFormRecoveryBundle,
   ensureFormKeyPair,
@@ -837,6 +838,9 @@ export default function FormEditorPage({ formId, user, onBack }) {
   const [toolsOpen, setToolsOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [publicSlugInput, setPublicSlugInput] = useState("");
+  const [publicSlugError, setPublicSlugError] = useState("");
+  const [publicSlugChecking, setPublicSlugChecking] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
   const [collabInput, setCollabInput] = useState("");
   const [toast, setToast] = useState(null);
@@ -849,7 +853,8 @@ export default function FormEditorPage({ formId, user, onBack }) {
 
   const accent = form.accentColor || MD.primary;
   const coverImageSrc = sanitizeImageSource(form.coverImage?.src);
-  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}?respond=${formId}` : "";
+  const currentPublicSlug = form.settings?.publicSlug || "";
+  const shareUrl = typeof window !== "undefined" ? getPublicFormUrl(window.location.origin, currentPublicSlug, formId) : "";
   const privacyAudit = analyzePrivacyRisk(form);
   const needsExistingKeyRecovery = keyVaultState === "setup_required" && Boolean(form.publicKey);
   const privacyAuditSignals = Object.values(privacyAudit.signals.reduce((grouped, signal) => {
@@ -888,6 +893,35 @@ export default function FormEditorPage({ formId, user, onBack }) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [paletteOpen]);
+
+  useEffect(() => {
+    setPublicSlugInput(currentPublicSlug);
+    setPublicSlugError("");
+  }, [currentPublicSlug, formId]);
+
+  const applyPublicSlug = async () => {
+    const validated = validatePublicSlug(publicSlugInput);
+    setPublicSlugInput(validated.slug);
+    if (validated.error) {
+      setPublicSlugError(validated.error);
+      return;
+    }
+    setPublicSlugChecking(true);
+    try {
+      if (validated.slug) {
+        const usedBy = await getPublicFormIdBySlug(validated.slug);
+        if (usedBy && usedBy !== formId) {
+          setPublicSlugError("이미 다른 폼에서 사용하는 주소예요.");
+          return;
+        }
+      }
+      updateForm((previous) => ({ ...previous, settings: { ...previous.settings, publicSlug: validated.slug } }));
+      setPublicSlugError("");
+      setToast(validated.slug ? "맞춤 공개 주소를 저장했어요." : "기본 링크로 돌아갔어요.");
+    } finally {
+      setPublicSlugChecking(false);
+    }
+  };
 
   const openShare = () => {
     flushActiveRichText();
@@ -1743,6 +1777,25 @@ export default function FormEditorPage({ formId, user, onBack }) {
       {shareOpen && (
         <Modal title="공유" onClose={() => setShareOpen(false)}>
           <p className="mb-3 text-sm text-[#59645E]">이 링크가 있는 사람은 누구나 설문에 응답할 수 있어요.</p>
+          <div className="mb-4 rounded-xl border border-[#C9CEC6] bg-[#F8F9F4] p-3">
+            <label htmlFor="public-slug" className="block text-sm font-semibold text-[#17251F]">맞춤 공개 주소</label>
+            <p className="mt-1 text-xs leading-5 text-[#59645E]">`cokform.pages.dev/` 뒤에 붙는 주소예요. 영문 소문자·숫자·하이픈(-)만 3~48자로 설정할 수 있어요.</p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="hidden shrink-0 text-xs text-[#59645E] sm:inline">…/</span>
+              <input
+                id="public-slug"
+                value={publicSlugInput}
+                onChange={(event) => { setPublicSlugInput(event.target.value); setPublicSlugError(""); }}
+                onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void applyPublicSlug(); } }}
+                placeholder="limited-3"
+                maxLength={48}
+                className="min-w-0 flex-1 rounded-lg border border-[#B9C2BB] bg-white px-3 py-2 text-sm outline-none focus:border-[#17866D]"
+                aria-describedby="public-slug-help"
+              />
+              <button type="button" onClick={() => void applyPublicSlug()} disabled={publicSlugChecking} className="shrink-0 rounded-full bg-[#0B4D3D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#083A2E] disabled:cursor-wait disabled:opacity-60">{publicSlugChecking ? "확인 중" : "적용"}</button>
+            </div>
+            <p id="public-slug-help" className={`mt-2 text-xs ${publicSlugError ? "text-[#B3261E]" : "text-[#59645E]"}`}>{publicSlugError || (currentPublicSlug ? `현재 주소: /${currentPublicSlug}` : "비워두면 기존 기본 링크를 사용해요.")}</p>
+          </div>
           <div className="flex items-center gap-2 rounded-lg border border-[#C9CEC6] p-2">
             <input readOnly value={shareUrl} className="min-w-0 flex-1 truncate bg-transparent text-sm outline-none" />
             <button

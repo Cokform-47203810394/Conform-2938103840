@@ -18,6 +18,7 @@ import AuthControl from "./components/AuthControl";
 import { subscribeAuth } from "./lib/auth";
 import { ArrowLeft } from "lucide-react";
 import { ELEV1 } from "./theme";
+import { isPublicSlugPath } from "./lib/publicSlug";
 
 function PageLoading() {
   return <div className="flex min-h-screen items-center justify-center bg-[#F5F3EC] text-sm text-[#78837C]">불러오는 중…</div>;
@@ -69,11 +70,16 @@ function writeSessionFormId(key, formId) {
 }
 
 function getQueryMode() {
-  if (typeof window === "undefined") return { respond: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false, afterHours: false, state: false, unknown: false };
+  if (typeof window === "undefined") return { respond: null, publicSlug: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false, afterHours: false, state: false, unknown: false };
   const params = new URLSearchParams(window.location.search);
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+  const reservedPaths = ["/privacy", "/terms", "/sitemap", "/docs", "/resources", "/international-transfer", "/service-restrictions", "/business-info", "/after-hours", "/status"];
+  const publicSlug = pathname.startsWith("/") && !reservedPaths.includes(pathname) && !pathname.startsWith("/docs/")
+    ? isPublicSlugPath(pathname)
+    : null;
   return {
     respond: params.get("respond"),
+    publicSlug,
     privacy: pathname === "/privacy" || params.get("privacy") === "1",
     terms: pathname === "/terms" || params.get("terms") === "1",
     sitemap: pathname === "/sitemap",
@@ -85,15 +91,16 @@ function getQueryMode() {
     businessInfo: pathname === "/business-info",
     afterHours: pathname === "/after-hours",
     state: pathname === "/status",
-    unknown: pathname !== "/" && !["/privacy", "/terms", "/sitemap", "/docs", "/resources", "/international-transfer", "/service-restrictions", "/business-info", "/after-hours", "/status"].includes(pathname) && !pathname.startsWith("/docs/"),
+    unknown: pathname !== "/" && !reservedPaths.includes(pathname) && !pathname.startsWith("/docs/") && !publicSlug,
   };
 }
 
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const { respond: respondFormId, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo, afterHours, state, unknown } = getQueryMode();
+  const { respond: respondFormId, publicSlug, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo, afterHours, state, unknown } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
+  if (publicSlug) return <RespondPage formSlug={publicSlug} />;
   if (privacy) return <Suspense fallback={<PageLoading />}><PrivacyPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (terms) return <Suspense fallback={<PageLoading />}><TermsPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (sitemap) return <Suspense fallback={<PageLoading />}><SitemapPage onBack={() => { window.location.href = "/"; }} /></Suspense>;

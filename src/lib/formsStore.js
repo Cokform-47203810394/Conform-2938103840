@@ -2,6 +2,7 @@ import { getSupabaseClient, getSupabaseConfig, hasSupabaseConfig } from "./supab
 import { uid } from "../questionTypes";
 import { decryptAnswers, encryptAnswers, isEncryptedEnvelope } from "./secureResponses";
 import { getResponseWindowState } from "./responseWindow";
+import { validatePublicSlug } from "./publicSlug";
 
 const INDEX_KEY = "form-builder:index";
 const DOC_PREFIX = "form-builder:doc";
@@ -262,6 +263,23 @@ export async function recordFormView(formId) {
   return saved === true;
 }
 
+export async function getPublicFormIdBySlug(slug) {
+  const validated = validatePublicSlug(slug);
+  if (validated.error || !validated.slug) return null;
+  const remote = await trySupabase("맞춤 주소 조회", async (supabase) => {
+    const { data, error } = await supabase
+      .from(PUBLIC_TABLE)
+      .select("id")
+      .eq("public_slug", validated.slug)
+      .maybeSingle();
+    if (error) return undefined;
+    return data?.id || null;
+  });
+  if (remote !== undefined) return remote;
+  if (hasSupabaseConfig()) return null;
+  return readIndexLocal().find((item) => validatePublicSlug(item?.publicSlug).slug === validated.slug)?.id || null;
+}
+
 export async function getFormDoc(id) {
   const remote = await trySupabase("로드", async (supabase) => {
     const { data: authData } = await supabase.auth.getUser();
@@ -344,6 +362,8 @@ export async function saveFormDoc(id, doc) {
   const now = new Date().toISOString();
   const title = doc.form?.title?.trim() || "제목 없는 설문지";
   const payload = { form: doc.form };
+  const publicSlug = validatePublicSlug(doc.form?.settings?.publicSlug);
+  if (publicSlug.error) return false;
 
   const savedRemotely = await trySupabase("저장", async (supabase) => {
     const { data: authData } = await supabase.auth.getUser();
@@ -369,6 +389,7 @@ export async function saveFormDoc(id, doc) {
       id,
       title,
       data: publicFormData(doc.form),
+      public_slug: publicSlug.slug || null,
       updated_at: now,
     });
     return publicError ? undefined : true;
@@ -550,10 +571,13 @@ export async function restoreFormRecoveryData(payload) {
       updated_at: new Date().toISOString(),
     });
     if (formError) return undefined;
+    const publicSlug = validatePublicSlug(form?.settings?.publicSlug);
+    if (publicSlug.error) return undefined;
     const { error: publicError } = await supabase.from(PUBLIC_TABLE).upsert({
       id: formId,
       title,
       data: publicFormData(form),
+      public_slug: publicSlug.slug || null,
       updated_at: new Date().toISOString(),
     });
     if (publicError) return undefined;
@@ -882,10 +906,13 @@ export async function restoreFormFromTrash(id) {
     const now = new Date().toISOString();
     const { error: formError } = await supabase.from(TABLE).update({ deleted_at: null, updated_at: now }).eq("id", id);
     if (formError) return undefined;
+    const publicSlug = validatePublicSlug(form?.settings?.publicSlug);
+    if (publicSlug.error) return undefined;
     const { error: publicError } = await supabase.from(PUBLIC_TABLE).upsert({
       id,
       title: row.title,
       data: publicFormData(form),
+      public_slug: publicSlug.slug || null,
       updated_at: now,
     });
     if (!publicError) return true;
