@@ -163,7 +163,7 @@ function RespondPageContent({ formId }) {
     <div className="min-h-[100dvh] px-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-4 sm:py-6" style={{ backgroundColor: form.backgroundColor || "#F5F3EC" }}>
       <div className="mx-auto max-w-2xl">
         {submitError && <div role="alert" className="mb-3 rounded-xl border border-[#F2B8B5] bg-[#FFF6F5] px-4 py-3 text-sm text-[#8C1D18]">{submitError}</div>}
-        <PreviewForm form={form} onSubmit={handleSubmit} accent={accent} />
+        <PreviewForm form={form} onSubmit={handleSubmit} accent={accent} draftKey={formId} />
       </div>
     </div>
   );

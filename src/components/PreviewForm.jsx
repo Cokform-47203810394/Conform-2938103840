@@ -8,8 +8,9 @@ import { isQuestionVisibleForAnswers } from "../lib/conditionalQuestions";
 import { findBlacklistViolation } from "../lib/responseValidation";
 import { clearResponseDraft, formatResponseDraftTime, loadResponseDraft, saveResponseDraft } from "../lib/responseDraft";
 
-export default function PreviewForm({ form, onSubmit, accent, previewMode = false }) {
+export default function PreviewForm({ form, onSubmit, accent, previewMode = false, draftKey = "" }) {
   const color = accent || MD.primary;
+  const responseDraftId = draftKey || form?.id || "";
   const descriptionImageSrc = sanitizeImageSource(form.descriptionImage?.src);
   const descriptionStyle = form.descriptionStyle || {};
   const descriptionTypography = {
@@ -35,28 +36,28 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
   const errorSummaryRef = useRef(null);
 
   useEffect(() => {
-    if (previewMode || !form?.id) return;
-    const savedDraft = loadResponseDraft(form.id, form.questions.map((question) => question.id));
+    if (previewMode || !responseDraftId) return;
+    const savedDraft = loadResponseDraft(responseDraftId, form.questions.map((question) => question.id));
     if (!savedDraft) return;
     answersRef.current = savedDraft.answers;
     setAnswers(savedDraft.answers);
     setDraftSavedAt(savedDraft.savedAt);
-  }, [form?.id, previewMode]);
+  }, [responseDraftId, previewMode]);
 
   const handleChange = (qid, value) => {
     const nextAnswers = { ...answersRef.current, [qid]: value };
     answersRef.current = nextAnswers;
     setAnswers(nextAnswers);
     setErrors((e) => ({ ...e, [qid]: false }));
-    if (!previewMode && form?.id) {
-      const savedAt = saveResponseDraft(form.id, nextAnswers);
+    if (!previewMode && responseDraftId) {
+      const savedAt = saveResponseDraft(responseDraftId, nextAnswers);
       if (savedAt) setDraftSavedAt(savedAt);
     }
   };
 
   const discardDraft = () => {
-    if (!form?.id) return;
-    clearResponseDraft(form.id);
+    if (!responseDraftId) return;
+    clearResponseDraft(responseDraftId);
     answersRef.current = {};
     setAnswers({});
     setErrors({});
@@ -139,7 +140,7 @@ export default function PreviewForm({ form, onSubmit, accent, previewMode = fals
       const submittedAnswers = Object.fromEntries(Object.entries(answers).filter(([id]) => id.startsWith("_cokform_") || visibleQuestionIds.has(id)));
       const completed = await onSubmit(submittedAnswers, previewMode ? {} : { startedAt: startedAtRef.current, website });
       if (completed !== false) {
-        clearResponseDraft(form.id);
+        clearResponseDraft(responseDraftId);
         setDraftSavedAt("");
         setSubmitted(true);
       }
