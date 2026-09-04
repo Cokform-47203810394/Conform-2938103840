@@ -515,6 +515,7 @@ export default function HomePage({ onOpenForm, onOpenSettings, user, authReady }
               <h2 className="text-xs font-bold tracking-[0.08em] text-[#718077]">서비스</h2>
               <div className="mt-3 flex flex-col items-start gap-2.5 text-sm">
                 <a href="/" className="transition hover:text-[#D8ED59]">폼 만들기</a>
+                <a href="/about" className="transition hover:text-[#D8ED59]">Cokform 소개</a>
                 <a href="/docs" className="transition hover:text-[#D8ED59]">사용 가이드</a>
                 <a href="/docs/e2ee-and-key-management" className="transition hover:text-[#D8ED59]">응답 암호화</a>
                 <a href="/resources" className="transition hover:text-[#D8ED59]">브랜드 리소스</a>

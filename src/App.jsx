@@ -14,6 +14,7 @@ const ServiceRestrictionsPage = lazy(() => import("./pages/ServiceRestrictionsPa
 const BusinessInfoPage = lazy(() => import("./pages/BusinessInfoPage"));
 const AfterHoursPage = lazy(() => import("./pages/AfterHoursPage"));
 const CokformStatePage = lazy(() => import("./pages/CokformStatePage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
 import AuthControl from "./components/AuthControl";
 import { subscribeAuth } from "./lib/auth";
 import { ArrowLeft } from "lucide-react";
@@ -70,10 +71,10 @@ function writeSessionFormId(key, formId) {
 }
 
 function getQueryMode() {
-  if (typeof window === "undefined") return { respond: null, publicSlug: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false, afterHours: false, state: false, unknown: false };
+  if (typeof window === "undefined") return { respond: null, publicSlug: null, privacy: false, terms: false, sitemap: false, docs: false, docsSlug: null, resources: false, internationalTransfer: false, serviceRestrictions: false, businessInfo: false, afterHours: false, state: false, about: false, unknown: false };
   const params = new URLSearchParams(window.location.search);
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
-  const reservedPaths = ["/privacy", "/terms", "/sitemap", "/docs", "/resources", "/international-transfer", "/service-restrictions", "/business-info", "/after-hours", "/status"];
+  const reservedPaths = ["/privacy", "/terms", "/sitemap", "/docs", "/resources", "/international-transfer", "/service-restrictions", "/business-info", "/after-hours", "/status", "/about"];
   const publicSlug = pathname.startsWith("/") && !reservedPaths.includes(pathname) && !pathname.startsWith("/docs/")
     ? isPublicSlugPath(pathname)
     : null;
@@ -91,6 +92,7 @@ function getQueryMode() {
     businessInfo: pathname === "/business-info",
     afterHours: pathname === "/after-hours",
     state: pathname === "/status",
+    about: pathname === "/about",
     unknown: pathname !== "/" && !reservedPaths.includes(pathname) && !pathname.startsWith("/docs/") && !publicSlug,
   };
 }
@@ -98,7 +100,7 @@ function getQueryMode() {
 export default function App() {
   // anyone opening a shared link (?respond=<id>) goes straight to the respondent view,
   // with none of the builder chrome — this is what makes 공유 actually work
-  const { respond: respondFormId, publicSlug, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo, afterHours, state, unknown } = getQueryMode();
+  const { respond: respondFormId, publicSlug, privacy, terms, sitemap, docs, docsSlug, resources, internationalTransfer, serviceRestrictions, businessInfo, afterHours, state, about, unknown } = getQueryMode();
   if (respondFormId) return <RespondPage formId={respondFormId} />;
   if (publicSlug) return <RespondPage formSlug={publicSlug} />;
   if (privacy) return <Suspense fallback={<PageLoading />}><PrivacyPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
@@ -112,6 +114,7 @@ export default function App() {
   if (businessInfo) return <Suspense fallback={<PageLoading />}><BusinessInfoPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (afterHours) return <Suspense fallback={<PageLoading />}><AfterHoursPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (state) return <Suspense fallback={<PageLoading />}><CokformStatePage onBack={() => { window.location.href = "/"; }} /></Suspense>;
+  if (about) return <Suspense fallback={<PageLoading />}><AboutPage onBack={() => { window.location.href = "/"; }} /></Suspense>;
   if (unknown) return <UnknownRoutePage />;
   return <Builder />;
 }
