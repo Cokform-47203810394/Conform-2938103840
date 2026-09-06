@@ -13,6 +13,8 @@ Cokform은 한국 실무 흐름에 맞춘 **개인정보 보호형 폼 빌더**�
 | 개인정보 보호 | [보안과 키 관리](security/e2ee-and-key-management.md) | E2EE 경계, 개인키 금고, 복구 비밀번호·키 백업·복구 번들 |
 | 실무 고지 | [개인정보 수집 운영](guides/privacy-operations.md) | 수집 목적·항목·보유기간 고지, 동의 질문, 보관기간 설정 |
 | 문제가 생겼을 때 | [문제 해결](guides/troubleshooting.md) | 금고 잠김, 응답 미수신, 공개 링크·마감·내보내기 점검 |
+| 브랜드 전략 | [Cokform 브랜드 가이드](COKFORM_BRAND_GUIDE.md) | 포지셔닝·메시지·로고·색상·채널별 사용 원칙 |
+| 제품 디자인 | [Cokform 제품 디자인 가이드](COKFORM_DESIGN_GUIDE.md) | 토큰·타이포·컴포넌트·반응형·접근성·QA |
 | 브랜드 사용 | [브랜드 리소스](brand-resources.md) | 로고·마크·색상·사용 원칙·문의 |
 | 국외 처리 | [국외이전·국외 처리 안내](legal/international-data-transfer.md) | 실제 국내 저장 구조, 조건부 외부 연동, 고지 항목 |
 | 이용제한 | [서비스 이용제한 정책](legal/service-restrictions.md) | 금지행위, 비례적 조치, 통지·소명·보안 제보 |
@@ -32,6 +34,8 @@ Cokform 문서는 과장하지 않습니다. 암호화가 적용되는 범위, �
 ```text
 /docs
 ├── README.md                         # 이 문서와 전체 안내
+├── COKFORM_BRAND_GUIDE.md            # 브랜드 전략·로고·색상·메시지
+├── COKFORM_DESIGN_GUIDE.md            # 제품 토큰·컴포넌트·반응형·QA
 ├── brand-resources.md                # 로고·마크·색상·사용 원칙
 ├── guides/
 │   ├── create-and-share.md           # 폼 제작·공개·공유
